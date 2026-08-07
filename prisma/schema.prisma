@@ -1,0 +1,138 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model Student {
+  id            String      @id @default(cuid())
+  studentId     String      @unique
+  name          String
+  email         String      @unique
+  company       String?
+  course        String?
+  section       String?
+  supervisorId  String?
+  supervisor    Teacher?    @relation(fields: [supervisorId], references: [id])
+  narratives    Narrative[]
+  createdAt     DateTime    @default(now())
+  updatedAt     DateTime    @updatedAt
+
+  @@index([email])
+  @@index([studentId])
+}
+
+model Teacher {
+  id              String      @id @default(cuid())
+  teacherId       String      @unique
+  name            String
+  email           String      @unique
+  password        String?
+  role            String      @default("teacher")
+  students        Student[]
+  narrativeReviews NarrativeReview[]
+  notifications   Notification[]
+  createdAt       DateTime    @default(now())
+  updatedAt       DateTime    @updatedAt
+
+  @@index([email])
+}
+
+model Narrative {
+  id                String            @id @default(cuid())
+  studentId         String
+  student           Student           @relation(fields: [studentId], references: [id], onDelete: Cascade)
+  date              DateTime
+  timeIn            String?
+  timeOut           String?
+  hoursRendered     Float?
+  content           String            @db.Text
+  status            String            @default("pending") // pending, approved, revision_requested
+  verificationStatus String           @default("on_time") // on_time, late
+  submittedAt       DateTime          @default(now())
+  submissionDate    DateTime          @default(now())
+  submissionTime    String
+  timezone          String?
+  deviceUsed        String?
+  isDraft           Boolean           @default(false)
+  photos            Photo[]
+  reviews           NarrativeReview[]
+  createdAt         DateTime          @default(now())
+  updatedAt         DateTime          @updatedAt
+
+  @@index([studentId])
+  @@index([date])
+  @@index([status])
+}
+
+model Photo {
+  id          String    @id @default(cuid())
+  narrativeId String
+  narrative   Narrative @relation(fields: [narrativeId], references: [id], onDelete: Cascade)
+  url         String
+  filename    String
+  uploadedAt  DateTime  @default(now())
+
+  @@index([narrativeId])
+}
+
+model NarrativeReview {
+  id          String    @id @default(cuid())
+  narrativeId String
+  narrative   Narrative @relation(fields: [narrativeId], references: [id], onDelete: Cascade)
+  teacherId   String
+  teacher     Teacher   @relation(fields: [teacherId], references: [id])
+  action      String    // approved, revision_requested
+  comment     String?   @db.Text
+  createdAt   DateTime  @default(now())
+
+  @@index([narrativeId])
+  @@index([teacherId])
+}
+
+model Notification {
+  id         String   @id @default(cuid())
+  userId     String
+  userType   String   // student, teacher
+  teacher    Teacher? @relation(fields: [userId], references: [id], onDelete: Cascade)
+  type       String   // narrative_approved, revision_requested, missing_submission, etc.
+  title      String
+  message    String   @db.Text
+  isRead     Boolean  @default(false)
+  link       String?
+  createdAt  DateTime @default(now())
+
+  @@index([userId])
+  @@index([isRead])
+}
+
+model AuditLog {
+  id          String   @id @default(cuid())
+  userId      String
+  userType    String   // student, teacher
+  action      String   // submission, approval, revision, login, etc.
+  description String   @db.Text
+  metadata    String?  @db.Text // JSON string for additional data
+  ipAddress   String?
+  userAgent   String?
+  createdAt   DateTime @default(now())
+
+  @@index([userId])
+  @@index([createdAt])
+}
+
+model Holiday {
+  id          String   @id @default(cuid())
+  date        DateTime @unique
+  name        String
+  description String?
+  createdAt   DateTime @default(now())
+
+  @@index([date])
+}
