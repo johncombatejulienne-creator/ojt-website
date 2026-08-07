@@ -1,0 +1,161 @@
+═══════════════════════════════════════════════════════════════
+    🎓 OJT WEBSITE COMBATE - DEPLOYMENT CHECKLIST
+═══════════════════════════════════════════════════════════════
+
+Your Website URL: https://ojt-website-combate.vercel.app
+
+═══════════════════════════════════════════════════════════════
+STEP 1: VERCEL DEPLOYMENT
+═══════════════════════════════════════════════════════════════
+
+□ Open PowerShell in project folder
+□ Run: vercel login
+□ Click the verification link in browser
+□ Run: vercel
+□ Enter project name: ojt-website-combate
+□ Accept defaults
+□ Wait for deployment
+
+═══════════════════════════════════════════════════════════════
+STEP 2: SUPABASE DATABASE
+═══════════════════════════════════════════════════════════════
+
+□ Go to: https://supabase.com
+□ Sign up / Login
+□ Click "New Project"
+□ Name: ojt-website-combate
+□ Create strong password
+□ Region: Singapore
+□ Wait 2-3 minutes for setup
+□ Settings → Database → Connection String (URI)
+□ Copy connection string
+□ Replace [YOUR-PASSWORD] with actual password
+□ SAVE THIS CONNECTION STRING!
+
+═══════════════════════════════════════════════════════════════
+STEP 3: GOOGLE OAUTH
+═══════════════════════════════════════════════════════════════
+
+□ Go to: https://console.cloud.google.com
+□ Create new project: "OJT Website Combate"
+□ APIs & Services → Library → Enable "Google+ API"
+□ OAuth consent screen → External
+□ Fill in app name and email
+□ Credentials → Create OAuth Client ID
+□ Type: Web application
+□ Add redirect URIs:
+  - http://localhost:3000/api/auth/callback/google
+  - https://ojt-website-combate.vercel.app/api/auth/callback/google
+□ Copy Client ID
+□ Copy Client Secret
+□ SAVE THESE!
+
+═══════════════════════════════════════════════════════════════
+STEP 4: ENVIRONMENT VARIABLES
+═══════════════════════════════════════════════════════════════
+
+Run these commands in PowerShell:
+
+□ vercel env add DATABASE_URL
+   → Paste Supabase connection string
+
+□ vercel env add NEXTAUTH_SECRET
+   → Generate at: https://generate-secret.vercel.app/32
+   → Paste generated secret
+
+□ vercel env add NEXTAUTH_URL
+   → Type: https://ojt-website-combate.vercel.app
+
+□ vercel env add GOOGLE_CLIENT_ID
+   → Paste Google Client ID
+
+□ vercel env add GOOGLE_CLIENT_SECRET
+   → Paste Google Client Secret
+
+═══════════════════════════════════════════════════════════════
+STEP 5: PRODUCTION DEPLOY
+═══════════════════════════════════════════════════════════════
+
+□ Run: vercel --prod
+□ Wait for deployment
+□ Website is LIVE!
+
+═══════════════════════════════════════════════════════════════
+STEP 6: DATABASE SETUP
+═══════════════════════════════════════════════════════════════
+
+□ Create .env file with your credentials
+□ Run: npx prisma generate
+□ Run: npx prisma migrate deploy
+□ (Optional) Run: npm run db:seed
+
+═══════════════════════════════════════════════════════════════
+STEP 7: CREATE ADMIN ACCOUNT
+═══════════════════════════════════════════════════════════════
+
+□ Run: npx prisma studio
+□ Opens at http://localhost:5555
+□ Click "Teacher" table
+□ Add record:
+   - teacherId: ADMIN001
+   - name: Your Name
+   - email: your@email.com
+   - password: $2a$10$rX8V5YZvXQH7nqZWVyqHR.yGZwF8mG8XLGJxGKVwq0vMqvJ4xDGNC
+   - role: teacher
+□ Save
+
+Your login: your@email.com / admin123
+
+═══════════════════════════════════════════════════════════════
+STEP 8: TEST YOUR WEBSITE
+═══════════════════════════════════════════════════════════════
+
+□ Open: https://ojt-website-combate.vercel.app
+□ Test teacher login
+□ Test student Google sign-in
+□ Check mobile responsiveness
+
+═══════════════════════════════════════════════════════════════
+✅ WEBSITE IS LIVE!
+═══════════════════════════════════════════════════════════════
+
+🌐 URL: https://ojt-website-combate.vercel.app
+
+Share this link with:
+✓ Students - They sign in with Gmail
+✓ Teachers - They use email/password
+✓ Anyone with internet access
+
+═══════════════════════════════════════════════════════════════
+IMPORTANT LINKS TO SAVE
+═══════════════════════════════════════════════════════════════
+
+Website:         https://ojt-website-combate.vercel.app
+Vercel Dashboard: https://vercel.com/dashboard
+Supabase:        https://app.supabase.com
+Google Console:  https://console.cloud.google.com
+Secret Generator: https://generate-secret.vercel.app/32
+
+═══════════════════════════════════════════════════════════════
+CREDENTIALS TO SAVE
+═══════════════════════════════════════════════════════════════
+
+□ Supabase Database URL: _________________________
+□ Supabase Password: _________________________
+□ NextAuth Secret: _________________________
+□ Google Client ID: _________________________
+□ Google Client Secret: _________________________
+□ Admin Email: _________________________
+□ Admin Password: admin123 (change after first login!)
+
+═══════════════════════════════════════════════════════════════
+FOR DETAILED INSTRUCTIONS, SEE:
+═══════════════════════════════════════════════════════════════
+
+→ FINAL_DEPLOYMENT_GUIDE.md (Complete step-by-step guide)
+→ START_HERE.md (Quick start)
+→ DEPLOYMENT_SUMMARY.html (Visual guide)
+
+═══════════════════════════════════════════════════════════════
+CONGRATULATIONS! 🎉
+═══════════════════════════════════════════════════════════════

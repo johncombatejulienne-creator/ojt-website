@@ -48,3 +48,6 @@ prisma/migrations/*_migration.sql
 
 # OS
 Thumbs.db
+
+# Local Netlify folder
+.netlify
