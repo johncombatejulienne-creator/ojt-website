@@ -10,35 +10,45 @@ datasource db {
 }
 
 model Student {
-  id            String      @id @default(cuid())
-  studentId     String      @unique
-  name          String
-  email         String      @unique
-  company       String?
-  course        String?
-  section       String?
-  supervisorId  String?
-  supervisor    Teacher?    @relation(fields: [supervisorId], references: [id])
-  narratives    Narrative[]
-  createdAt     DateTime    @default(now())
-  updatedAt     DateTime    @updatedAt
+  id                String                     @id @default(cuid())
+  studentId         String                     @unique
+  name              String
+  email             String                     @unique
+  company           String?
+  course            String?
+  gradeLevel        Int?
+  strandId          String?
+  strand            Strand?                    @relation(fields: [strandId], references: [id])
+  sectionId         String?
+  section           Section?                   @relation(fields: [sectionId], references: [id])
+  supervisorId      String?
+  supervisor        Teacher?                   @relation(fields: [supervisorId], references: [id])
+  narratives        Narrative[]
+  checklistProgress StudentChecklistProgress[]
+  createdAt         DateTime                   @default(now())
+  updatedAt         DateTime                   @updatedAt
 
   @@index([email])
   @@index([studentId])
+  @@index([strandId])
+  @@index([sectionId])
 }
 
 model Teacher {
-  id              String      @id @default(cuid())
-  teacherId       String      @unique
-  name            String
-  email           String      @unique
-  password        String?
-  role            String      @default("teacher")
-  students        Student[]
+  id               String            @id @default(cuid())
+  teacherId        String            @unique
+  name             String
+  email            String            @unique
+  password         String?
+  role             String            @default("teacher")
+  accessLevel      String            @default("teacher") // teacher, admin, super_admin
+  students         Student[]
+  sections         Section[]
+  announcements    Announcement[]
   narrativeReviews NarrativeReview[]
-  notifications   Notification[]
-  createdAt       DateTime    @default(now())
-  updatedAt       DateTime    @updatedAt
+  notifications    Notification[]
+  createdAt        DateTime          @default(now())
+  updatedAt        DateTime          @updatedAt
 
   @@index([email])
 }
@@ -71,12 +81,15 @@ model Narrative {
 }
 
 model Photo {
-  id          String    @id @default(cuid())
-  narrativeId String
-  narrative   Narrative @relation(fields: [narrativeId], references: [id], onDelete: Cascade)
-  url         String
-  filename    String
-  uploadedAt  DateTime  @default(now())
+  id            String          @id @default(cuid())
+  narrativeId   String
+  narrative     Narrative       @relation(fields: [narrativeId], references: [id], onDelete: Cascade)
+  url           String
+  filename      String
+  captureDate   DateTime?
+  isVerified    Boolean         @default(false)
+  uploadedAt    DateTime        @default(now())
+  metadata      PhotoMetadata?
 
   @@index([narrativeId])
 }
@@ -134,4 +147,140 @@ model Holiday {
   createdAt   DateTime @default(now())
 
   @@index([date])
+}
+
+model Strand {
+  id            String        @id @default(cuid())
+  name          String        @unique
+  description   String?
+  isActive      Boolean       @default(true)
+  sections      Section[]
+  students      Student[]
+  checklists    Checklist[]
+  announcements Announcement[]
+  createdAt     DateTime      @default(now())
+  updatedAt     DateTime      @updatedAt
+
+  @@index([name])
+}
+
+model Section {
+  id            String          @id @default(cuid())
+  name          String
+  gradeLevel    Int
+  strandId      String
+  strand        Strand          @relation(fields: [strandId], references: [id])
+  teacherId     String?
+  teacher       Teacher?        @relation(fields: [teacherId], references: [id])
+  students      Student[]
+  announcements Announcement[]
+  checklists    Checklist[]
+  isActive      Boolean         @default(true)
+  createdAt     DateTime        @default(now())
+  updatedAt     DateTime        @updatedAt
+
+  @@unique([strandId, name])
+  @@index([strandId])
+  @@index([teacherId])
+}
+
+model Announcement {
+  id          String    @id @default(cuid())
+  title       String
+  content     String    @db.Text
+  type        String
+  targetType  String
+  strandId    String?
+  strand      Strand?   @relation(fields: [strandId], references: [id])
+  sectionId   String?
+  section     Section?  @relation(fields: [sectionId], references: [id])
+  teacherId   String
+  teacher     Teacher   @relation(fields: [teacherId], references: [id])
+  isActive    Boolean   @default(true)
+  publishedAt DateTime  @default(now())
+  expiresAt   DateTime?
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+
+  @@index([targetType])
+  @@index([strandId])
+  @@index([sectionId])
+  @@index([teacherId])
+  @@index([publishedAt])
+}
+
+model Checklist {
+  id          String                     @id @default(cuid())
+  name        String
+  description String?
+  targetType  String
+  strandId    String?
+  strand      Strand?                    @relation(fields: [strandId], references: [id])
+  sectionId   String?
+  section     Section?                   @relation(fields: [sectionId], references: [id])
+  items       ChecklistItem[]
+  progress    StudentChecklistProgress[]
+  isActive    Boolean                    @default(true)
+  createdAt   DateTime                   @default(now())
+  updatedAt   DateTime                   @updatedAt
+
+  @@index([strandId])
+  @@index([sectionId])
+}
+
+model ChecklistItem {
+  id              String     @id @default(cuid())
+  checklistId     String
+  checklist       Checklist  @relation(fields: [checklistId], references: [id], onDelete: Cascade)
+  title           String
+  description     String?
+  order           Int        @default(0)
+  requirementType String?
+  isRequired      Boolean    @default(true)
+  targetCount     Int?
+  createdAt       DateTime   @default(now())
+  updatedAt       DateTime   @updatedAt
+
+  @@index([checklistId])
+  @@index([order])
+}
+
+model StudentChecklistProgress {
+  id              String    @id @default(cuid())
+  studentId       String
+  student         Student   @relation(fields: [studentId], references: [id], onDelete: Cascade)
+  checklistId     String
+  checklist       Checklist @relation(fields: [checklistId], references: [id])
+  checklistItemId String
+  status          String    @default("pending")
+  completedCount  Int       @default(0)
+  completedAt     DateTime?
+  notes           String?
+  createdAt       DateTime  @default(now())
+  updatedAt       DateTime  @updatedAt
+
+  @@unique([studentId, checklistItemId])
+  @@index([studentId])
+  @@index([checklistId])
+  @@index([status])
+}
+
+model PhotoMetadata {
+  id               String   @id @default(cuid())
+  photoId          String   @unique
+  photo            Photo    @relation(fields: [photoId], references: [id], onDelete: Cascade)
+  captureTimestamp DateTime
+  deviceInfo       String?
+  gpsLatitude      Float?
+  gpsLongitude     Float?
+  cameraModel      String?
+  imageHash        String?
+  exifData         String?  @db.Text
+  isVerified       Boolean  @default(false)
+  verificationNotes String?
+  createdAt        DateTime @default(now())
+
+  @@index([photoId])
+  @@index([captureTimestamp])
+  @@index([isVerified])
 }
