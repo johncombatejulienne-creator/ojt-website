@@ -1,6 +1,8 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { getServerSession } from 'next-auth'
 import { authOptions } from '@/lib/auth'
+import { extractPhotoMetadata } from '@/lib/photoVerification'
+import { prisma } from '@/lib/prisma'
 
 // This is a placeholder for image upload
 // You'll need to implement the actual upload logic based on your chosen storage solution
@@ -16,6 +18,7 @@ export async function POST(request: NextRequest) {
 
     const formData = await request.formData()
     const files = formData.getAll('files') as File[]
+    const narrativeDate = formData.get('narrativeDate') as string
 
     if (files.length === 0) {
       return NextResponse.json(
@@ -24,35 +27,40 @@ export async function POST(request: NextRequest) {
       )
     }
 
-    // TODO: Implement actual upload logic here
-    // Example for Cloudinary:
-    /*
-    const uploadPromises = files.map(async (file) => {
-      const buffer = Buffer.from(await file.arrayBuffer())
-      const base64 = buffer.toString('base64')
-      const dataURI = `data:${file.type};base64,${base64}`
-      
-      const result = await cloudinary.uploader.upload(dataURI, {
-        folder: 'work-immersion',
-        resource_type: 'auto',
-      })
-      
-      return {
-        url: result.secure_url,
-        filename: file.name,
-        publicId: result.public_id,
-      }
-    })
-    
-    const uploadedFiles = await Promise.all(uploadPromises)
-    */
+    const uploadedFiles = []
 
-    // Temporary mock response
-    const uploadedFiles = files.map((file, index) => ({
-      url: `/uploads/temp-${Date.now()}-${index}.jpg`,
-      filename: file.name,
-      publicId: `temp-${Date.now()}-${index}`,
-    }))
+    for (const file of files) {
+      try {
+        // Convert file to buffer
+        const buffer = Buffer.from(await file.arrayBuffer())
+        
+        // Extract metadata and verify
+        const metadata = await extractPhotoMetadata(buffer)
+        
+        // TODO: Upload to your storage (Cloudinary/S3/Firebase)
+        // For now, create a temporary URL
+        const tempUrl = `/uploads/temp-${Date.now()}-${file.name}`
+        
+        // Store metadata for verification
+        uploadedFiles.push({
+          url: tempUrl,
+          filename: file.name,
+          metadata: {
+            captureTimestamp: metadata.captureTimestamp,
+            deviceInfo: metadata.deviceInfo,
+            gpsLatitude: metadata.gpsLatitude,
+            gpsLongitude: metadata.gpsLongitude,
+            cameraModel: metadata.cameraModel,
+            imageHash: metadata.imageHash,
+            exifData: metadata.exifData,
+          },
+          captureDate: metadata.captureTimestamp || new Date(),
+        })
+      } catch (fileError) {
+        console.error(`Error processing file ${file.name}:`, fileError)
+        // Continue with other files
+      }
+    }
 
     return NextResponse.json({
       success: true,
