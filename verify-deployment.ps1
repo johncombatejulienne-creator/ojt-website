@@ -123,9 +123,10 @@ Write-Host "══════════════════════�
 Write-Host ""
 
 # Helpful commands
-Write-Host "📌 Quick Commands:" -ForegroundColor Cyan
+Write-Host "Quick Commands:" -ForegroundColor Cyan
 Write-Host "   Deploy:        vercel --prod" -ForegroundColor Gray
 Write-Host "   View logs:     vercel logs" -ForegroundColor Gray
 Write-Host "   Open Vercel:   start https://vercel.com/john-kiosk/ojt-portal" -ForegroundColor Gray
-Write-Host "   Open Website:  start $WebsiteUrl" -ForegroundColor Gray
+$openCmd = "   Open Website:  start " + $WebsiteUrl
+Write-Host $openCmd -ForegroundColor Gray
 Write-Host ""
