@@ -48,7 +48,7 @@ export async function GET() {
     })
 
     // Get student's progress for these checklists
-    const checklistIds = checklists.map(c => c.id)
+    const checklistIds = checklists.map((c: { id: string }) => c.id)
     const progress = await prisma.studentChecklistProgress.findMany({
       where: {
         studentId: student.id,
@@ -65,11 +65,11 @@ export async function GET() {
     })
 
     // Combine checklist data with progress
-    const checklistsWithProgress = checklists.map(checklist => {
-      const checklistProgress = progress.filter(p => p.checklistId === checklist.id)
+    const checklistsWithProgress = checklists.map((checklist: any) => {
+      const checklistProgress = progress.filter((p: any) => p.checklistId === checklist.id)
       
-      const itemsWithProgress = checklist.items.map(item => {
-        const itemProgress = checklistProgress.find(p => p.checklistItemId === item.id)
+      const itemsWithProgress = checklist.items.map((item: any) => {
+        const itemProgress = checklistProgress.find((p: any) => p.checklistItemId === item.id)
         
         // Auto-calculate progress for narrative-type items
         let autoStatus = itemProgress?.status || 'pending'
@@ -94,7 +94,7 @@ export async function GET() {
 
       const totalItems = checklist.items.length
       const completedItems = itemsWithProgress.filter(
-        i => i.progress.status === 'completed'
+        (i: any) => i.progress.status === 'completed'
       ).length
       const progressPercentage = totalItems > 0 ? (completedItems / totalItems) * 100 : 0
 

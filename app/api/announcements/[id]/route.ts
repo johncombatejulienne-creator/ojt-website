@@ -5,9 +5,10 @@ import { authOptions } from '@/lib/auth'
 
 export async function PUT(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
+    const { id } = await params
     const session = await getServerSession(authOptions)
     
     if (!session || !session.user || session.user.role !== 'teacher') {
@@ -27,7 +28,7 @@ export async function PUT(
 
     // Verify ownership
     const existing = await prisma.announcement.findUnique({
-      where: { id: params.id },
+      where: { id: id },
     })
 
     if (!existing || existing.teacherId !== teacher.id) {
@@ -38,7 +39,7 @@ export async function PUT(
     }
 
     const announcement = await prisma.announcement.update({
-      where: { id: params.id },
+      where: { id: id },
       data: {
         ...(title && { title }),
         ...(content && { content }),
@@ -64,9 +65,10 @@ export async function PUT(
 
 export async function DELETE(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
+    const { id } = await params
     const session = await getServerSession(authOptions)
     
     if (!session || !session.user || session.user.role !== 'teacher') {
@@ -83,7 +85,7 @@ export async function DELETE(
 
     // Verify ownership
     const existing = await prisma.announcement.findUnique({
-      where: { id: params.id },
+      where: { id: id },
     })
 
     if (!existing || existing.teacherId !== teacher.id) {
@@ -95,7 +97,7 @@ export async function DELETE(
 
     // Soft delete
     await prisma.announcement.update({
-      where: { id: params.id },
+      where: { id: id },
       data: { isActive: false },
     })
 

@@ -81,7 +81,7 @@ export async function POST(request: NextRequest) {
         strandId: strandId || null,
         sectionId: sectionId || null,
         items: items ? {
-          create: items.map((item: any, index: number) => ({
+          create: items.map((item: { title: string; description?: string; order?: number; requirementType: string; isRequired?: boolean; targetCount?: number }, index: number) => ({
             title: item.title,
             description: item.description,
             order: item.order || index,
@@ -111,8 +111,8 @@ export async function POST(request: NextRequest) {
     })
 
     if (students.length > 0 && checklist.items.length > 0) {
-      const progressRecords = students.flatMap(student =>
-        checklist.items.map(item => ({
+      const progressRecords = students.flatMap((student: { id: string }) =>
+        checklist.items.map((item: { id: string }) => ({
           studentId: student.id,
           checklistId: checklist.id,
           checklistItemId: item.id,

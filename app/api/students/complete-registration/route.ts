@@ -91,7 +91,7 @@ export async function POST(request: NextRequest) {
         userId: student.id,
         userType: 'student',
         action: 'complete_registration',
-        description: `Student completed registration: ${student.name} (${student.studentId}) - ${section.strand?.name} ${section.name}`,
+        description: `Student completed registration: ${student.name} (${student.studentId}) - ${student.strand?.name} ${student.section?.name}`,
         metadata: JSON.stringify({
           strandId,
           sectionId,

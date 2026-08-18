@@ -45,7 +45,6 @@ async function main() {
       email: 'student1@gmail.com',
       company: 'Tech Solutions Inc.',
       course: 'Computer Science',
-      section: 'CS-4A',
       supervisorId: teacher1.id,
     },
   })
@@ -59,7 +58,6 @@ async function main() {
       email: 'student2@gmail.com',
       company: 'Business Corp Ltd.',
       course: 'Business Administration',
-      section: 'BA-4B',
       supervisorId: teacher1.id,
     },
   })
@@ -73,7 +71,6 @@ async function main() {
       email: 'student3@gmail.com',
       company: 'Engineering Works',
       course: 'Engineering',
-      section: 'ENG-4A',
       supervisorId: teacher2.id,
     },
   })

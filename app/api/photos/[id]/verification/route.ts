@@ -6,9 +6,10 @@ import { verifyPhotoTimestamp, verifyGPSLocation } from '@/lib/photoVerification
 
 export async function GET(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
+    const { id } = await params
     const session = await getServerSession(authOptions)
     
     if (!session || !session.user) {
@@ -16,7 +17,7 @@ export async function GET(
     }
 
     const photo = await prisma.photo.findUnique({
-      where: { id: params.id },
+      where: { id: id },
       include: {
         metadata: true,
         narrative: {
@@ -41,7 +42,18 @@ export async function GET(
       )
     }
 
-    let verification = {
+    let verification: {
+      isVerified: boolean;
+      hasMetadata: boolean;
+      timestamp: {
+        isValid: boolean;
+        warning?: string;
+        reason?: string;
+      };
+      gps: {
+        isValid: boolean;
+      };
+    } = {
       isVerified: photo.isVerified,
       hasMetadata: !!photo.metadata,
       timestamp: {
@@ -61,7 +73,11 @@ export async function GET(
         photo.narrative.date
       )
 
-      verification.timestamp = timestampVerification
+      verification.timestamp = {
+        isValid: timestampVerification.isValid,
+        ...(timestampVerification.warning && { warning: timestampVerification.warning }),
+        ...(timestampVerification.reason && { reason: timestampVerification.reason }),
+      }
 
       // Verify GPS if available
       if (photo.metadata.gpsLatitude && photo.metadata.gpsLongitude) {
@@ -109,9 +125,10 @@ export async function GET(
 
 export async function PUT(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
+    const { id } = await params
     const session = await getServerSession(authOptions)
     
     if (!session || !session.user || session.user.role !== 'teacher') {
@@ -122,7 +139,7 @@ export async function PUT(
     const { isVerified, verificationNotes } = body
 
     const photo = await prisma.photo.findUnique({
-      where: { id: params.id },
+      where: { id: id },
       include: { metadata: true },
     })
 
@@ -135,7 +152,7 @@ export async function PUT(
 
     // Update photo verification status
     await prisma.photo.update({
-      where: { id: params.id },
+      where: { id: id },
       data: { isVerified },
     })
 
