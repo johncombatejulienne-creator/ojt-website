@@ -8,14 +8,15 @@ const globalForPrisma = globalThis as unknown as {
 
 let prisma: PrismaClient
 
-if (process.env.DATABASE_URL) {
-  const pool = new Pool({ connectionString: process.env.DATABASE_URL })
-  const adapter = new PrismaPg(pool)
-  prisma = globalForPrisma.prisma ?? new PrismaClient({ adapter, log: ['query'] })
-} else {
-  // Fallback for build time
-  prisma = globalForPrisma.prisma ?? new PrismaClient({ log: ['query'] })
-}
+// Always use adapter in Prisma 7, even for build time
+const connectionString = process.env.DATABASE_URL || 'postgresql://dummy:dummy@localhost:5432/dummy'
+const pool = new Pool({ connectionString })
+const adapter = new PrismaPg(pool)
+
+prisma = globalForPrisma.prisma ?? new PrismaClient({ 
+  adapter,
+  log: process.env.NODE_ENV === 'development' ? ['query'] : []
+})
 
 if (process.env.NODE_ENV !== 'production') globalForPrisma.prisma = prisma
 
