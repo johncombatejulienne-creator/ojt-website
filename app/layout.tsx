@@ -1,4 +1,4 @@
-import type { Metadata } from "next";
+import type { Metadata, Viewport } from "next";
 import { SessionProvider } from "@/components/SessionProvider";
 import "./globals.css";
 
@@ -6,18 +6,19 @@ export const metadata: Metadata = {
   title: "Work Immersion Management System",
   description: "Digital work immersion journal for students and supervisors",
   manifest: "/manifest.json",
-  themeColor: "#1565C0",
-  viewport: {
-    width: "device-width",
-    initialScale: 1,
-    maximumScale: 1,
-    userScalable: false,
-  },
   appleWebApp: {
     capable: true,
     statusBarStyle: "default",
     title: "Work Immersion",
   },
+};
+
+export const viewport: Viewport = {
+  width: "device-width",
+  initialScale: 1,
+  maximumScale: 1,
+  userScalable: false,
+  themeColor: "#1565C0",
 };
 
 export default function RootLayout({
