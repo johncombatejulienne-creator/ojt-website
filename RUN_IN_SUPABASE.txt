@@ -1,0 +1,47 @@
+═══════════════════════════════════════════════════════════════
+    SUPABASE SQL MIGRATION - COPY AND PASTE THIS
+═══════════════════════════════════════════════════════════════
+
+STEP 1: Open Supabase SQL Editor
+────────────────────────────────────────────────────────────
+1. In your Supabase dashboard
+2. Click "SQL Editor" in the left sidebar
+3. Click "New query" button
+
+STEP 2: Copy SQL from File
+────────────────────────────────────────────────────────────
+1. Open the file: manual-migration.sql
+   (in your project folder)
+2. Select ALL the SQL code (Ctrl+A)
+3. Copy it (Ctrl+C)
+
+STEP 3: Paste and Run
+────────────────────────────────────────────────────────────
+1. Paste in Supabase SQL Editor (Ctrl+V)
+2. Click "Run" button (or press F5)
+3. Wait for completion
+
+STEP 4: Verify Success
+────────────────────────────────────────────────────────────
+You should see at the bottom:
+✓ "Database migration completed successfully!"
+✓ Shows strand count (should be 4)
+✓ Shows section count
+
+═══════════════════════════════════════════════════════════════
+
+ALTERNATIVELY: Use the Table Editor
+────────────────────────────────────────────────────────────
+If you prefer visual interface:
+1. Click "Table Editor" in Supabase
+2. You'll see all 13 tables created
+3. Click on "Strand" to see ICT, STEM, ABM, HUMSS
+
+═══════════════════════════════════════════════════════════════
+
+YOUR SUPABASE PROJECT:
+Project: work-immersion-db
+URL: https://cyjwcqffiajxfqchbuxh.supabase.co
+Status: Healthy ✅
+
+═══════════════════════════════════════════════════════════════
