@@ -70,7 +70,6 @@ export const authOptions: NextAuthOptions = {
               email: user.email!,
               name: user.name || user.email!.split('@')[0],
               studentId: `STU-${Date.now()}`, // Temporary ID, will be replaced on profile completion
-              hasCompletedProfile: false,
             },
           })
         }
