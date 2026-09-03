@@ -60,13 +60,29 @@ export async function PUT(request: NextRequest) {
     }
 
     const body = await request.json()
-    const { company, course } = body
+    const { name, studentId, strandId, sectionId, company, course, gradeLevel } = body
+
+    // Find the teacher assigned to the selected section
+    let supervisorId = undefined
+    if (sectionId) {
+      const section = await prisma.section.findUnique({
+        where: { id: sectionId },
+        select: { teacherId: true },
+      })
+      supervisorId = section?.teacherId || undefined
+    }
 
     const student = await prisma.student.update({
       where: { email: session.user.email! },
       data: {
-        ...(company && { company }),
-        ...(course && { course }),
+        ...(name && { name }),
+        ...(studentId && { studentId }),
+        ...(strandId && { strandId }),
+        ...(sectionId && { sectionId }),
+        ...(company !== undefined && { company }),
+        ...(course !== undefined && { course }),
+        ...(gradeLevel && { gradeLevel }),
+        ...(supervisorId && { supervisorId }),
       },
       include: {
         strand: true,

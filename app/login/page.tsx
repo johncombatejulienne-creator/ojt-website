@@ -1,7 +1,7 @@
 'use client'
 
-import React, { useState } from 'react'
-import { signIn } from 'next-auth/react'
+import React, { useState, useEffect } from 'react'
+import { signIn, signOut, useSession } from 'next-auth/react'
 import { useRouter } from 'next/navigation'
 import { Button } from '@/components/ui/Button'
 import { Input } from '@/components/ui/Input'
@@ -9,11 +9,24 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/Card'
 
 export default function LoginPage() {
   const router = useRouter()
+  const { data: session, status } = useSession()
   const [isLoading, setIsLoading] = useState(false)
   const [userType, setUserType] = useState<'student' | 'teacher'>('student')
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
   const [error, setError] = useState('')
+
+  // Redirect if already logged in
+  useEffect(() => {
+    if (status === 'authenticated' && session?.user) {
+      router.push('/dashboard')
+    }
+  }, [status, session, router])
+
+  const handleSignOut = async () => {
+    await signOut({ redirect: false })
+    setError('')
+  }
 
   const handleGoogleSignIn = async () => {
     setIsLoading(true)
@@ -78,6 +91,23 @@ export default function LoginPage() {
             Digital Journal for Students & Supervisors
           </p>
         </div>
+
+        {/* Show sign out option if there's a session */}
+        {status === 'authenticated' && (
+          <div className="mb-4 p-4 bg-yellow-50 border border-yellow-200 rounded-lg">
+            <p className="text-sm text-yellow-800 mb-2">
+              You're signed in as <strong>{session?.user?.email}</strong>
+            </p>
+            <Button
+              onClick={handleSignOut}
+              variant="outline"
+              size="sm"
+              className="w-full"
+            >
+              Sign out and use different account
+            </Button>
+          </div>
+        )}
 
         <Card>
           <CardHeader>

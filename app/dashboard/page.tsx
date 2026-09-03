@@ -13,7 +13,7 @@ interface StudentData {
   email: string
   company?: string
   gradeLevel?: number
-  strand?: { name: string; code: string }
+  strand?: { name: string }
   section?: { name: string }
   supervisor?: { name: string }
 }
@@ -147,7 +147,16 @@ export default function StudentDashboard() {
       <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
         {/* Student Overview */}
         <div className="bg-white rounded-lg shadow-sm border p-6 mb-6">
-          <h2 className="text-lg font-semibold text-gray-900 mb-4">Your Information</h2>
+          <div className="flex justify-between items-center mb-4">
+            <h2 className="text-lg font-semibold text-gray-900">Your Information</h2>
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => router.push('/profile/edit')}
+            >
+              Edit Profile
+            </Button>
+          </div>
           <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
             <div>
               <p className="text-sm text-gray-600">Student ID</p>
@@ -164,7 +173,7 @@ export default function StudentDashboard() {
             <div>
               <p className="text-sm text-gray-600">Strand</p>
               <p className="font-medium text-gray-900">
-                {student?.strand?.code || 'Not assigned'}
+                {student?.strand?.name || 'Not assigned'}
               </p>
             </div>
             {student?.company && (
