@@ -54,7 +54,7 @@ export const authOptions: NextAuthOptions = {
   callbacks: {
     async signIn({ user, account, profile }) {
       if (account?.provider === "google") {
-        // Check if user is a student or teacher
+        // Check if user exists as student or teacher
         const student = await prisma.student.findUnique({
           where: { email: user.email! },
         })
@@ -63,9 +63,20 @@ export const authOptions: NextAuthOptions = {
           where: { email: user.email! },
         })
 
-        // For students, they need to be registered first
-        // For teachers, allow if they're in the database
-        return !!(student || teacher)
+        // If not found, automatically create a new student account
+        if (!student && !teacher) {
+          await prisma.student.create({
+            data: {
+              email: user.email!,
+              name: user.name || user.email!.split('@')[0],
+              studentId: `STU-${Date.now()}`, // Temporary ID, will be replaced on profile completion
+              hasCompletedProfile: false,
+            },
+          })
+        }
+
+        // Allow sign-in for everyone
+        return true
       }
       return true
     },
