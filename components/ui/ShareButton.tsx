@@ -96,8 +96,8 @@ export function ShareButton({
   const btnLabel =
     label ??
     (busy
-      ? hasNative ? 'Sharingâ€¦' : 'Copyingâ€¦'
-      : hasNative ? 'Share'    : 'Copy Link')
+      ? hasNative ? 'Sharing...' : 'Copying...'
+      : hasNative ? 'Share'      : 'Copy Link')
 
   return (
     <div className="relative inline-block">
@@ -257,7 +257,7 @@ export function CopyableField({
 }: CopyableFieldProps) {
   const display = showFullValue
     ? value
-    : value.length > 24 ? `${value.slice(0, 24)}â€¦` : value
+    : value.length > 24 ? `${value.slice(0, 24)}...` : value
 
   return (
     <div className={cn('flex items-center justify-between p-3 bg-gray-50 rounded-xl border border-gray-200', className)}>
