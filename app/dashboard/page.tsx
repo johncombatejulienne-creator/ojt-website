@@ -61,9 +61,9 @@ function StatCard({ label, value, sub, color }: {
   label: string; value: string | number; sub?: string; color: string
 }) {
   return (
-    <div className={`${color} rounded-2xl p-5 flex flex-col gap-1 min-w-0`}>
-      <p className="text-white/80 text-xs font-semibold uppercase tracking-widest truncate">{label}</p>
-      <p className="text-white text-3xl font-black leading-none">{value}</p>
+    <div className={`${color} rounded-2xl p-4 sm:p-5 flex flex-col gap-1 min-w-0 overflow-hidden`}>
+      <p className="text-white/80 text-xs font-semibold uppercase tracking-widest truncate leading-tight">{label}</p>
+      <p className="text-white text-2xl sm:text-3xl font-black leading-none">{value}</p>
       {sub && <p className="text-white/70 text-xs mt-0.5 truncate">{sub}</p>}
     </div>
   )
@@ -184,31 +184,33 @@ export default function StudentDashboard() {
       <div className="space-y-6">
 
         {/* ── Welcome Banner ─────────────────────────────── */}
-        <div className={`bg-gradient-to-r ${theme.gradient} rounded-3xl p-6 sm:p-8
-          text-white shadow-lg overflow-hidden relative`}>
-          {/* Subtle pattern */}
-          <div className="absolute inset-0 opacity-10"
+        <div className={`bg-gradient-to-r ${theme.gradient} rounded-2xl sm:rounded-3xl p-5 sm:p-7
+          text-white shadow-lg relative overflow-hidden`}>
+          {/* Background pattern */}
+          <div className="absolute inset-0 opacity-10 pointer-events-none"
             style={{ backgroundImage: 'radial-gradient(circle at 80% 50%, white 1px, transparent 1px)', backgroundSize: '28px 28px' }} />
 
-          <div className="relative flex flex-col sm:flex-row sm:items-center gap-5">
-            <Avatar
-              src={student?.profilePicture ?? session?.user?.profilePicture}
-              name={student?.name ?? session?.user?.name}
-              size={64}
-            />
+          <div className="relative flex flex-col sm:flex-row sm:items-center gap-4">
+            <div className="flex-shrink-0">
+              <Avatar
+                src={student?.profilePicture ?? session?.user?.profilePicture}
+                name={student?.name ?? session?.user?.name}
+                size={56}
+              />
+            </div>
             <div className="flex-1 min-w-0">
-              <p className="text-white/70 text-sm font-medium">Welcome back,</p>
-              <h1 className="text-2xl sm:text-3xl font-black leading-tight truncate">
-                {student?.name ?? session?.user?.name ?? 'Student'}
+              <p className="text-white/70 text-xs font-medium uppercase tracking-wider">Welcome back</p>
+              <h1 className="text-xl sm:text-2xl font-black leading-tight mt-0.5">
+                {(student?.name ?? session?.user?.name ?? 'Student').split(' ').slice(0,3).join(' ')}
               </h1>
-              <div className="flex flex-wrap items-center gap-3 mt-2">
+              <div className="flex flex-wrap items-center gap-2 mt-2">
                 {student?.studentId && (
-                  <span className="bg-white/20 text-white text-xs font-medium px-2.5 py-1 rounded-full">
+                  <span className="bg-white/20 text-white text-xs font-medium px-2 py-0.5 rounded-full whitespace-nowrap">
                     ID: {student.studentId}
                   </span>
                 )}
                 {strandCode && (
-                  <span className="bg-white/20 text-white text-xs font-medium px-2.5 py-1 rounded-full">
+                  <span className="bg-white/20 text-white text-xs font-medium px-2 py-0.5 rounded-full">
                     {strandCode}
                   </span>
                 )}

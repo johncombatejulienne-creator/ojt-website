@@ -46,12 +46,12 @@ function StatCard({ label, value, icon, gradient }: {
   label: string; value: number; icon: React.ReactNode; gradient: string
 }) {
   return (
-    <div className={`${gradient} rounded-2xl p-5 sm:p-6 text-white shadow-md flex items-center justify-between gap-4 min-w-0`}>
-      <div className="min-w-0">
-        <p className="text-white/75 text-xs font-semibold uppercase tracking-widest truncate mb-1">{label}</p>
-        <p className="text-4xl font-black leading-none">{value}</p>
+    <div className={`${gradient} rounded-2xl p-4 sm:p-5 text-white shadow-md flex items-center justify-between gap-3 min-w-0 overflow-hidden`}>
+      <div className="min-w-0 flex-1">
+        <p className="text-white/75 text-xs font-semibold uppercase tracking-widest truncate mb-1 leading-tight">{label}</p>
+        <p className="text-3xl sm:text-4xl font-black leading-none">{value}</p>
       </div>
-      <div className="w-12 h-12 rounded-xl bg-white/15 flex items-center justify-center flex-shrink-0">
+      <div className="w-11 h-11 rounded-xl bg-white/15 flex items-center justify-center flex-shrink-0">
         {icon}
       </div>
     </div>
@@ -117,12 +117,12 @@ export default function TeacherDashboard() {
       <div className="space-y-6">
 
         {/* ── Welcome Banner ─────────────────────────────── */}
-        <div className="bg-gradient-to-r from-slate-700 to-slate-900 rounded-3xl p-6 sm:p-8 text-white shadow-lg relative overflow-hidden">
-          <div className="absolute inset-0 opacity-5"
+        <div className="bg-gradient-to-r from-slate-700 to-slate-900 rounded-2xl sm:rounded-3xl p-5 sm:p-7 text-white shadow-lg relative overflow-hidden">
+          <div className="absolute inset-0 opacity-5 pointer-events-none"
             style={{ backgroundImage: 'radial-gradient(circle at 70% 50%, white 1px, transparent 1px)', backgroundSize: '32px 32px' }} />
           <div className="relative">
-            <p className="text-white/60 text-sm font-medium">Welcome back,</p>
-            <h1 className="text-2xl sm:text-3xl font-black mt-0.5">{userName}</h1>
+            <p className="text-white/60 text-xs font-medium uppercase tracking-wider">Welcome back</p>
+            <h1 className="text-xl sm:text-2xl font-black mt-0.5 truncate">{userName}</h1>
             <p className="text-white/50 text-sm mt-1">
               Teacher Dashboard &mdash; Manage your students and review their work.
             </p>
