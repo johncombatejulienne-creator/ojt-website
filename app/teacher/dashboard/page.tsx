@@ -1,7 +1,7 @@
 ﻿'use client'
 
 import { useEffect, useState } from 'react'
-import { useSession } from 'next-auth/react'
+import { useSession, signOut } from 'next-auth/react'
 import { useRouter } from 'next/navigation'
 import Image from 'next/image'
 import AppShell from '@/components/AppShell'
@@ -66,11 +66,15 @@ function StatCard({ label, value, icon, bg }: { label:string; value:number; icon
 export default function TeacherDashboard() {
   const { data: session, status } = useSession()
   const router  = useRouter()
-  const [loading,  setLoading]  = useState(true)
-  const [sections, setSections] = useState<Section[]>([])
-  const [students, setStudents] = useState<Student[]>([])
-  const [active,   setActive]   = useState('all')
-  const [search,   setSearch]   = useState('')
+  const [loading,  setLoading]        = useState(true)
+  const [sections, setSections]       = useState<Section[]>([])
+  const [students, setStudents]       = useState<Student[]>([])
+  const [active,   setActive]         = useState('all')
+  const [search,   setSearch]         = useState('')
+  const [deleteAccountConfirm, setDeleteAccountConfirm] = useState(false)
+  const [deletingAccount,      setDeletingAccount]      = useState(false)
+  const [deletingStudentId,    setDeletingStudentId]    = useState<string | null>(null)
+  const [deleteStudentConfirm, setDeleteStudentConfirm] = useState<Student | null>(null)
 
   const fetchData = async () => {
     try {
@@ -90,6 +94,41 @@ export default function TeacherDashboard() {
     // eslint-disable-next-line react-hooks/set-state-in-effect
     else if (status === 'authenticated') void fetchData()
   }, [status]) // eslint-disable-line react-hooks/exhaustive-deps
+
+  /* ── Delete own account ────────────────────────────────── */
+  const handleDeleteAccount = async () => {
+    setDeletingAccount(true)
+    try {
+      const res = await fetch('/api/teacher/delete-account', { method: 'DELETE' })
+      if (!res.ok) throw new Error('Failed to delete account')
+      await signOut({ callbackUrl: '/login', redirect: true })
+    } catch (e) {
+      console.error(e)
+      setDeletingAccount(false)
+      setDeleteAccountConfirm(false)
+      alert('Failed to delete account. Please try again.')
+    }
+  }
+
+  /* ── Delete a student ──────────────────────────────────── */
+  const handleDeleteStudent = async (student: Student) => {
+    setDeletingStudentId(student.id)
+    try {
+      const res = await fetch(`/api/teacher/students/${student.id}`, { method: 'DELETE' })
+      if (!res.ok) throw new Error('Failed to delete student')
+      setStudents(prev => prev.filter(s => s.id !== student.id))
+      setSections(prev => prev.map(sec => ({
+        ...sec,
+        students: sec.students.filter(s => s.id !== student.id)
+      })))
+      setDeleteStudentConfirm(null)
+    } catch (e) {
+      console.error(e)
+      alert('Failed to delete student. Please try again.')
+    } finally {
+      setDeletingStudentId(null)
+    }
+  }
 
   const filtered = students
     .filter(s => active === 'all' || s.section?.name === active)
@@ -139,6 +178,22 @@ export default function TeacherDashboard() {
           <p style={{ fontSize:13, color:'rgba(255,255,255,0.45)' }}>
             Manage your students and review their work.
           </p>
+          {/* Delete account */}
+          <button
+            onClick={() => setDeleteAccountConfirm(true)}
+            style={{
+              marginTop: 16, display:'inline-flex', alignItems:'center', gap:6,
+              fontSize:12, color:'rgba(255,100,100,0.85)', fontWeight:600,
+              background:'rgba(255,255,255,0.08)', border:'1px solid rgba(255,100,100,0.25)',
+              borderRadius:8, padding:'6px 14px', cursor:'pointer',
+            }}
+          >
+            <svg style={{ width:14, height:14 }} fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2}
+                d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"/>
+            </svg>
+            Delete My Account
+          </button>
         </div>
 
         {/* ── Stats ───────────────────────────────────────── */}
@@ -271,6 +326,16 @@ export default function TeacherDashboard() {
                         onClick={() => router.push(`/teacher/students/${s.id}`)}>
                         View
                       </Button>
+                      <button
+                        onClick={() => setDeleteStudentConfirm(s)}
+                        style={{
+                          padding:'5px 10px', borderRadius:8, fontSize:12, fontWeight:600,
+                          background:'#FEF2F2', color:'#DC2626', border:'1px solid #FECACA',
+                          cursor:'pointer', whiteSpace:'nowrap',
+                        }}
+                      >
+                        Delete
+                      </button>
                     </div>
                   </div>
                 )
@@ -280,6 +345,110 @@ export default function TeacherDashboard() {
         </div>
 
       </div>
+
+      {/* ── Delete Account Confirmation Modal ───────────── */}
+      {deleteAccountConfirm && (
+        <div style={{
+          position:'fixed', inset:0, background:'rgba(0,0,0,0.5)',
+          display:'flex', alignItems:'center', justifyContent:'center',
+          zIndex:100, padding:16,
+        }}>
+          <div style={{
+            background:'white', borderRadius:20, padding:32, maxWidth:400,
+            width:'100%', boxShadow:'0 25px 50px rgba(0,0,0,0.25)',
+          }}>
+            <div style={{ width:56, height:56, background:'#FEE2E2', borderRadius:14,
+              display:'flex', alignItems:'center', justifyContent:'center', marginBottom:20 }}>
+              <svg style={{ width:28, height:28, color:'#DC2626' }} fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2}
+                  d="M12 9v2m0 4h.01M10.29 3.86L1.82 18a2 2 0 001.71 3h16.94a2 2 0 001.71-3L13.71 3.86a2 2 0 00-3.42 0z"/>
+              </svg>
+            </div>
+            <h2 style={{ fontSize:20, fontWeight:800, color:'#111827', marginBottom:8 }}>
+              Delete Your Account?
+            </h2>
+            <p style={{ fontSize:14, color:'#6B7280', lineHeight:1.6, marginBottom:24 }}>
+              This action is <strong>permanent and cannot be undone.</strong> Your account will be deleted.
+              Your students will remain but be unassigned.
+            </p>
+            <div style={{ display:'flex', gap:12 }}>
+              <button
+                onClick={() => setDeleteAccountConfirm(false)}
+                disabled={deletingAccount}
+                style={{ flex:1, padding:'10px 0', borderRadius:10, fontSize:14, fontWeight:600,
+                  background:'#F3F4F6', color:'#374151', border:'none', cursor:'pointer' }}
+              >
+                Cancel
+              </button>
+              <button
+                onClick={handleDeleteAccount}
+                disabled={deletingAccount}
+                style={{ flex:1, padding:'10px 0', borderRadius:10, fontSize:14, fontWeight:600,
+                  background:'#DC2626', color:'white', border:'none', cursor:'pointer',
+                  opacity: deletingAccount ? 0.7 : 1 }}
+              >
+                {deletingAccount ? 'Deleting...' : 'Yes, Delete Account'}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* ── Delete Student Confirmation Modal ───────────── */}
+      {deleteStudentConfirm && (
+        <div style={{
+          position:'fixed', inset:0, background:'rgba(0,0,0,0.5)',
+          display:'flex', alignItems:'center', justifyContent:'center',
+          zIndex:100, padding:16,
+        }}>
+          <div style={{
+            background:'white', borderRadius:20, padding:32, maxWidth:400,
+            width:'100%', boxShadow:'0 25px 50px rgba(0,0,0,0.25)',
+          }}>
+            <div style={{ width:56, height:56, background:'#FEE2E2', borderRadius:14,
+              display:'flex', alignItems:'center', justifyContent:'center', marginBottom:20 }}>
+              <svg style={{ width:28, height:28, color:'#DC2626' }} fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2}
+                  d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"/>
+              </svg>
+            </div>
+            <h2 style={{ fontSize:20, fontWeight:800, color:'#111827', marginBottom:8 }}>
+              Delete Student Account?
+            </h2>
+            <p style={{ fontSize:14, color:'#6B7280', lineHeight:1.6, marginBottom:8 }}>
+              You are about to permanently delete:
+            </p>
+            <div style={{ background:'#F9FAFB', borderRadius:10, padding:'12px 16px', marginBottom:20 }}>
+              <p style={{ fontWeight:700, fontSize:15, color:'#111827' }}>{deleteStudentConfirm.name}</p>
+              <p style={{ fontSize:12, color:'#9CA3AF', marginTop:2 }}>{deleteStudentConfirm.email}</p>
+              <p style={{ fontSize:12, color:'#9CA3AF' }}>ID: {deleteStudentConfirm.studentId}</p>
+            </div>
+            <p style={{ fontSize:13, color:'#EF4444', marginBottom:20, fontWeight:500 }}>
+              This will permanently delete all their narratives and data. This cannot be undone.
+            </p>
+            <div style={{ display:'flex', gap:12 }}>
+              <button
+                onClick={() => setDeleteStudentConfirm(null)}
+                disabled={deletingStudentId !== null}
+                style={{ flex:1, padding:'10px 0', borderRadius:10, fontSize:14, fontWeight:600,
+                  background:'#F3F4F6', color:'#374151', border:'none', cursor:'pointer' }}
+              >
+                Cancel
+              </button>
+              <button
+                onClick={() => handleDeleteStudent(deleteStudentConfirm)}
+                disabled={deletingStudentId !== null}
+                style={{ flex:1, padding:'10px 0', borderRadius:10, fontSize:14, fontWeight:600,
+                  background:'#DC2626', color:'white', border:'none', cursor:'pointer',
+                  opacity: deletingStudentId !== null ? 0.7 : 1 }}
+              >
+                {deletingStudentId === deleteStudentConfirm.id ? 'Deleting...' : 'Yes, Delete Student'}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
     </AppShell>
   )
 }

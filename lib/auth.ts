@@ -1,4 +1,4 @@
-import { NextAuthOptions } from "next-auth"
+﻿import { NextAuthOptions } from "next-auth"
 import GoogleProvider from "next-auth/providers/google"
 import CredentialsProvider from "next-auth/providers/credentials"
 import { prisma } from "./prisma"
@@ -19,184 +19,191 @@ export const authOptions: NextAuthOptions = {
     CredentialsProvider({
       name: "Credentials",
       credentials: {
-        email: { label: "Email", type: "email" },
+        email:    { label: "Email",    type: "email" },
         password: { label: "Password", type: "password" },
-        role: { label: "Role", type: "text" },
+        role:     { label: "Role",     type: "text" },
       },
       async authorize(credentials) {
         if (!credentials?.email || !credentials?.password) {
           throw new Error("Email and password are required")
         }
 
-        // Only teachers can log in with credentials
-        // Students must use Google Sign-In
         const teacher = await prisma.teacher.findUnique({
           where: { email: credentials.email },
         })
 
-        if (!teacher) {
-          throw new Error("No teacher account found with this email")
-        }
+        if (!teacher) throw new Error("No teacher account found with this email")
+        if (!teacher.password) throw new Error("This account requires Google Sign-In")
 
-        if (!teacher.password) {
-          throw new Error("This account requires Google Sign-In")
-        }
-
-        const isPasswordValid = await bcrypt.compare(
-          credentials.password,
-          teacher.password
-        )
-
-        if (!isPasswordValid) {
-          throw new Error("Incorrect password")
-        }
+        const valid = await bcrypt.compare(credentials.password, teacher.password)
+        if (!valid) throw new Error("Incorrect password")
 
         return {
-          id: teacher.id,
-          email: teacher.email,
-          name: teacher.name,
-          image: teacher.profilePicture ?? null,
-          role: "teacher",
+          id:             teacher.id,
+          email:          teacher.email,
+          name:           teacher.name,
+          image:          teacher.profilePicture ?? null,
+          role:           "teacher",
           profilePicture: teacher.profilePicture ?? null,
+          dbId:           teacher.id,
+          teacherId:      teacher.teacherId,
         }
       },
     }),
   ],
 
   callbacks: {
+    /**
+     * signIn — runs BEFORE jwt.
+     * For Google: ensure the user exists in the right table.
+     * We also set user.role here so the jwt callback can use it.
+     */
     async signIn({ user, account }) {
-      if (account?.provider === "google") {
-        try {
-          // Check if already a teacher
-          const teacher = await prisma.teacher.findUnique({
-            where: { email: user.email! },
-          })
+      if (account?.provider !== "google") return true
 
-          if (teacher) {
-            if (!teacher.profilePicture && user.image) {
-              await prisma.teacher.update({
-                where: { id: teacher.id },
-                data: { profilePicture: user.image },
-              })
-            }
-            return true
-          }
+      try {
+        const email = user.email!
 
-          // Check if already a student
-          const student = await prisma.student.findUnique({
-            where: { email: user.email! },
-          })
-
-          if (student) {
-            if (!student.profilePicture && user.image) {
-              await prisma.student.update({
-                where: { id: student.id },
-                data: { profilePicture: user.image },
-              })
-            }
-            return true
-          }
-
-          // New user — check callbackUrl to decide student vs teacher
-          // Teacher sign-in redirects to /teacher/dashboard
-          const callbackUrl = account.state as string ?? ""
-          const isTeacher = callbackUrl.includes("teacher")
-
-          if (isTeacher) {
-            await prisma.teacher.create({
-              data: {
-                email: user.email!,
-                name: user.name || user.email!.split("@")[0],
-                teacherId: `TCH-${Date.now()}`,
-                role: "teacher",
-                accessLevel: "teacher",
-                profilePicture: user.image ?? null,
-              },
-            })
-          } else {
-            await prisma.student.create({
-              data: {
-                email: user.email!,
-                name: user.name || user.email!.split("@")[0],
-                studentId: `STU-${Date.now()}`,
-                profilePicture: user.image ?? null,
-              },
+        // 1. Already a teacher?
+        const existingTeacher = await prisma.teacher.findUnique({ where: { email } })
+        if (existingTeacher) {
+          // Sync Google profile picture
+          if (!existingTeacher.profilePicture && user.image) {
+            await prisma.teacher.update({
+              where: { id: existingTeacher.id },
+              data: { profilePicture: user.image },
             })
           }
-
-          return true
-        } catch (error) {
-          console.error("Sign-in error:", error)
+          // Tag the user object so jwt knows the role
+          ;(user as unknown as Record<string, unknown>).role           = "teacher"
+          ;(user as unknown as Record<string, unknown>).dbId           = existingTeacher.id
+          ;(user as unknown as Record<string, unknown>).teacherId      = existingTeacher.teacherId
+          ;(user as unknown as Record<string, unknown>).profilePicture = existingTeacher.profilePicture ?? user.image ?? null
           return true
         }
+
+        // 2. Already a student?
+        const existingStudent = await prisma.student.findUnique({ where: { email } })
+        if (existingStudent) {
+          if (!existingStudent.profilePicture && user.image) {
+            await prisma.student.update({
+              where: { id: existingStudent.id },
+              data: { profilePicture: user.image },
+            })
+          }
+          ;(user as unknown as Record<string, unknown>).role           = "student"
+          ;(user as unknown as Record<string, unknown>).dbId           = existingStudent.id
+          ;(user as unknown as Record<string, unknown>).studentId      = existingStudent.studentId
+          ;(user as unknown as Record<string, unknown>).profilePicture = existingStudent.profilePicture ?? user.image ?? null
+          return true
+        }
+
+        // 3. Brand-new user.
+        // Decide role based on the callbackUrl embedded in the OAuth state.
+        // When the user clicks "Sign in as Teacher", callbackUrl=/teacher/dashboard.
+        const callbackUrl = (account.state as string | undefined) ?? ""
+        const isTeacher   = callbackUrl.includes("teacher")
+
+        if (isTeacher) {
+          const newTeacher = await prisma.teacher.create({
+            data: {
+              email,
+              name:         user.name || email.split("@")[0],
+              teacherId:    `TCH-${Date.now()}`,
+              role:         "teacher",
+              accessLevel:  "teacher",
+              profilePicture: user.image ?? null,
+            },
+          })
+          ;(user as unknown as Record<string, unknown>).role           = "teacher"
+          ;(user as unknown as Record<string, unknown>).dbId           = newTeacher.id
+          ;(user as unknown as Record<string, unknown>).teacherId      = newTeacher.teacherId
+          ;(user as unknown as Record<string, unknown>).profilePicture = user.image ?? null
+        } else {
+          const newStudent = await prisma.student.create({
+            data: {
+              email,
+              name:         user.name || email.split("@")[0],
+              studentId:    `STU-${Date.now()}`,
+              profilePicture: user.image ?? null,
+            },
+          })
+          ;(user as unknown as Record<string, unknown>).role           = "student"
+          ;(user as unknown as Record<string, unknown>).dbId           = newStudent.id
+          ;(user as unknown as Record<string, unknown>).studentId      = newStudent.studentId
+          ;(user as unknown as Record<string, unknown>).profilePicture = user.image ?? null
+        }
+
+        return true
+      } catch (error) {
+        console.error("signIn error:", error)
+        return true // still allow sign-in even on non-critical errors
       }
-      return true
     },
 
+    /**
+     * jwt — builds the token.
+     * On the FIRST call (initial sign-in), user object is present and has
+     * the role/dbId/etc we set in signIn above.  Use those directly.
+     * On subsequent calls (session refresh), only token is available.
+     */
     async jwt({ token, user, account, trigger, session }) {
-      // On initial sign-in, enrich the token with DB data
-      if (user || account) {
-        try {
-          const email = user?.email ?? token.email
-          if (!email) return token
+      // ── First sign-in ───────────────────────────────────────────
+      if (user) {
+        const u = user as unknown as Record<string, unknown>
 
-          // For credentials provider: the authorize() function already verified
-          // the teacher — trust the role it returned and don't re-query DB
-          if (account?.provider === "credentials") {
+        // Role already resolved by signIn callback (or by credentials authorize)
+        if (u.role) {
+          token.role           = u.role as string
+          token.userId         = (u.dbId  ?? u.id) as string
+          token.profilePicture = (u.profilePicture ?? null) as string | null
+          token.sub            = token.userId
+
+          if (u.role === "teacher") {
+            token.teacherId = u.teacherId as string | undefined
+          } else {
+            token.studentId = u.studentId as string | undefined
+          }
+
+          return token
+        }
+
+        // Fallback: role wasn't set (shouldn't happen, but safe)
+        const email = user.email
+        if (email) {
+          try {
             const teacher = await prisma.teacher.findUnique({
               where: { email },
-              select: { id: true, teacherId: true, name: true, profilePicture: true },
+              select: { id: true, teacherId: true, profilePicture: true },
             })
             if (teacher) {
-              token.role = "teacher"
-              token.userId = teacher.id
+              token.role = "teacher"; token.userId = teacher.id
               token.teacherId = teacher.teacherId
               token.profilePicture = teacher.profilePicture ?? null
               token.sub = teacher.id
+              return token
             }
-            return token
+            const student = await prisma.student.findUnique({
+              where: { email },
+              select: { id: true, studentId: true, profilePicture: true },
+            })
+            if (student) {
+              token.role = "student"; token.userId = student.id
+              token.studentId = student.studentId
+              token.profilePicture = student.profilePicture ?? null
+              token.sub = student.id
+            }
+          } catch (err) {
+            console.error("jwt fallback error:", err)
           }
-
-          // For Google provider: check teacher first, then student
-          const teacher = await prisma.teacher.findUnique({
-            where: { email },
-            select: { id: true, teacherId: true, name: true, profilePicture: true },
-          })
-
-          if (teacher) {
-            token.role = "teacher"
-            token.userId = teacher.id
-            token.teacherId = teacher.teacherId
-            token.profilePicture = teacher.profilePicture ?? null
-            token.sub = teacher.id
-            return token
-          }
-
-          const student = await prisma.student.findUnique({
-            where: { email },
-            select: { id: true, studentId: true, name: true, profilePicture: true },
-          })
-
-          if (student) {
-            token.role = "student"
-            token.userId = student.id
-            token.studentId = student.studentId
-            token.profilePicture = student.profilePicture ?? null
-            token.sub = student.id
-            return token
-          }
-
-          // New unregistered user
-          token.role = "student"
-        } catch (error) {
-          console.error("JWT callback error:", error)
-          token.role = "student"
         }
+
+        return token
       }
 
-      // Handle session update trigger (e.g. after profile picture change)
-      if (trigger === "update" && session?.profilePicture !== undefined) {
-        token.profilePicture = session.profilePicture
+      // ── Session update (e.g. profile picture changed) ───────────
+      if (trigger === "update" && session) {
+        if (session.profilePicture !== undefined) token.profilePicture = session.profilePicture
       }
 
       return token
@@ -204,25 +211,17 @@ export const authOptions: NextAuthOptions = {
 
     async session({ session, token }) {
       if (session.user) {
-        session.user.id = (token.userId as string) ?? token.sub!
-        session.user.role = token.role as string
-        session.user.studentId = token.studentId as string | undefined
-        session.user.teacherId = token.teacherId as string | undefined
+        session.user.id             = (token.userId as string) ?? token.sub!
+        session.user.role           = (token.role as string) ?? "student"
+        session.user.studentId      = token.studentId as string | undefined
+        session.user.teacherId      = token.teacherId as string | undefined
         session.user.profilePicture = (token.profilePicture as string | null) ?? null
       }
       return session
     },
   },
 
-  pages: {
-    signIn: "/login",
-    error: "/login",
-  },
-
-  session: {
-    strategy: "jwt",
-    maxAge: 30 * 24 * 60 * 60, // 30 days
-  },
-
-  secret: process.env.NEXTAUTH_SECRET,
+  pages:   { signIn: "/login", error: "/login" },
+  session: { strategy: "jwt", maxAge: 30 * 24 * 60 * 60 },
+  secret:  process.env.NEXTAUTH_SECRET,
 }
