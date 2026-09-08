@@ -14,26 +14,64 @@ export async function POST(request: NextRequest) {
       )
     }
 
-    const { studentId, gradeLevel, strandId, sectionId, company, course } = await request.json()
+    const { studentId, gradeLevel, strandId, sectionId, sectionName, company, course } = await request.json()
 
-    if (!studentId || !gradeLevel || !strandId || !sectionId) {
+    if (!studentId || !gradeLevel || !strandId) {
       return NextResponse.json(
-        { error: 'Student ID, grade level, strand, and section are required' },
+        { error: 'Student ID, grade level, and strand are required' },
         { status: 400 }
       )
     }
 
-    // Verify section belongs to strand
-    const section = await prisma.section.findUnique({
-      where: { id: sectionId },
-      include: { teacher: true },
-    })
-
-    if (!section || section.strandId !== strandId) {
+    if (!sectionId && !sectionName) {
       return NextResponse.json(
-        { error: 'Invalid strand/section combination' },
+        { error: 'Please select a section or enter a custom section name' },
         { status: 400 }
       )
+    }
+
+    let finalSectionId = sectionId
+    let teacherId = null
+
+    // If custom section name is provided, create or find the section
+    if (sectionName && !sectionId) {
+      // Check if section with this name already exists for this strand
+      let section = await prisma.section.findFirst({
+        where: {
+          name: sectionName.trim(),
+          strandId: strandId,
+        },
+      })
+
+      // If section doesn't exist, create it
+      if (!section) {
+        section = await prisma.section.create({
+          data: {
+            name: sectionName.trim(),
+            gradeLevel: gradeLevel,
+            strandId: strandId,
+            isActive: true,
+          },
+        })
+      }
+
+      finalSectionId = section.id
+      teacherId = section.teacherId
+    } else if (sectionId) {
+      // Verify section belongs to strand
+      const section = await prisma.section.findUnique({
+        where: { id: sectionId },
+        include: { teacher: true },
+      })
+
+      if (!section || section.strandId !== strandId) {
+        return NextResponse.json(
+          { error: 'Invalid strand/section combination' },
+          { status: 400 }
+        )
+      }
+
+      teacherId = section.teacherId
     }
 
     // Check if student ID is already taken
@@ -56,8 +94,8 @@ export async function POST(request: NextRequest) {
         name: session.user.name || '',
         gradeLevel,
         strandId,
-        sectionId,
-        supervisorId: section.teacherId, // Auto-assign teacher
+        sectionId: finalSectionId,
+        supervisorId: teacherId, // Auto-assign teacher if available
         company,
         course,
       },
@@ -67,8 +105,8 @@ export async function POST(request: NextRequest) {
         name: session.user.name || '',
         gradeLevel,
         strandId,
-        sectionId,
-        supervisorId: section.teacherId, // Auto-assign teacher
+        sectionId: finalSectionId,
+        supervisorId: teacherId, // Auto-assign teacher if available
         company,
         course,
       },
@@ -94,19 +132,22 @@ export async function POST(request: NextRequest) {
         description: `Student completed registration: ${student.name} (${student.studentId}) - ${student.strand?.name} ${student.section?.name}`,
         metadata: JSON.stringify({
           strandId,
-          sectionId,
+          sectionId: finalSectionId,
           gradeLevel,
-          assignedTeacher: section.teacher?.name,
+          assignedTeacher: student.supervisor?.name || 'None',
+          customSection: sectionName ? true : false,
         }),
       },
     })
 
-    // TODO: Initialize checklist progress for this student's strand/section
+    const message = teacherId 
+      ? `Successfully registered! You've been assigned to ${student.supervisor?.name}.`
+      : `Successfully registered to ${student.section?.name}! A teacher will be assigned soon.`
 
     return NextResponse.json({
       success: true,
       student,
-      message: `Successfully registered! You've been assigned to ${section.teacher?.name || 'a supervisor'}.`,
+      message,
     })
   } catch (error) {
     console.error('Complete registration error:', error)

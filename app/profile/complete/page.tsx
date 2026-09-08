@@ -25,6 +25,7 @@ export default function CompleteProfilePage() {
   const { data: session } = useSession()
   const [isSubmitting, setIsSubmitting] = useState(false)
   const [error, setError] = useState('')
+  const [useCustomSection, setUseCustomSection] = useState(false)
   
   const [strands, setStrands] = useState<Strand[]>([])
   const [sections, setSections] = useState<Section[]>([])
@@ -35,6 +36,7 @@ export default function CompleteProfilePage() {
     gradeLevel: 12,
     strandId: '',
     sectionId: '',
+    customSection: '',
     company: '',
     course: '',
   })
@@ -90,17 +92,36 @@ export default function CompleteProfilePage() {
     setIsSubmitting(true)
 
     // Validation
-    if (!formData.studentId || !formData.strandId || !formData.sectionId) {
+    if (!formData.studentId || !formData.strandId) {
       setError('Please fill in all required fields')
       setIsSubmitting(false)
       return
     }
 
+    // Check if section is provided (either from dropdown or custom input)
+    if (!useCustomSection && !formData.sectionId) {
+      setError('Please select a section or enter a custom section name')
+      setIsSubmitting(false)
+      return
+    }
+
+    if (useCustomSection && !formData.customSection.trim()) {
+      setError('Please enter your section name')
+      setIsSubmitting(false)
+      return
+    }
+
     try {
+      const submissionData = {
+        ...formData,
+        // If using custom section, create it or find existing one
+        sectionName: useCustomSection ? formData.customSection : undefined,
+      }
+
       const response = await fetch('/api/students/complete-registration', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(formData),
+        body: JSON.stringify(submissionData),
       })
 
       if (!response.ok) {
@@ -117,138 +138,210 @@ export default function CompleteProfilePage() {
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-primary-50 via-background to-accent/20 flex items-center justify-center p-4">
-      <Card className="max-w-2xl w-full">
-        <CardHeader>
-          <CardTitle className="text-2xl">Complete Your Profile</CardTitle>
-          <p className="text-gray-600 mt-2">
-            Please provide your information to access the Work Immersion System
+    <div className="min-h-screen bg-gradient-to-br from-blue-50 via-purple-50 to-pink-50 flex items-center justify-center p-4 sm:p-6 lg:p-8">
+      <Card className="max-w-3xl w-full shadow-2xl">
+        <CardHeader className="space-y-3 pb-6">
+          <CardTitle className="text-3xl bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent">
+            Complete Your Profile
+          </CardTitle>
+          <p className="text-gray-600 text-base leading-relaxed">
+            Please provide your information to access the Work Immersion Program
           </p>
         </CardHeader>
-        <CardContent>
+        <CardContent className="space-y-8">
           {error && (
-            <div className="mb-6 p-4 bg-red-50 border border-red-200 rounded-lg text-red-700">
-              {error}
+            <div className="p-4 bg-red-50 border-l-4 border-red-500 rounded-r-lg">
+              <div className="flex items-start gap-3">
+                <svg className="w-5 h-5 text-red-500 flex-shrink-0 mt-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                </svg>
+                <p className="text-red-700 text-sm">{error}</p>
+              </div>
             </div>
           )}
 
-          <form onSubmit={handleSubmit} className="space-y-6">
+          <form onSubmit={handleSubmit} className="space-y-8">
             {/* Student Information */}
-            <div className="space-y-4">
-              <h3 className="font-semibold text-gray-900 flex items-center gap-2">
-                <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
-                </svg>
+            <div className="space-y-5">
+              <h3 className="font-semibold text-gray-900 flex items-center gap-3 text-lg">
+                <div className="w-8 h-8 bg-gradient-to-r from-blue-600 to-purple-600 rounded-lg flex items-center justify-center">
+                  <svg className="w-5 h-5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
+                  </svg>
+                </div>
                 Student Information
               </h3>
 
-              <Input
-                label="Student ID Number *"
-                type="text"
-                name="studentId"
-                value={formData.studentId}
-                onChange={handleChange}
-                placeholder="e.g., 2024-12345"
-                required
-              />
+              <div className="space-y-2">
+                <label className="block text-sm font-medium text-gray-700">
+                  Student ID Number <span className="text-red-500">*</span>
+                </label>
+                <input
+                  type="text"
+                  name="studentId"
+                  value={formData.studentId}
+                  onChange={handleChange}
+                  placeholder="e.g., 2024-12345 or 202412345"
+                  required
+                  className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent text-base"
+                />
+                <p className="text-xs text-gray-500 leading-relaxed">
+                  Enter your school-assigned student ID number
+                </p>
+              </div>
 
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">
-                  Email *
+              <div className="space-y-2">
+                <label className="block text-sm font-medium text-gray-700">
+                  Email Address <span className="text-red-500">*</span>
                 </label>
                 <input
                   type="email"
                   value={session?.user?.email || ''}
                   disabled
-                  className="w-full px-3 py-2 border border-gray-300 rounded-lg bg-gray-50 text-gray-600"
+                  className="w-full px-4 py-3 border border-gray-300 rounded-lg bg-gray-50 text-gray-600 text-base"
                 />
-                <p className="text-xs text-gray-500 mt-1">
-                  This is your registered Gmail account
+                <p className="text-xs text-gray-500 leading-relaxed">
+                  📧 This is your registered Gmail account (cannot be changed)
                 </p>
               </div>
 
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">
-                  Full Name *
+              <div className="space-y-2">
+                <label className="block text-sm font-medium text-gray-700">
+                  Full Name <span className="text-red-500">*</span>
                 </label>
                 <input
                   type="text"
                   value={session?.user?.name || ''}
                   disabled
-                  className="w-full px-3 py-2 border border-gray-300 rounded-lg bg-gray-50 text-gray-600"
+                  className="w-full px-4 py-3 border border-gray-300 rounded-lg bg-gray-50 text-gray-600 text-base"
                 />
+                <p className="text-xs text-gray-500 leading-relaxed">
+                  👤 From your Google account (can be edited later in profile settings)
+                </p>
               </div>
             </div>
 
             {/* Academic Information */}
-            <div className="space-y-4 pt-4 border-t">
-              <h3 className="font-semibold text-gray-900 flex items-center gap-2">
-                <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13C19.832 18.477 18.247 18 16.5 18c-1.746 0-3.332.477-4.5 1.253" />
-                </svg>
+            <div className="space-y-5 pt-6 border-t-2 border-gray-100">
+              <h3 className="font-semibold text-gray-900 flex items-center gap-3 text-lg">
+                <div className="w-8 h-8 bg-gradient-to-r from-purple-600 to-pink-600 rounded-lg flex items-center justify-center">
+                  <svg className="w-5 h-5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13C19.832 18.477 18.247 18 16.5 18c-1.746 0-3.332.477-4.5 1.253" />
+                  </svg>
+                </div>
                 Academic Information
               </h3>
 
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">
-                  Grade Level *
+              <div className="space-y-2">
+                <label className="block text-sm font-medium text-gray-700">
+                  Grade Level <span className="text-red-500">*</span>
                 </label>
                 <select
                   name="gradeLevel"
                   value={formData.gradeLevel}
                   onChange={handleChange}
                   required
-                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-transparent"
+                  className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent text-base"
                 >
                   <option value="11">Grade 11</option>
                   <option value="12">Grade 12</option>
                 </select>
               </div>
 
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">
-                  Strand *
+              <div className="space-y-2">
+                <label className="block text-sm font-medium text-gray-700">
+                  Strand <span className="text-red-500">*</span>
                 </label>
                 <select
                   name="strandId"
                   value={formData.strandId}
                   onChange={handleChange}
                   required
-                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-transparent"
+                  className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent text-base"
                 >
                   <option value="">Select your strand</option>
                   {strands.map((strand) => (
                     <option key={strand.id} value={strand.id}>
-                      {strand.code} - {strand.name}
+                      {strand.name}
                     </option>
                   ))}
                 </select>
               </div>
 
-              <div>
+              <div className="space-y-3">
                 <label className="block text-sm font-medium text-gray-700 mb-2">
                   Section *
                 </label>
-                <select
-                  name="sectionId"
-                  value={formData.sectionId}
-                  onChange={handleChange}
-                  required
-                  disabled={!formData.strandId}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-transparent disabled:bg-gray-50 disabled:text-gray-500"
-                >
-                  <option value="">
-                    {formData.strandId ? 'Select your section' : 'Select a strand first'}
-                  </option>
-                  {filteredSections.map((section) => (
-                    <option key={section.id} value={section.id}>
-                      {section.name}
+                
+                {/* Toggle between dropdown and custom input */}
+                <div className="flex gap-4 mb-3">
+                  <button
+                    type="button"
+                    onClick={() => setUseCustomSection(false)}
+                    className={`flex-1 py-2 px-4 rounded-lg font-medium transition-all duration-300 ${
+                      !useCustomSection
+                        ? 'bg-gradient-to-r from-blue-600 to-purple-600 text-white shadow-md'
+                        : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
+                    }`}
+                  >
+                    Select from List
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setUseCustomSection(true)}
+                    className={`flex-1 py-2 px-4 rounded-lg font-medium transition-all duration-300 ${
+                      useCustomSection
+                        ? 'bg-gradient-to-r from-blue-600 to-purple-600 text-white shadow-md'
+                        : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
+                    }`}
+                  >
+                    Type My Section
+                  </button>
+                </div>
+
+                {/* Dropdown for existing sections */}
+                {!useCustomSection && (
+                  <select
+                    name="sectionId"
+                    value={formData.sectionId}
+                    onChange={handleChange}
+                    required={!useCustomSection}
+                    disabled={!formData.strandId}
+                    className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent disabled:bg-gray-50 disabled:text-gray-500 text-base"
+                  >
+                    <option value="">
+                      {formData.strandId ? 'Select your section' : 'Select a strand first'}
                     </option>
-                  ))}
-                </select>
-                {formData.strandId && filteredSections.length === 0 && (
-                  <p className="text-xs text-yellow-600 mt-1">
-                    No sections available for this strand yet
+                    {filteredSections.map((section) => (
+                      <option key={section.id} value={section.id}>
+                        {section.name}
+                      </option>
+                    ))}
+                  </select>
+                )}
+
+                {/* Custom input for typing section name */}
+                {useCustomSection && (
+                  <div>
+                    <input
+                      type="text"
+                      name="customSection"
+                      value={formData.customSection}
+                      onChange={handleChange}
+                      placeholder="e.g., Section A, Einstein, 12-STEM-1"
+                      required={useCustomSection}
+                      disabled={!formData.strandId}
+                      className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent disabled:bg-gray-50 text-base"
+                    />
+                    <p className="text-xs text-gray-500 mt-2 leading-relaxed">
+                      💡 Type the name of your section. This will be visible to your teacher.
+                    </p>
+                  </div>
+                )}
+                
+                {formData.strandId && filteredSections.length === 0 && !useCustomSection && (
+                  <p className="text-xs text-yellow-600 mt-2 leading-relaxed">
+                    ⚠️ No sections available yet. Click "Type My Section" to enter your section name.
                   </p>
                 )}
               </div>
