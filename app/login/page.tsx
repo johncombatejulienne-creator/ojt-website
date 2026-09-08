@@ -33,19 +33,24 @@ export default function LoginPage() {
     setError('')
     
     try {
+      // Force complete sign out first to clear any cached sessions
+      await signOut({ redirect: false })
+      
+      // Small delay to ensure sign out completes
+      await new Promise(resolve => setTimeout(resolve, 500))
+      
+      // Now sign in fresh
       const result = await signIn('google', {
         callbackUrl: '/dashboard',
-        redirect: false,
+        redirect: true, // Changed to true for better mobile handling
       })
 
       if (result?.error) {
-        setError('Failed to sign in with Google')
-      } else if (result?.url) {
-        router.push(result.url)
+        setError('Failed to sign in with Google. Please try again.')
+        setIsLoading(false)
       }
     } catch (err) {
       setError('An error occurred during sign in')
-    } finally {
       setIsLoading(false)
     }
   }
