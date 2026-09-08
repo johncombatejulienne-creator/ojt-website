@@ -39,7 +39,9 @@ export default function LoginPage() {
     try {
       await signOut({ redirect: false })
       await new Promise(r => setTimeout(r, 200))
-      await signIn('google', { callbackUrl: asTeacher ? '/teacher/dashboard' : '/dashboard', redirect: true })
+      // Use different provider IDs so server can detect teacher vs student intent
+      const provider = asTeacher ? 'google-teacher' : 'google'
+      await signIn(provider, { callbackUrl: asTeacher ? '/teacher/dashboard' : '/dashboard', redirect: true })
     } catch { setError('An error occurred. Please try again.'); setLoading(false) }
   }
 
