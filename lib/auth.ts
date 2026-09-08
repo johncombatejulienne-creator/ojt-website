@@ -12,6 +12,7 @@ export const authOptions: NextAuthOptions = {
       authorization: {
         params: {
           prompt: "select_account",
+          access_type: "offline",
         },
       },
     }),
@@ -66,13 +67,12 @@ export const authOptions: NextAuthOptions = {
     async signIn({ user, account }) {
       if (account?.provider === "google") {
         try {
-          // Check if user exists as teacher first
+          // Check if already a teacher
           const teacher = await prisma.teacher.findUnique({
             where: { email: user.email! },
           })
 
           if (teacher) {
-            // Update teacher profile picture from Google if not set
             if (!teacher.profilePicture && user.image) {
               await prisma.teacher.update({
                 where: { id: teacher.id },
@@ -82,13 +82,12 @@ export const authOptions: NextAuthOptions = {
             return true
           }
 
-          // Check if student already exists
+          // Check if already a student
           const student = await prisma.student.findUnique({
             where: { email: user.email! },
           })
 
           if (student) {
-            // Update student profile picture from Google if not set
             if (!student.profilePicture && user.image) {
               await prisma.student.update({
                 where: { id: student.id },
@@ -98,25 +97,39 @@ export const authOptions: NextAuthOptions = {
             return true
           }
 
-          // New user — auto-create student account
-          await prisma.student.create({
-            data: {
-              email: user.email!,
-              name: user.name || user.email!.split("@")[0],
-              studentId: `STU-${Date.now()}`,
-              profilePicture: user.image ?? null,
-            },
-          })
+          // New user — check callbackUrl to decide student vs teacher
+          // Teacher sign-in redirects to /teacher/dashboard
+          const callbackUrl = account.state as string ?? ""
+          const isTeacher = callbackUrl.includes("teacher")
+
+          if (isTeacher) {
+            await prisma.teacher.create({
+              data: {
+                email: user.email!,
+                name: user.name || user.email!.split("@")[0],
+                teacherId: `TCH-${Date.now()}`,
+                role: "teacher",
+                accessLevel: "teacher",
+                profilePicture: user.image ?? null,
+              },
+            })
+          } else {
+            await prisma.student.create({
+              data: {
+                email: user.email!,
+                name: user.name || user.email!.split("@")[0],
+                studentId: `STU-${Date.now()}`,
+                profilePicture: user.image ?? null,
+              },
+            })
+          }
 
           return true
         } catch (error) {
           console.error("Sign-in error:", error)
-          // Allow sign-in even on non-critical errors
           return true
         }
       }
-
-      // Credentials provider — always allowed if authorize() passed
       return true
     },
 
