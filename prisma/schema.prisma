@@ -14,6 +14,7 @@ model Student {
   studentId         String                     @unique
   name              String
   email             String                     @unique
+  profilePicture    String?
   company           String?
   course            String?
   gradeLevel        Int?
@@ -39,6 +40,7 @@ model Teacher {
   teacherId        String            @unique
   name             String
   email            String            @unique
+  profilePicture   String?
   password         String?
   role             String            @default("teacher")
   accessLevel      String            @default("teacher") // teacher, admin, super_admin

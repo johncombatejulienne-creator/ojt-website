@@ -66,17 +66,15 @@ export default function LoginPage() {
         password,
         role: userType,
         callbackUrl: userType === 'teacher' ? '/teacher/dashboard' : '/dashboard',
-        redirect: false,
+        redirect: true, // Changed to true for better handling
       })
 
       if (result?.error) {
         setError('Invalid email or password')
-      } else if (result?.url) {
-        router.push(result.url)
+        setIsLoading(false)
       }
     } catch (err) {
       setError('An error occurred during sign in')
-    } finally {
       setIsLoading(false)
     }
   }

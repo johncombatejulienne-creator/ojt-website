@@ -139,6 +139,17 @@ export default function CompleteProfilePage() {
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-blue-50 via-purple-50 to-pink-50 flex items-center justify-center p-4 sm:p-6 lg:p-8">
+      {/* Back to Login Button */}
+      <button
+        onClick={() => router.push('/login')}
+        className="fixed top-4 left-4 z-50 flex items-center gap-2 bg-white/80 hover:bg-white backdrop-blur-sm px-4 py-2 rounded-lg shadow-md transition-all duration-300 hover:scale-105 text-gray-700 font-medium"
+      >
+        <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
+        </svg>
+        Back to Login
+      </button>
+
       <Card className="max-w-3xl w-full shadow-2xl">
         <CardHeader className="space-y-3 pb-6">
           <CardTitle className="text-3xl bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent">
