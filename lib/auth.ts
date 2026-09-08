@@ -125,18 +125,29 @@ export const authOptions: NextAuthOptions = {
       if (user || account) {
         try {
           const email = user?.email ?? token.email
-
           if (!email) return token
 
-          // Check teacher first
+          // For credentials provider: the authorize() function already verified
+          // the teacher — trust the role it returned and don't re-query DB
+          if (account?.provider === "credentials") {
+            const teacher = await prisma.teacher.findUnique({
+              where: { email },
+              select: { id: true, teacherId: true, name: true, profilePicture: true },
+            })
+            if (teacher) {
+              token.role = "teacher"
+              token.userId = teacher.id
+              token.teacherId = teacher.teacherId
+              token.profilePicture = teacher.profilePicture ?? null
+              token.sub = teacher.id
+            }
+            return token
+          }
+
+          // For Google provider: check teacher first, then student
           const teacher = await prisma.teacher.findUnique({
             where: { email },
-            select: {
-              id: true,
-              teacherId: true,
-              name: true,
-              profilePicture: true,
-            },
+            select: { id: true, teacherId: true, name: true, profilePicture: true },
           })
 
           if (teacher) {
@@ -148,15 +159,9 @@ export const authOptions: NextAuthOptions = {
             return token
           }
 
-          // Then check student
           const student = await prisma.student.findUnique({
             where: { email },
-            select: {
-              id: true,
-              studentId: true,
-              name: true,
-              profilePicture: true,
-            },
+            select: { id: true, studentId: true, name: true, profilePicture: true },
           })
 
           if (student) {
@@ -168,7 +173,7 @@ export const authOptions: NextAuthOptions = {
             return token
           }
 
-          // Fallback — new unregistered user
+          // New unregistered user
           token.role = "student"
         } catch (error) {
           console.error("JWT callback error:", error)
