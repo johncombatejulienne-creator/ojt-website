@@ -4,27 +4,33 @@ import Header from './Header'
 
 interface AppShellProps {
   children: React.ReactNode
-  /** The student's strand code — drives header gradient and theme accent */
   strandCode?: string
-  /** Extra class on the <main> content area */
   className?: string
 }
 
-/**
- * AppShell wraps every authenticated page.
- *
- * Structure:
- *   <Header />           — sticky top bar
- *   <main>               — scrollable content area
- *     {children}
- *   </main>
- */
 export default function AppShell({ children, strandCode, className = '' }: AppShellProps) {
   return (
-    <div className="min-h-screen bg-gray-50 flex flex-col">
+    <div style={{ minHeight: '100vh', backgroundColor: '#F8FAFC', display: 'flex', flexDirection: 'column' }}>
       <Header strandCode={strandCode} />
-      <main className={`flex-1 w-full ${className}`}>
-        <div className="max-w-[1280px] mx-auto px-4 sm:px-6 lg:px-8 py-6 sm:py-8">
+      <main style={{ flex: 1, width: '100%', overflowX: 'hidden' }} className={className}>
+        {/* 
+          Using inline style for the container so padding is guaranteed 
+          regardless of Tailwind CSS generation on Vercel.
+        */}
+        <div
+          className="dashboard-container"
+          style={{
+            maxWidth: '1280px',
+            marginLeft: 'auto',
+            marginRight: 'auto',
+            paddingLeft: '16px',
+            paddingRight: '16px',
+            paddingTop: '24px',
+            paddingBottom: '32px',
+            boxSizing: 'border-box',
+            width: '100%',
+          }}
+        >
           {children}
         </div>
       </main>

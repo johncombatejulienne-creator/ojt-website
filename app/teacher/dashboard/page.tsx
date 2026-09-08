@@ -7,7 +7,6 @@ import Image from 'next/image'
 import AppShell from '@/components/AppShell'
 import { Button } from '@/components/ui/Button'
 
-/* ─── Types ──────────────────────────────────────────────── */
 interface Student {
   id: string; studentId: string; name: string; email: string
   profilePicture?: string | null
@@ -17,41 +16,46 @@ interface Student {
 }
 interface Section {
   id: string; name: string; gradeLevel: number
-  strand: { name: string }
-  students: Student[]
+  strand: { name: string }; students: Student[]
 }
 
 /* ─── Avatar ─────────────────────────────────────────────── */
 function Avatar({ src, name, size = 40 }: { src?: string|null; name: string; size?: number }) {
   const [err, setErr] = useState(false)
   const initials = name.split(' ').map(w=>w[0]).join('').toUpperCase().slice(0,2)
+  const base = { width:size, height:size, borderRadius:10, flexShrink:0,
+    display:'flex', alignItems:'center', justifyContent:'center',
+    fontWeight:700, fontSize:Math.round(size*0.36) }
   if (src && !err) return (
-    <div className="rounded-xl overflow-hidden flex-shrink-0" style={{ width: size, height: size }}>
+    <div style={{ ...base, overflow:'hidden' }}>
       <Image src={src} alt={name} width={size} height={size}
-        className="object-cover w-full h-full"
+        style={{ width:'100%', height:'100%', objectFit:'cover' }}
         unoptimized={src.startsWith('data:')} onError={() => setErr(true)} />
     </div>
   )
   return (
-    <div className="rounded-xl flex items-center justify-center text-white font-bold
-      flex-shrink-0 bg-gradient-to-br from-slate-500 to-slate-700"
-      style={{ width: size, height: size, fontSize: Math.round(size * 0.36) }}>
+    <div style={{ ...base, background:'linear-gradient(135deg,#475569,#1E293B)', color:'white' }}>
       {initials}
     </div>
   )
 }
 
 /* ─── Stat Card ──────────────────────────────────────────── */
-function StatCard({ label, value, icon, gradient }: {
-  label: string; value: number; icon: React.ReactNode; gradient: string
-}) {
+function StatCard({ label, value, icon, bg }: { label:string; value:number; icon:React.ReactNode; bg:string }) {
   return (
-    <div className={`${gradient} rounded-2xl p-4 sm:p-5 text-white shadow-md flex items-center justify-between gap-3 min-w-0 overflow-hidden`}>
-      <div className="min-w-0 flex-1">
-        <p className="text-white/75 text-xs font-semibold uppercase tracking-widest truncate mb-1 leading-tight">{label}</p>
-        <p className="text-3xl sm:text-4xl font-black leading-none">{value}</p>
+    <div style={{ background:bg, borderRadius:16, padding:'16px 20px', color:'white',
+      display:'flex', alignItems:'center', justifyContent:'space-between', gap:12,
+      overflow:'hidden', boxSizing:'border-box', boxShadow:'0 4px 12px rgba(0,0,0,0.15)' }}>
+      <div style={{ minWidth:0, flex:1 }}>
+        <p style={{ fontSize:11, fontWeight:700, textTransform:'uppercase', letterSpacing:'0.07em',
+          color:'rgba(255,255,255,0.75)', marginBottom:4, overflow:'hidden',
+          textOverflow:'ellipsis', whiteSpace:'nowrap' }}>
+          {label}
+        </p>
+        <p style={{ fontSize:36, fontWeight:900, lineHeight:1, color:'white' }}>{value}</p>
       </div>
-      <div className="w-11 h-11 rounded-xl bg-white/15 flex items-center justify-center flex-shrink-0">
+      <div style={{ width:44, height:44, borderRadius:10, background:'rgba(255,255,255,0.15)',
+        display:'flex', alignItems:'center', justifyContent:'center', flexShrink:0 }}>
         {icon}
       </div>
     </div>
@@ -62,11 +66,11 @@ function StatCard({ label, value, icon, gradient }: {
 export default function TeacherDashboard() {
   const { data: session, status } = useSession()
   const router  = useRouter()
-  const [loading, setLoading]   = useState(true)
+  const [loading,  setLoading]  = useState(true)
   const [sections, setSections] = useState<Section[]>([])
   const [students, setStudents] = useState<Student[]>([])
-  const [active, setActive]     = useState('all')
-  const [search, setSearch]     = useState('')
+  const [active,   setActive]   = useState('all')
+  const [search,   setSearch]   = useState('')
 
   const fetchData = async () => {
     try {
@@ -83,6 +87,7 @@ export default function TeacherDashboard() {
 
   useEffect(() => {
     if (status === 'unauthenticated') router.push('/login')
+    // eslint-disable-next-line react-hooks/set-state-in-effect
     else if (status === 'authenticated') void fetchData()
   }, [status]) // eslint-disable-line react-hooks/exhaustive-deps
 
@@ -91,8 +96,7 @@ export default function TeacherDashboard() {
     .filter(s => !search.trim() ||
       s.name.toLowerCase().includes(search.toLowerCase()) ||
       s.email.toLowerCase().includes(search.toLowerCase()) ||
-      s.studentId.toLowerCase().includes(search.toLowerCase())
-    )
+      s.studentId.toLowerCase().includes(search.toLowerCase()))
 
   const stats = {
     students: students.length,
@@ -101,11 +105,11 @@ export default function TeacherDashboard() {
   }
 
   if (loading || status === 'loading') return (
-    <div className="min-h-screen flex items-center justify-center bg-gray-50">
-      <div className="text-center space-y-3">
-        <div className="w-12 h-12 border-4 border-slate-200 border-t-slate-600
-          rounded-full animate-spin mx-auto" />
-        <p className="text-sm text-gray-500">Loading dashboard...</p>
+    <div style={{ minHeight:'100vh', display:'flex', alignItems:'center', justifyContent:'center', background:'#F8FAFC' }}>
+      <div style={{ textAlign:'center' }}>
+        <div style={{ width:48, height:48, border:'4px solid #CBD5E1',
+          borderTopColor:'#475569', borderRadius:'50%', animation:'spin 1s linear infinite', margin:'0 auto 12px' }} />
+        <p style={{ fontSize:14, color:'#6B7280' }}>Loading dashboard...</p>
       </div>
     </div>
   )
@@ -114,129 +118,152 @@ export default function TeacherDashboard() {
 
   return (
     <AppShell>
-      <div className="space-y-6">
+      <div style={{ display:'flex', flexDirection:'column', gap:20 }}>
 
-        {/* ── Welcome Banner ─────────────────────────────── */}
-        <div className="bg-gradient-to-r from-slate-700 to-slate-900 rounded-2xl sm:rounded-3xl p-5 sm:p-7 text-white shadow-lg relative overflow-hidden">
-          <div className="absolute inset-0 opacity-5 pointer-events-none"
-            style={{ backgroundImage: 'radial-gradient(circle at 70% 50%, white 1px, transparent 1px)', backgroundSize: '32px 32px' }} />
-          <div className="relative">
-            <p className="text-white/60 text-xs font-medium uppercase tracking-wider">Welcome back</p>
-            <h1 className="text-xl sm:text-2xl font-black mt-0.5 truncate">{userName}</h1>
-            <p className="text-white/50 text-sm mt-1">
-              Teacher Dashboard &mdash; Manage your students and review their work.
-            </p>
-          </div>
+        {/* ── Welcome Banner ──────────────────────────────── */}
+        <div style={{
+          background: 'linear-gradient(135deg,#334155,#1E293B)',
+          borderRadius: 20, padding: '20px 24px', color: 'white',
+          position: 'relative', overflow: 'hidden',
+          boxShadow: '0 4px 20px rgba(0,0,0,0.2)',
+          boxSizing: 'border-box',
+        }}>
+          <p style={{ fontSize:11, fontWeight:700, textTransform:'uppercase',
+            letterSpacing:'0.06em', color:'rgba(255,255,255,0.5)', marginBottom:4 }}>
+            Teacher Dashboard
+          </p>
+          <h1 style={{ fontSize:22, fontWeight:900, overflow:'hidden',
+            textOverflow:'ellipsis', whiteSpace:'nowrap', marginBottom:4 }}>
+            {userName}
+          </h1>
+          <p style={{ fontSize:13, color:'rgba(255,255,255,0.45)' }}>
+            Manage your students and review their work.
+          </p>
         </div>
 
-        {/* ── Stats ──────────────────────────────────────── */}
-        <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-          <StatCard
-            label="Total Students" value={stats.students}
-            gradient="bg-gradient-to-br from-blue-500 to-blue-700"
-            icon={<svg className="w-6 h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197M13 7a4 4 0 11-8 0 4 4 0 018 0z"/></svg>}
+        {/* ── Stats ───────────────────────────────────────── */}
+        <div style={{ display:'grid', gridTemplateColumns:'repeat(3, minmax(0, 1fr))', gap:12,
+          width:'100%', boxSizing:'border-box' }}>
+          <StatCard label="Students" value={stats.students}
+            bg="linear-gradient(135deg,#3B82F6,#1D4ED8)"
+            icon={<svg style={{width:22,height:22,color:'white'}} fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197M13 7a4 4 0 11-8 0 4 4 0 018 0z"/></svg>}
           />
-          <StatCard
-            label="Sections" value={stats.sections}
-            gradient="bg-gradient-to-br from-violet-500 to-violet-700"
-            icon={<svg className="w-6 h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10"/></svg>}
+          <StatCard label="Sections" value={stats.sections}
+            bg="linear-gradient(135deg,#7C3AED,#5B21B6)"
+            icon={<svg style={{width:22,height:22,color:'white'}} fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10"/></svg>}
           />
-          <StatCard
-            label="Pending Reviews" value={stats.pending}
-            gradient="bg-gradient-to-br from-rose-500 to-rose-700"
-            icon={<svg className="w-6 h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/></svg>}
+          <StatCard label="Pending" value={stats.pending}
+            bg="linear-gradient(135deg,#EF4444,#B91C1C)"
+            icon={<svg style={{width:22,height:22,color:'white'}} fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/></svg>}
           />
         </div>
 
-        {/* ── Filters & Search ───────────────────────────── */}
-        <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-5 space-y-4">
+        {/* ── Filters ─────────────────────────────────────── */}
+        <div style={{ background:'white', border:'1px solid #E5E7EB', borderRadius:16,
+          padding:'16px 20px', boxSizing:'border-box' }}>
           {/* Section tabs */}
-          <div className="flex flex-wrap gap-2">
-            {[{ key: 'all', label: `All (${students.length})` },
-              ...sections.map(s => ({ key: s.name, label: `${s.name} (${s.students.length})` }))
+          <div style={{ display:'flex', flexWrap:'wrap', gap:8, marginBottom:14 }}>
+            {[{ key:'all', label:`All (${students.length})` },
+              ...sections.map(s => ({ key:s.name, label:`${s.name} (${s.students.length})` }))
             ].map(tab => (
-              <button key={tab.key} onClick={() => setActive(tab.key)}
-                className={`px-4 py-1.5 rounded-full text-sm font-medium transition-all ${
-                  active === tab.key
-                    ? 'bg-slate-800 text-white shadow-sm'
-                    : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
-                }`}>
+              <button key={tab.key} onClick={() => setActive(tab.key)} style={{
+                padding:'6px 16px', borderRadius:999, fontSize:12, fontWeight:600,
+                cursor:'pointer', border:'none', transition:'all 0.15s',
+                background: active===tab.key ? '#1E293B' : '#F3F4F6',
+                color: active===tab.key ? 'white' : '#4B5563',
+              }}>
                 {tab.label}
               </button>
             ))}
           </div>
 
           {/* Search */}
-          <div className="relative">
-            <svg className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400"
+          <div style={{ position:'relative' }}>
+            <svg style={{ position:'absolute', left:12, top:'50%', transform:'translateY(-50%)',
+              width:16, height:16, color:'#9CA3AF', pointerEvents:'none' }}
               fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2}
                 d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"/>
             </svg>
-            <input
-              type="text"
-              value={search}
-              onChange={e => setSearch(e.target.value)}
+            <input type="text" value={search} onChange={e => setSearch(e.target.value)}
               placeholder="Search by name, email, or ID..."
-              className="w-full pl-10 pr-4 py-2.5 border border-gray-200 rounded-xl text-sm
-                bg-gray-50 focus:bg-white focus:outline-none focus:ring-2
-                focus:ring-slate-300 focus:border-slate-400 transition-all"
+              style={{ width:'100%', paddingLeft:36, paddingRight:16, paddingTop:10, paddingBottom:10,
+                border:'1px solid #E5E7EB', borderRadius:12, fontSize:14,
+                background:'#F9FAFB', outline:'none', boxSizing:'border-box' }}
+              onFocus={e => { e.target.style.borderColor='#6366F1'; e.target.style.background='white' }}
+              onBlur={e => { e.target.style.borderColor='#E5E7EB'; e.target.style.background='#F9FAFB' }}
             />
           </div>
         </div>
 
-        {/* ── Students List ───────────────────────────────── */}
-        <div className="bg-white rounded-2xl border border-gray-100 shadow-sm overflow-hidden">
-          <div className="px-5 py-4 border-b border-gray-100 flex items-center justify-between gap-3">
-            <h2 className="font-bold text-gray-900">
-              Students
-              {active !== 'all' && <span className="text-gray-400 font-normal"> — {active}</span>}
-            </h2>
-            <span className="text-xs text-gray-400">{filtered.length} student{filtered.length !== 1 ? 's' : ''}</span>
+        {/* ── Students List ────────────────────────────────── */}
+        <div style={{ background:'white', border:'1px solid #E5E7EB', borderRadius:16, overflow:'hidden' }}>
+          <div style={{ padding:'16px 20px', borderBottom:'1px solid #F3F4F6',
+            display:'flex', alignItems:'center', justifyContent:'space-between', gap:12 }}>
+            <p style={{ fontWeight:700, fontSize:15, color:'#111827' }}>
+              Students{active !== 'all' && ` — ${active}`}
+            </p>
+            <span style={{ fontSize:12, color:'#9CA3AF' }}>
+              {filtered.length} student{filtered.length !== 1 ? 's' : ''}
+            </span>
           </div>
 
           {filtered.length === 0 ? (
-            <div className="empty-state">
-              <div className="empty-state-icon">
-                <svg className="w-7 h-7" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <div style={{ display:'flex', flexDirection:'column', alignItems:'center',
+              justifyContent:'center', padding:'48px 24px', gap:12, textAlign:'center' }}>
+              <div style={{ width:48, height:48, background:'#F3F4F6', borderRadius:12,
+                display:'flex', alignItems:'center', justifyContent:'center' }}>
+                <svg style={{ width:24, height:24, color:'#9CA3AF' }} fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5}
-                    d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197M13 7a4 4 0 11-8 0 4 4 0 018 0z" />
+                    d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197M13 7a4 4 0 11-8 0 4 4 0 018 0z"/>
                 </svg>
               </div>
-              <p className="font-medium text-gray-700 text-sm">
+              <p style={{ fontSize:14, fontWeight:600, color:'#374151' }}>
                 {search ? 'No students match your search' : 'No students in this section yet'}
               </p>
               {search && (
                 <button onClick={() => setSearch('')}
-                  className="text-xs text-indigo-600 hover:text-indigo-800 font-medium">
+                  style={{ fontSize:12, color:'#6366F1', fontWeight:600, background:'none',
+                    border:'none', cursor:'pointer' }}>
                   Clear search
                 </button>
               )}
             </div>
           ) : (
-            <div className="divide-y divide-gray-50">
-              {filtered.map(s => {
+            <div>
+              {filtered.map((s, i) => {
                 const pending = s.narratives.filter(n => n.status === 'pending').length
                 return (
-                  <div key={s.id}
-                    className="flex flex-col sm:flex-row sm:items-center justify-between
-                      gap-3 px-5 py-4 hover:bg-gray-50 transition-colors">
-                    <div className="flex items-center gap-3 min-w-0">
+                  <div key={s.id} style={{
+                    display:'flex', alignItems:'center', justifyContent:'space-between',
+                    gap:12, padding:'14px 20px', flexWrap:'wrap',
+                    borderBottom: i < filtered.length-1 ? '1px solid #F9FAFB' : 'none',
+                    transition:'background 0.1s',
+                    boxSizing:'border-box',
+                  }}
+                    onMouseEnter={e => { (e.currentTarget as HTMLElement).style.background='#F9FAFB' }}
+                    onMouseLeave={e => { (e.currentTarget as HTMLElement).style.background='transparent' }}
+                  >
+                    <div style={{ display:'flex', alignItems:'center', gap:12, flex:1, minWidth:0 }}>
                       <Avatar src={s.profilePicture} name={s.name} size={44} />
-                      <div className="min-w-0">
-                        <p className="font-semibold text-gray-900 text-sm truncate">{s.name}</p>
-                        <p className="text-xs text-gray-500 truncate">{s.email}</p>
-                        <p className="text-xs text-gray-400 mt-0.5">
-                          ID: {s.studentId}
-                          {s.strand?.name && ` · ${s.strand.name}`}
-                          {s.section?.name && ` · ${s.section.name}`}
+                      <div style={{ minWidth:0, flex:1 }}>
+                        <p style={{ fontWeight:600, fontSize:14, color:'#111827',
+                          overflow:'hidden', textOverflow:'ellipsis', whiteSpace:'nowrap' }}>
+                          {s.name}
+                        </p>
+                        <p style={{ fontSize:12, color:'#6B7280',
+                          overflow:'hidden', textOverflow:'ellipsis', whiteSpace:'nowrap' }}>
+                          {s.email}
+                        </p>
+                        <p style={{ fontSize:11, color:'#9CA3AF', marginTop:2 }}>
+                          {s.studentId}{s.strand?.name ? ` · ${s.strand.name}` : ''}{s.section?.name ? ` · ${s.section.name}` : ''}
                         </p>
                       </div>
                     </div>
-                    <div className="flex items-center gap-2 self-end sm:self-auto flex-shrink-0">
+                    <div style={{ display:'flex', alignItems:'center', gap:8, flexShrink:0 }}>
                       {pending > 0 && (
-                        <span className="px-2.5 py-1 bg-amber-100 text-amber-800
-                          text-xs font-semibold rounded-full whitespace-nowrap">
+                        <span style={{ background:'#FEF3C7', color:'#92400E', fontSize:11, fontWeight:700,
+                          padding:'4px 10px', borderRadius:999, whiteSpace:'nowrap' }}>
                           {pending} pending
                         </span>
                       )}
