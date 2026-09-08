@@ -1,4 +1,4 @@
-import { NextRequest, NextResponse } from 'next/server'
+﻿import { NextRequest, NextResponse } from 'next/server'
 import { prisma } from '@/lib/prisma'
 import { getServerSession } from 'next-auth'
 import { authOptions } from '@/lib/auth'
@@ -14,7 +14,8 @@ export async function GET(request: NextRequest) {
     const { searchParams } = new URL(request.url)
     const type = searchParams.get('type')
 
-    let where: any = { isActive: true }
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const where: any = { isActive: true }
 
     // Students see announcements for their strand/section
     if (session.user.role === 'student') {
@@ -56,7 +57,6 @@ export async function GET(request: NextRequest) {
     }
 
     // Filter by expiration date
-    where.OR = where.OR || []
     where.OR.push({ expiresAt: null })
     where.OR.push({ expiresAt: { gt: new Date() } })
 

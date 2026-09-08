@@ -42,7 +42,7 @@ export async function GET(
       )
     }
 
-    let verification: {
+    const verification: {
       isVerified: boolean;
       hasMetadata: boolean;
       timestamp: {

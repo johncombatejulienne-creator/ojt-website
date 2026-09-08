@@ -2,7 +2,6 @@ import { NextRequest, NextResponse } from 'next/server'
 import { getServerSession } from 'next-auth'
 import { authOptions } from '@/lib/auth'
 import { extractPhotoMetadata } from '@/lib/photoVerification'
-import { prisma } from '@/lib/prisma'
 
 // This is a placeholder for image upload
 // You'll need to implement the actual upload logic based on your chosen storage solution
@@ -18,7 +17,8 @@ export async function POST(request: NextRequest) {
 
     const formData = await request.formData()
     const files = formData.getAll('files') as File[]
-    const narrativeDate = formData.get('narrativeDate') as string
+    // narrativeDate is unused — kept for future timestamp verification
+    // const narrativeDate = formData.get('narrativeDate') as string
 
     if (files.length === 0) {
       return NextResponse.json(

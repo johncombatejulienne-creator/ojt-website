@@ -1,5 +1,5 @@
 import { type ClassValue, clsx } from "clsx"
-import { format, isToday, isBefore, startOfDay, endOfDay, parseISO } from "date-fns"
+import { format, startOfDay, endOfDay, parseISO } from "date-fns"
 
 export function cn(...inputs: ClassValue[]) {
   return clsx(inputs)
@@ -21,11 +21,8 @@ export function formatTime(date: Date | string): string {
 }
 
 export function isSubmissionOnTime(submissionDate: Date, narrativeDate: Date): boolean {
-  const submissionDay = startOfDay(submissionDate)
   const narrativeDay = startOfDay(narrativeDate)
   const narrativeEndDay = endOfDay(narrativeDate)
-  
-  // Check if submission was made on the same day or before 11:59 PM of the narrative date
   return submissionDate >= narrativeDay && submissionDate <= narrativeEndDay
 }
 
@@ -102,7 +99,7 @@ export async function createAuditLog(data: {
   userType: 'student' | 'teacher'
   action: string
   description: string
-  metadata?: any
+  metadata?: Record<string, unknown>
   ipAddress?: string
   userAgent?: string
 }) {

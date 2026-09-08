@@ -1,4 +1,4 @@
-import { NextRequest, NextResponse } from 'next/server'
+﻿import { NextRequest, NextResponse } from 'next/server'
 import { prisma } from '@/lib/prisma'
 import { getServerSession } from 'next-auth'
 import { authOptions } from '@/lib/auth'
@@ -16,7 +16,7 @@ export async function GET(request: NextRequest) {
     const strandId = searchParams.get('strandId')
     const sectionId = searchParams.get('sectionId')
 
-    let where: any = { isActive: true }
+    const where: Record<string, unknown> = { isActive: true }
 
     if (targetType) where.targetType = targetType
     if (strandId) where.strandId = strandId

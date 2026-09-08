@@ -6,7 +6,7 @@ export async function GET(request: NextRequest) {
     const { searchParams } = new URL(request.url)
     const strandId = searchParams.get('strandId')
 
-    const where: any = { isActive: true }
+    const where: Record<string, unknown> = { isActive: true }
     if (strandId) {
       where.strandId = strandId
     }

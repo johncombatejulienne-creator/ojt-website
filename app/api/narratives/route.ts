@@ -1,4 +1,4 @@
-import { NextRequest, NextResponse } from 'next/server'
+﻿import { NextRequest, NextResponse } from 'next/server'
 import { prisma } from '@/lib/prisma'
 import { getServerSession } from 'next-auth'
 import { authOptions } from '@/lib/auth'
@@ -19,7 +19,7 @@ export async function GET(request: NextRequest) {
     const limit = parseInt(searchParams.get('limit') || '10')
     const skip = (page - 1) * limit
 
-    let where: any = {}
+    const where: Record<string, unknown> = {}
 
     // Students can only see their own narratives
     if (session.user.role === 'student') {
@@ -140,7 +140,7 @@ export async function POST(request: NextRequest) {
         timezone: Intl.DateTimeFormat().resolvedOptions().timeZone,
         deviceUsed,
         photos: photos?.length > 0 ? {
-          create: photos.map((photo: any) => ({
+          create: photos.map((photo: { url: string; filename: string }) => ({
             url: photo.url,
             filename: photo.filename,
           })),

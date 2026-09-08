@@ -1,4 +1,4 @@
-import crypto from 'crypto'
+﻿import crypto from 'crypto'
 import sharp from 'sharp'
 
 export interface PhotoMetadata {
@@ -8,7 +8,7 @@ export interface PhotoMetadata {
   gpsLongitude?: number
   cameraModel?: string
   imageHash: string
-  exifData?: any
+  exifData?: unknown
 }
 
 export async function extractPhotoMetadata(
@@ -24,9 +24,10 @@ export async function extractPhotoMetadata(
     // Extract EXIF metadata using sharp
     const metadata = await sharp(imageBuffer).metadata()
     
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const exifData = metadata.exif
-      ? parseExifBuffer(metadata.exif)
-      : {}
+      ? (parseExifBuffer(metadata.exif) as any)
+      : {} as any
 
     // Extract capture timestamp
     let captureTimestamp: Date | undefined
@@ -81,7 +82,7 @@ export async function extractPhotoMetadata(
   }
 }
 
-function parseExifBuffer(buffer: Buffer): any {
+function parseExifBuffer(buffer: Buffer): unknown {
   // Simple EXIF parsing - in production, use a library like exif-parser
   try {
     return {}
@@ -236,3 +237,4 @@ function calculateDistance(
 function toRad(degrees: number): number {
   return (degrees * Math.PI) / 180
 }
+

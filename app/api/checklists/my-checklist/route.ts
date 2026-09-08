@@ -1,4 +1,4 @@
-import { NextRequest, NextResponse } from 'next/server'
+import { NextResponse } from 'next/server'
 import { prisma } from '@/lib/prisma'
 import { getServerSession } from 'next-auth'
 import { authOptions } from '@/lib/auth'
@@ -48,7 +48,7 @@ export async function GET() {
     })
 
     // Get student's progress for these checklists
-    const checklistIds = checklists.map((c: { id: string }) => c.id)
+    const checklistIds = (checklists as ChecklistWithItems[]).map((c) => c.id)
     const progress = await prisma.studentChecklistProgress.findMany({
       where: {
         studentId: student.id,
@@ -64,12 +64,34 @@ export async function GET() {
       },
     })
 
+interface ChecklistItem {
+  id: string
+  requirementType: string
+  targetCount?: number | null
+  [key: string]: unknown
+}
+
+interface ChecklistWithItems {
+  id: string
+  items: ChecklistItem[]
+  [key: string]: unknown
+}
+
+interface ProgressRecord {
+  checklistId: string
+  checklistItemId: string
+  status: string
+  completedCount: number
+  completedAt: Date | null
+  notes: string | null
+}
+
     // Combine checklist data with progress
-    const checklistsWithProgress = checklists.map((checklist: any) => {
-      const checklistProgress = progress.filter((p: any) => p.checklistId === checklist.id)
+    const checklistsWithProgress = (checklists as ChecklistWithItems[]).map((checklist) => {
+      const checklistProgress = (progress as ProgressRecord[]).filter((p) => p.checklistId === checklist.id)
       
-      const itemsWithProgress = checklist.items.map((item: any) => {
-        const itemProgress = checklistProgress.find((p: any) => p.checklistItemId === item.id)
+      const itemsWithProgress = checklist.items.map((item) => {
+        const itemProgress = checklistProgress.find((p) => p.checklistItemId === item.id)
         
         // Auto-calculate progress for narrative-type items
         let autoStatus = itemProgress?.status || 'pending'
@@ -94,7 +116,7 @@ export async function GET() {
 
       const totalItems = checklist.items.length
       const completedItems = itemsWithProgress.filter(
-        (i: any) => i.progress.status === 'completed'
+        (i) => i.progress.status === 'completed'
       ).length
       const progressPercentage = totalItems > 0 ? (completedItems / totalItems) * 100 : 0
 

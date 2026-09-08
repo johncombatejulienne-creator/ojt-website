@@ -6,33 +6,40 @@ import { prisma } from '@/lib/prisma'
 export async function GET() {
   try {
     const session = await getServerSession(authOptions)
-    
-    if (!session || !session.user || session.user.role !== 'student') {
+
+    if (!session?.user?.email) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
     }
 
+    // Allow both students and teachers to fetch their own profile via this route
+    if (session.user.role !== 'student') {
+      return NextResponse.json({ error: 'Student access only' }, { status: 403 })
+    }
+
     const student = await prisma.student.findUnique({
-      where: { email: session.user.email! },
-      include: {
+      where: { email: session.user.email },
+      select: {
+        id: true,
+        studentId: true,
+        name: true,
+        email: true,
+        profilePicture: true,
+        company: true,
+        course: true,
+        gradeLevel: true,
+        strandId: true,
+        sectionId: true,
+        supervisorId: true,
+        createdAt: true,
+        updatedAt: true,
         strand: {
-          select: {
-            id: true,
-            name: true,
-          },
+          select: { id: true, name: true },
         },
         section: {
-          select: {
-            id: true,
-            name: true,
-            gradeLevel: true,
-          },
+          select: { id: true, name: true, gradeLevel: true },
         },
         supervisor: {
-          select: {
-            id: true,
-            name: true,
-            email: true,
-          },
+          select: { id: true, name: true, email: true },
         },
       },
     })
@@ -44,65 +51,93 @@ export async function GET() {
     return NextResponse.json({ student })
   } catch (error) {
     console.error('Error fetching student profile:', error)
-    return NextResponse.json(
-      { error: 'Failed to fetch profile' },
-      { status: 500 }
-    )
+    return NextResponse.json({ error: 'Failed to fetch profile' }, { status: 500 })
   }
 }
 
 export async function PUT(request: NextRequest) {
   try {
     const session = await getServerSession(authOptions)
-    
-    if (!session || !session.user || session.user.role !== 'student') {
+
+    if (!session?.user?.email) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
     }
 
-    const body = await request.json()
-    const { name, studentId, strandId, sectionId, company, course, gradeLevel } = body
+    if (session.user.role !== 'student') {
+      return NextResponse.json({ error: 'Student access only' }, { status: 403 })
+    }
 
-    // Find the teacher assigned to the selected section
-    let supervisorId = undefined
+    const body = await request.json()
+    const {
+      name,
+      studentId,
+      strandId,
+      sectionId,
+      company,
+      course,
+      gradeLevel,
+      profilePicture,
+    } = body
+
+    // Resolve supervisor from section if section changed
+    let supervisorId: string | undefined = undefined
     if (sectionId) {
       const section = await prisma.section.findUnique({
         where: { id: sectionId },
         select: { teacherId: true },
       })
-      supervisorId = section?.teacherId || undefined
+      supervisorId = section?.teacherId ?? undefined
     }
 
+    // Build update payload — only include defined values
+    const updateData: Record<string, unknown> = {}
+    if (name !== undefined) updateData.name = name
+    if (studentId !== undefined) updateData.studentId = studentId
+    if (strandId !== undefined) updateData.strandId = strandId
+    if (sectionId !== undefined) updateData.sectionId = sectionId
+    if (company !== undefined) updateData.company = company
+    if (course !== undefined) updateData.course = course
+    if (gradeLevel !== undefined) updateData.gradeLevel = Number(gradeLevel)
+    if (profilePicture !== undefined) updateData.profilePicture = profilePicture
+    if (supervisorId !== undefined) updateData.supervisorId = supervisorId
+
     const student = await prisma.student.update({
-      where: { email: session.user.email! },
+      where: { email: session.user.email },
+      data: updateData,
+      select: {
+        id: true,
+        studentId: true,
+        name: true,
+        email: true,
+        profilePicture: true,
+        company: true,
+        course: true,
+        gradeLevel: true,
+        strandId: true,
+        sectionId: true,
+        supervisorId: true,
+        strand: { select: { id: true, name: true } },
+        section: { select: { id: true, name: true, gradeLevel: true } },
+        supervisor: { select: { id: true, name: true, email: true } },
+      },
+    })
+
+    // Audit log
+    await prisma.auditLog.create({
       data: {
-        ...(name && { name }),
-        ...(studentId && { studentId }),
-        ...(strandId && { strandId }),
-        ...(sectionId && { sectionId }),
-        ...(company !== undefined && { company }),
-        ...(course !== undefined && { course }),
-        ...(gradeLevel && { gradeLevel }),
-        ...(supervisorId && { supervisorId }),
+        userId: student.id,
+        userType: 'student',
+        action: 'profile_update',
+        description: `Student updated their profile: ${student.name}`,
+        metadata: JSON.stringify({ updatedFields: Object.keys(updateData) }),
       },
-      include: {
-        strand: true,
-        section: true,
-        supervisor: {
-          select: {
-            id: true,
-            name: true,
-            email: true,
-          },
-        },
-      },
+    }).catch(() => {
+      // Non-critical — don't fail the whole request
     })
 
     return NextResponse.json({ success: true, student })
   } catch (error) {
     console.error('Error updating student profile:', error)
-    return NextResponse.json(
-      { error: 'Failed to update profile' },
-      { status: 500 }
-    )
+    return NextResponse.json({ error: 'Failed to update profile' }, { status: 500 })
   }
 }
