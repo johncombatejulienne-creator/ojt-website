@@ -11,19 +11,39 @@ export async function DELETE() {
   try {
     const session = await getServerSession(authOptions)
 
-    if (!session?.user?.email || session.user.role !== 'teacher') {
+    if (!session?.user?.email) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
     }
 
-    const teacher = await prisma.teacher.findUnique({
-      where: { email: session.user.email },
-    })
-
-    if (!teacher) {
-      return NextResponse.json({ error: 'Teacher not found' }, { status: 404 })
+    // Must be teacher role
+    if (session.user.role !== 'teacher') {
+      return NextResponse.json({ error: 'Only teacher accounts can use this endpoint' }, { status: 403 })
     }
 
-    // Audit log before deletion
+    const email = session.user.email
+
+    const teacher = await prisma.teacher.findUnique({ where: { email } })
+
+    if (!teacher) {
+      return NextResponse.json(
+        { error: 'No teacher account found. Please sign out and sign back in via the Teacher tab first.' },
+        { status: 404 }
+      )
+    }
+
+    // Unassign students
+    await prisma.student.updateMany({
+      where: { supervisorId: teacher.id },
+      data:  { supervisorId: null },
+    })
+
+    // Unassign sections
+    await prisma.section.updateMany({
+      where: { teacherId: teacher.id },
+      data:  { teacherId: null },
+    })
+
+    // Audit log (non-critical)
     await prisma.auditLog.create({
       data: {
         userId:      teacher.id,
@@ -31,21 +51,9 @@ export async function DELETE() {
         action:      'account_deleted',
         description: `Teacher ${teacher.name} deleted their own account`,
       },
-    }).catch(() => {/* non-critical */})
+    }).catch(() => {})
 
-    // Unassign students from this teacher (don't delete students)
-    await prisma.student.updateMany({
-      where: { supervisorId: teacher.id },
-      data:  { supervisorId: null },
-    })
-
-    // Remove sections assigned to this teacher
-    await prisma.section.updateMany({
-      where: { teacherId: teacher.id },
-      data:  { teacherId: null },
-    })
-
-    // Delete teacher (cascade deletes announcements, reviews, notifications)
+    // Delete teacher record
     await prisma.teacher.delete({ where: { id: teacher.id } })
 
     return NextResponse.json({ success: true })

@@ -63,19 +63,35 @@ export const authOptions: NextAuthOptions = {
           return true
         }
 
+        // Check if this is a teacher sign-in based on state
+        const state     = (account.state as string | undefined) ?? ""
+        const isTeacher = state.includes("teacher")
+
         // Already a student?
         const existingStudent = await prisma.student.findUnique({ where: { email } })
         if (existingStudent) {
           if (!existingStudent.profilePicture && user.image) {
             await prisma.student.update({ where: { id: existingStudent.id }, data: { profilePicture: user.image } })
           }
+
+          // If signing in via Teacher tab, ALSO create a Teacher record for this email
+          // This promotes the user to teacher without deleting their student account
+          if (isTeacher) {
+            await prisma.teacher.create({
+              data: {
+                email,
+                name:           existingStudent.name || user.name || email.split("@")[0],
+                teacherId:      `TCH-${Date.now()}`,
+                role:           "teacher",
+                accessLevel:    "teacher",
+                profilePicture: existingStudent.profilePicture ?? user.image ?? null,
+              },
+            })
+          }
           return true
         }
 
-        // Brand-new user — check callbackUrl in OAuth state to decide role
-        const state       = (account.state as string | undefined) ?? ""
-        const isTeacher   = state.includes("teacher")
-
+        // Brand-new user — create based on intent
         if (isTeacher) {
           await prisma.teacher.create({
             data: {
