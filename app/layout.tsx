@@ -3,8 +3,8 @@ import { SessionProvider } from "@/components/SessionProvider";
 import "./globals.css";
 
 export const metadata: Metadata = {
-  title: "Work Immersion Management System",
-  description: "Digital work immersion journal for students and supervisors",
+  title: "Work Immersion Program",
+  description: "Digital platform for tracking and managing student work immersion experiences",
   manifest: "/manifest.json",
   appleWebApp: {
     capable: true,
