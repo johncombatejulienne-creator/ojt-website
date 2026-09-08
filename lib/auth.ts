@@ -57,28 +57,34 @@ export const authOptions: NextAuthOptions = {
   callbacks: {
     async signIn({ user, account, profile }) {
       if (account?.provider === "google") {
-        // Check if user exists as student or teacher
-        const student = await prisma.student.findUnique({
-          where: { email: user.email! },
-        })
-
-        const teacher = await prisma.teacher.findUnique({
-          where: { email: user.email! },
-        })
-
-        // If not found, automatically create a new student account
-        if (!student && !teacher) {
-          await prisma.student.create({
-            data: {
-              email: user.email!,
-              name: user.name || user.email!.split('@')[0],
-              studentId: `STU-${Date.now()}`, // Temporary ID, will be replaced on profile completion
-            },
+        try {
+          // Check if user exists as student or teacher
+          const student = await prisma.student.findUnique({
+            where: { email: user.email! },
           })
-        }
 
-        // Allow sign-in for everyone
-        return true
+          const teacher = await prisma.teacher.findUnique({
+            where: { email: user.email! },
+          })
+
+          // If not found, automatically create a new student account
+          if (!student && !teacher) {
+            await prisma.student.create({
+              data: {
+                email: user.email!,
+                name: user.name || user.email!.split('@')[0],
+                studentId: `STU-${Date.now()}`, // Temporary ID, will be replaced on profile completion
+              },
+            })
+          }
+
+          // Allow sign-in for everyone
+          return true
+        } catch (error) {
+          console.error('Sign-in error:', error)
+          // Still allow sign-in even if there's an error
+          return true
+        }
       }
       return true
     },
@@ -95,26 +101,32 @@ export const authOptions: NextAuthOptions = {
       if (user) {
         token.id = user.id
         
-        // Check if user is a student
-        const student = await prisma.student.findUnique({
-          where: { email: user.email! },
-        })
-
-        if (student) {
-          token.role = "student"
-          token.studentId = student.studentId
-          token.id = student.id
-        } else {
-          // Check if user is a teacher
-          const teacher = await prisma.teacher.findUnique({
+        try {
+          // Check if user is a student
+          const student = await prisma.student.findUnique({
             where: { email: user.email! },
           })
 
-          if (teacher) {
-            token.role = "teacher"
-            token.teacherId = teacher.teacherId
-            token.id = teacher.id
+          if (student) {
+            token.role = "student"
+            token.studentId = student.studentId
+            token.id = student.id
+          } else {
+            // Check if user is a teacher
+            const teacher = await prisma.teacher.findUnique({
+              where: { email: user.email! },
+            })
+
+            if (teacher) {
+              token.role = "teacher"
+              token.teacherId = teacher.teacherId
+              token.id = teacher.id
+            }
           }
+        } catch (error) {
+          console.error('JWT callback error:', error)
+          // Default to student role if there's an error
+          token.role = "student"
         }
       }
       return token
