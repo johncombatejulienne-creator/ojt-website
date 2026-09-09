@@ -287,7 +287,7 @@ export default function CreateNarrativePage() {
             </Button>
             <Button
               type="button" size="lg"
-              style={{ flex: 1 }}
+              style={{ flex: 1, background: '#4F46E5', color: 'white' }}
               isLoading={busy} disabled={draft || !ready}
               onClick={handleSubmitFinal}
             >
