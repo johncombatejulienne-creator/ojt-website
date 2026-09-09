@@ -37,12 +37,17 @@ export default function LoginPage() {
   const handleGoogleSignIn = async (asTeacher = false) => {
     setLoading(true); setError('')
     try {
+      // Set intent cookie so the server knows teacher vs student
+      await fetch('/api/auth/set-intent', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ intent: asTeacher ? 'teacher' : 'student' }),
+      })
       await signOut({ redirect: false })
       await new Promise(r => setTimeout(r, 200))
-      // Use single google provider — teacher intent passed via callbackUrl
-      await signIn('google', { 
-        callbackUrl: asTeacher ? '/teacher/dashboard' : '/dashboard', 
-        redirect: true 
+      await signIn('google', {
+        callbackUrl: asTeacher ? '/teacher/dashboard' : '/dashboard',
+        redirect: true,
       })
     } catch { setError('An error occurred. Please try again.'); setLoading(false) }
   }

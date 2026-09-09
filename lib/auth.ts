@@ -3,27 +3,15 @@ import GoogleProvider from "next-auth/providers/google"
 import CredentialsProvider from "next-auth/providers/credentials"
 import { prisma } from "./prisma"
 import bcrypt from "bcryptjs"
+import { cookies } from "next/headers"
 
 export const authOptions: NextAuthOptions = {
   providers: [
-    // Student Google sign-in → /api/auth/callback/google
     GoogleProvider({
-      id:           "google",
-      name:         "Google",
       clientId:     process.env.GOOGLE_CLIENT_ID!,
       clientSecret: process.env.GOOGLE_CLIENT_SECRET!,
       authorization: { params: { prompt: "select_account" } },
     }),
-
-    // Teacher Google sign-in → /api/auth/callback/google-teacher
-    GoogleProvider({
-      id:           "google-teacher",
-      name:         "Google Teacher",
-      clientId:     process.env.GOOGLE_CLIENT_ID!,
-      clientSecret: process.env.GOOGLE_CLIENT_SECRET!,
-      authorization: { params: { prompt: "select_account" } },
-    }),
-
     CredentialsProvider({
       name: "Credentials",
       credentials: {
@@ -49,82 +37,81 @@ export const authOptions: NextAuthOptions = {
 
   callbacks: {
     async signIn({ user, account }) {
-      if (!account) return true
-      const email = user.email!
+      if (account?.provider !== "google") return true
 
-      // ── Teacher providers ──────────────────────────────────────
-      if (account.provider === "google-teacher" || account.provider === "credentials") {
-        try {
-          let teacher = await prisma.teacher.findUnique({ where: { email } })
-          if (!teacher) {
-            // Check if a student record exists for this email — reuse their name/picture
-            const student = await prisma.student.findUnique({ where: { email } })
-            teacher = await prisma.teacher.create({
+      try {
+        const email = user.email!
+
+        // Read the intent cookie set by the login page before Google redirect
+        const cookieStore = await cookies()
+        const intent = cookieStore.get("signin_intent")?.value ?? "student"
+        const isTeacher = intent === "teacher"
+
+        // Check existing records
+        const existingTeacher = await prisma.teacher.findUnique({ where: { email } })
+        const existingStudent = await prisma.student.findUnique({ where: { email } })
+
+        if (isTeacher) {
+          // TEACHER TAB: ensure Teacher record exists
+          if (!existingTeacher) {
+            await prisma.teacher.create({
               data: {
                 email,
-                name:           student?.name ?? user.name ?? email.split("@")[0],
+                name:           existingStudent?.name ?? user.name ?? email.split("@")[0],
                 teacherId:      `TCH-${Date.now()}`,
                 role:           "teacher",
                 accessLevel:    "teacher",
-                profilePicture: student?.profilePicture ?? user.image ?? null,
+                profilePicture: existingStudent?.profilePicture ?? user.image ?? null,
               },
             })
-          } else if (!teacher.profilePicture && user.image) {
+          } else if (!existingTeacher.profilePicture && user.image) {
             await prisma.teacher.update({
-              where: { id: teacher.id },
+              where: { id: existingTeacher.id },
               data:  { profilePicture: user.image },
             })
           }
-        } catch (e) { console.error("Teacher signIn error:", e) }
+        } else {
+          // STUDENT TAB: ensure Student record exists (only if not already a teacher)
+          if (!existingTeacher && !existingStudent) {
+            await prisma.student.create({
+              data: {
+                email,
+                name:           user.name ?? email.split("@")[0],
+                studentId:      `STU-${Date.now()}`,
+                profilePicture: user.image ?? null,
+              },
+            })
+          } else if (existingStudent && !existingStudent.profilePicture && user.image) {
+            await prisma.student.update({
+              where: { id: existingStudent.id },
+              data:  { profilePicture: user.image },
+            })
+          } else if (existingTeacher && !existingTeacher.profilePicture && user.image) {
+            await prisma.teacher.update({
+              where: { id: existingTeacher.id },
+              data:  { profilePicture: user.image },
+            })
+          }
+        }
+
+        return true
+      } catch (e) {
+        console.error("signIn error:", e)
         return true
       }
-
-      // ── Student provider ───────────────────────────────────────
-      if (account.provider === "google") {
-        try {
-          const teacher = await prisma.teacher.findUnique({ where: { email } })
-          if (teacher) {
-            if (!teacher.profilePicture && user.image) {
-              await prisma.teacher.update({ where: { id: teacher.id }, data: { profilePicture: user.image } })
-            }
-            return true
-          }
-          const student = await prisma.student.findUnique({ where: { email } })
-          if (student) {
-            if (!student.profilePicture && user.image) {
-              await prisma.student.update({ where: { id: student.id }, data: { profilePicture: user.image } })
-            }
-            return true
-          }
-          // New user — create student
-          await prisma.student.create({
-            data: {
-              email,
-              name:           user.name ?? email.split("@")[0],
-              studentId:      `STU-${Date.now()}`,
-              profilePicture: user.image ?? null,
-            },
-          })
-        } catch (e) { console.error("Student signIn error:", e) }
-        return true
-      }
-
-      return true
     },
 
     async jwt({ token, user, trigger, session }) {
-      // Handle session update (e.g. profile picture change)
       if (trigger === "update" && session) {
         if (session.profilePicture !== undefined) token.profilePicture = session.profilePicture
         return token
       }
 
-      // Re-query DB on every call — always returns fresh role
       const email = (user?.email ?? token.email) as string | undefined
       if (!email) return token
 
       try {
-        // Teacher takes priority
+        // Teacher always takes priority
         const teacher = await prisma.teacher.findUnique({
           where:  { email },
           select: { id: true, teacherId: true, name: true, profilePicture: true },
@@ -156,7 +143,9 @@ export const authOptions: NextAuthOptions = {
         }
 
         token.role = "student"
-      } catch (err) { console.error("jwt error:", err) }
+      } catch (err) {
+        console.error("jwt error:", err)
+      }
 
       return token
     },
