@@ -72,18 +72,20 @@ export default function CreateNarrativePage() {
     setError('')
   }
 
-  const handleSubmitDraft = () => submit(true)
+  const handleSubmitDraft = () => submit(true, null)
 
   const handleSubmitFinal = () => {
-    // Require verification photo for final submission
     if (!verifyPhoto) {
       setShowCamera(true)
       return
     }
-    submit(false)
+    submit(false, verifyPhoto)
   }
 
-  const submit = async (isDraft: boolean) => {
+  // Called directly from camera capture — avoids stale closure
+  const submitWithPhoto = (photo: string) => submit(false, photo)
+
+  const submit = async (isDraft: boolean, photoUrl: string | null) => {
     setError(''); setSuccess('')
     if (!isDraft && form.narrative.trim().length < MIN) {
       setError(`Narrative needs at least ${MIN} characters.`); return
@@ -107,7 +109,7 @@ export default function CreateNarrativePage() {
           date:                 new Date(form.date).toISOString(),
           content,
           isDraft,
-          verificationPhotoUrl: isDraft ? undefined : verifyPhoto,
+          verificationPhotoUrl: isDraft ? undefined : photoUrl,
         }),
       })
 
@@ -139,8 +141,8 @@ export default function CreateNarrativePage() {
           onCapture={photo => {
             setVerifyPhoto(photo)
             setShowCamera(false)
-            // Auto-submit after capturing
-            setTimeout(() => submit(false), 100)
+            // Pass photo directly to avoid stale closure
+            submitWithPhoto(photo)
           }}
           onCancel={() => setShowCamera(false)}
         />
@@ -289,7 +291,7 @@ export default function CreateNarrativePage() {
               isLoading={busy} disabled={draft || !ready}
               onClick={handleSubmitFinal}
             >
-              {verifyPhoto ? 'Submit Narrative' : 'Take Verification Photo & Submit'}
+              {verifyPhoto ? 'Submit Narrative' : 'Take Photo & Submit'}
             </Button>
           </div>
         </div>
