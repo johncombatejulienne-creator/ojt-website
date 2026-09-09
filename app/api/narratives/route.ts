@@ -109,7 +109,7 @@ export async function POST(request: NextRequest) {
     const submissionDate = new Date()
     const narrativeDate  = new Date(date)
 
-    // Determine if on-time (submitted on the same calendar day as the narrative date)
+    // Determine if on-time
     const sameDay = submissionDate.toDateString() === narrativeDate.toDateString()
     const verificationStatus = sameDay ? 'on_time' : 'late'
 
@@ -117,9 +117,25 @@ export async function POST(request: NextRequest) {
     const ua         = request.headers.get('user-agent') ?? ''
     const deviceUsed = /mobile|android|iphone|ipad/i.test(ua) ? 'Mobile' : 'Desktop'
 
-    // Safe timezone
+    // Safe timezone — never throw
     let timezone = 'Asia/Manila'
-    try { timezone = Intl.DateTimeFormat().resolvedOptions().timeZone || 'Asia/Manila' } catch {}
+    try {
+      const tz = Intl.DateTimeFormat().resolvedOptions().timeZone
+      if (tz) timezone = tz
+    } catch {}
+
+    // Safe submissionTime — never throw, never undefined
+    let submissionTime = '12:00:00 AM'
+    try {
+      const h  = submissionDate.getHours()
+      const m  = submissionDate.getMinutes()
+      const s  = submissionDate.getSeconds()
+      const ap = h >= 12 ? 'PM' : 'AM'
+      const hh = ((h % 12) || 12).toString().padStart(2, '0')
+      const mm = m.toString().padStart(2, '0')
+      const ss = s.toString().padStart(2, '0')
+      submissionTime = `${hh}:${mm}:${ss} ${ap}`
+    } catch {}
 
     const narrative = await prisma.narrative.create({
       data: {
@@ -130,7 +146,7 @@ export async function POST(request: NextRequest) {
         status:             'pending',
         verificationStatus,
         submissionDate,
-        submissionTime:     submissionDate.toLocaleTimeString('en-PH', { hour12: true }),
+        submissionTime,
         timezone,
         deviceUsed,
         // Store verification photo as a Photo record if provided
@@ -175,6 +191,7 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({ success: true, narrative })
   } catch (error) {
     console.error('POST narrative error:', error)
-    return NextResponse.json({ error: 'Failed to create narrative' }, { status: 500 })
+    const msg = error instanceof Error ? error.message : 'Unknown error'
+    return NextResponse.json({ error: 'Failed to create narrative', detail: msg }, { status: 500 })
   }
 }

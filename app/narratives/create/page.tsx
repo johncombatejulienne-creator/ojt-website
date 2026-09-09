@@ -113,7 +113,7 @@ export default function CreateNarrativePage() {
 
       if (!res.ok) {
         const d = await res.json()
-        throw new Error(d.error ?? 'Submission failed')
+        throw new Error(d.detail ?? d.error ?? 'Submission failed')
       }
 
       setSuccess(isDraft ? 'Draft saved!' : 'Narrative submitted successfully!')
