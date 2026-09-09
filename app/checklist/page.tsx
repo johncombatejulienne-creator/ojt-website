@@ -1,169 +1,187 @@
 'use client'
 
 import { useEffect, useState } from 'react'
+import { useRouter } from 'next/navigation'
 import AppShell from '@/components/AppShell'
-import PageHeader from '@/components/PageHeader'
 
 interface ChecklistItem {
-  id:string; title:string; description?:string; order:number
-  requirementType:string; isRequired:boolean; targetCount?:number
-  progress: { status:string; completedCount:number; completedAt?:string; notes?:string }
+  id: string; title: string; description?: string; order: number
+  requirementType: string; isRequired: boolean; targetCount?: number
+  progress: { status: string; completedCount: number; completedAt?: string; notes?: string }
 }
 interface Checklist {
-  id:string; name:string; description?:string
+  id: string; name: string; description?: string
   items: ChecklistItem[]
-  stats: { totalItems:number; completedItems:number; progressPercentage:number }
-}
-
-function StatusBadge({ status }: { status: string }) {
-  const styles: Record<string,string> = {
-    completed:   'badge-green',
-    in_progress: 'badge-yellow',
-    pending:     'badge-gray',
-  }
-  const labels: Record<string,string> = { completed:'Done', in_progress:'In Progress', pending:'Pending' }
-  return <span className={`badge ${styles[status]??'badge-gray'}`}>{labels[status]??status}</span>
-}
-
-function StatusIcon({ status }: { status: string }) {
-  if (status === 'completed') return (
-    <div className="w-6 h-6 rounded-full bg-emerald-500 flex items-center justify-center flex-shrink-0">
-      <svg className="w-3.5 h-3.5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={3} d="M5 13l4 4L19 7"/>
-      </svg>
-    </div>
-  )
-  if (status === 'in_progress') return (
-    <div className="w-6 h-6 rounded-full bg-amber-400 flex items-center justify-center flex-shrink-0">
-      <svg className="w-3.5 h-3.5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"/>
-      </svg>
-    </div>
-  )
-  return (
-    <div className="w-6 h-6 rounded-full border-2 border-gray-300 bg-white flex-shrink-0" />
-  )
+  stats: { totalItems: number; completedItems: number; progressPercentage: number }
 }
 
 export default function ChecklistPage() {
+  const router = useRouter()
   const [checklists, setChecklists] = useState<Checklist[]>([])
-  const [loading, setLoading]       = useState(true)
+  const [loading,    setLoading]    = useState(true)
 
   useEffect(() => {
     let cancelled = false
-    fetch('/api/checklists/my-checklist').then(r=>r.json())
-      .then(d=>{ if(!cancelled){ setChecklists(d.checklists??[]); setLoading(false) } })
-      .catch(()=>{ if(!cancelled) setLoading(false) })
-    return ()=>{ cancelled=true }
+    fetch('/api/checklists/my-checklist')
+      .then(r => r.json())
+      .then(d => { if (!cancelled) { setChecklists(d.checklists ?? []); setLoading(false) } })
+      .catch(() => { if (!cancelled) setLoading(false) })
+    return () => { cancelled = true }
   }, [])
+
+  const statusIcon = (status: string) => {
+    if (status === 'completed') return (
+      <div style={{ width: 24, height: 24, borderRadius: '50%', background: '#10B981',
+        display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
+        <svg style={{ width: 14, height: 14, color: 'white' }} fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={3} d="M5 13l4 4L19 7" />
+        </svg>
+      </div>
+    )
+    if (status === 'in_progress') return (
+      <div style={{ width: 24, height: 24, borderRadius: '50%', background: '#F59E0B',
+        display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
+        <svg style={{ width: 12, height: 12, color: 'white' }} fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
+        </svg>
+      </div>
+    )
+    return (
+      <div style={{ width: 24, height: 24, borderRadius: '50%',
+        border: '2px solid #D1D5DB', background: 'white', flexShrink: 0 }} />
+    )
+  }
 
   if (loading) return (
     <AppShell>
-      <div className="flex items-center justify-center py-24">
-        <div className="w-10 h-10 border-4 border-indigo-200 border-t-indigo-600 rounded-full animate-spin" />
+      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '80px 0' }}>
+        <div style={{ width: 40, height: 40, border: '4px solid #E0E7FF',
+          borderTopColor: '#4F46E5', borderRadius: '50%', animation: 'spin 1s linear infinite' }} />
       </div>
     </AppShell>
   )
 
   return (
     <AppShell>
-      <PageHeader
-        title="Requirements Checklist"
-        subtitle="Track your work immersion requirements and progress"
-        backHref="/dashboard" backLabel="Dashboard"
-        shareOptions={{ title: 'Work Immersion Portal', text: 'Check your work immersion requirements.' }}
-      />
+      {/* Header */}
+      <div style={{ marginBottom: 24 }}>
+        <button onClick={() => router.push('/dashboard')} style={{
+          display: 'flex', alignItems: 'center', gap: 6, fontSize: 13, color: '#6B7280',
+          background: 'none', border: 'none', cursor: 'pointer', marginBottom: 8, padding: 0, fontFamily: 'inherit',
+        }}>
+          <svg style={{ width: 16, height: 16 }} fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
+          </svg>
+          Dashboard
+        </button>
+        <h1 style={{ fontSize: 24, fontWeight: 800, color: '#111827', margin: 0 }}>Requirements Checklist</h1>
+        <p style={{ fontSize: 13, color: '#9CA3AF', marginTop: 4 }}>Track your work immersion requirements</p>
+      </div>
 
       {checklists.length === 0 ? (
-        <div className="bg-white rounded-2xl border border-gray-100 shadow-sm">
-          <div className="empty-state">
-            <div className="empty-state-icon">
-              <svg className="w-7 h-7" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5}
-                  d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2"/>
-              </svg>
-            </div>
-            <p className="font-medium text-gray-700 text-sm">No requirements assigned yet</p>
-            <p className="text-xs text-gray-400 max-w-xs">Your teacher will assign a requirements checklist soon.</p>
+        <div style={{ background: 'white', borderRadius: 16, border: '1px solid #E5E7EB',
+          display: 'flex', flexDirection: 'column', alignItems: 'center',
+          justifyContent: 'center', padding: '64px 24px', gap: 12, textAlign: 'center' }}>
+          <div style={{ width: 56, height: 56, background: '#F3F4F6', borderRadius: 14,
+            display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+            <svg style={{ width: 28, height: 28, color: '#9CA3AF' }} fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5}
+                d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2" />
+            </svg>
           </div>
+          <p style={{ fontSize: 15, fontWeight: 600, color: '#374151' }}>No requirements assigned yet</p>
+          <p style={{ fontSize: 13, color: '#9CA3AF' }}>Your teacher will assign a checklist soon.</p>
         </div>
       ) : (
-        <div className="space-y-6">
+        <div style={{ display: 'flex', flexDirection: 'column', gap: 20 }}>
           {checklists.map(cl => {
             const pct = cl.stats.progressPercentage
-            const barColor = pct===100?'bg-emerald-500':pct>=50?'bg-amber-400':'bg-indigo-500'
+            const barColor = pct === 100 ? '#10B981' : pct >= 50 ? '#F59E0B' : '#4F46E5'
             return (
-              <div key={cl.id} className="bg-white rounded-2xl border border-gray-100 shadow-sm overflow-hidden">
+              <div key={cl.id} style={{ background: 'white', borderRadius: 16, border: '1px solid #E5E7EB', overflow: 'hidden' }}>
                 {/* Header */}
-                <div className="px-6 py-5 border-b border-gray-100">
-                  <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-3">
-                    <div className="min-w-0">
-                      <h2 className="font-bold text-gray-900">{cl.name}</h2>
-                      {cl.description && <p className="text-sm text-gray-500 mt-0.5">{cl.description}</p>}
+                <div style={{ padding: '20px 24px', borderBottom: '1px solid #F3F4F6' }}>
+                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', gap: 12, flexWrap: 'wrap' }}>
+                    <div>
+                      <h2 style={{ fontWeight: 700, fontSize: 16, color: '#111827', margin: 0 }}>{cl.name}</h2>
+                      {cl.description && <p style={{ fontSize: 13, color: '#9CA3AF', marginTop: 4 }}>{cl.description}</p>}
                     </div>
-                    <div className="flex-shrink-0 text-right">
-                      <p className="text-3xl font-black text-indigo-600 leading-none">{pct}%</p>
-                      <p className="text-xs text-gray-400 mt-0.5">
-                        {cl.stats.completedItems}/{cl.stats.totalItems} items
+                    <div style={{ textAlign: 'right', flexShrink: 0 }}>
+                      <p style={{ fontSize: 28, fontWeight: 900, color: '#4F46E5', lineHeight: 1, margin: 0 }}>{pct}%</p>
+                      <p style={{ fontSize: 12, color: '#9CA3AF', marginTop: 2 }}>
+                        {cl.stats.completedItems}/{cl.stats.totalItems} done
                       </p>
                     </div>
                   </div>
-                  <div className="progress-bar mt-4">
-                    <div className={`progress-fill ${barColor}`} style={{width:`${pct}%`}} />
+                  {/* Progress bar */}
+                  <div style={{ marginTop: 14, height: 8, background: '#F3F4F6', borderRadius: 999, overflow: 'hidden' }}>
+                    <div style={{ height: '100%', width: `${pct}%`, background: barColor,
+                      borderRadius: 999, transition: 'width 0.6s ease' }} />
                   </div>
                 </div>
 
                 {/* Items */}
-                <div className="divide-y divide-gray-50">
-                  {cl.items.map((item, i) => (
-                    <div key={item.id} className="flex items-start gap-4 px-6 py-4 hover:bg-gray-50 transition-colors">
-                      <div className="mt-0.5">
-                        <StatusIcon status={item.progress.status} />
-                      </div>
-                      <div className="flex-1 min-w-0">
-                        <div className="flex flex-wrap items-center gap-2 mb-1">
-                          <span className="font-medium text-gray-900 text-sm">{item.title}</span>
-                          {item.isRequired && (
-                            <span className="badge bg-red-50 text-red-600 text-xs">Required</span>
-                          )}
-                          <StatusBadge status={item.progress.status} />
-                        </div>
-                        {item.description && (
-                          <p className="text-xs text-gray-500 mb-1.5 leading-relaxed">{item.description}</p>
+                {cl.items.map((item, idx) => (
+                  <div key={item.id} style={{
+                    display: 'flex', alignItems: 'flex-start', gap: 14, padding: '14px 24px',
+                    borderBottom: idx < cl.items.length - 1 ? '1px solid #F9FAFB' : 'none',
+                    boxSizing: 'border-box',
+                  }}>
+                    <div style={{ marginTop: 1 }}>{statusIcon(item.progress.status)}</div>
+                    <div style={{ flex: 1, minWidth: 0 }}>
+                      <div style={{ display: 'flex', flexWrap: 'wrap', alignItems: 'center', gap: 8, marginBottom: 2 }}>
+                        <span style={{ fontWeight: 600, fontSize: 14, color: '#111827' }}>{item.title}</span>
+                        {item.isRequired && (
+                          <span style={{ fontSize: 10, fontWeight: 700, background: '#FEE2E2',
+                            color: '#DC2626', padding: '2px 8px', borderRadius: 999 }}>Required</span>
                         )}
-                        <div className="flex flex-wrap gap-3 text-xs text-gray-400">
-                          <span className="capitalize">{item.requirementType}</span>
-                          {item.targetCount!=null && (
-                            <span>{item.progress.completedCount}/{item.targetCount}</span>
-                          )}
-                        </div>
-                        {item.progress.notes && (
-                          <div className="mt-2 px-3 py-2 bg-indigo-50 rounded-lg text-xs text-indigo-700">
-                            <strong>Note:</strong> {item.progress.notes}
-                          </div>
-                        )}
+                        <span style={{
+                          fontSize: 10, fontWeight: 600, padding: '2px 8px', borderRadius: 999,
+                          background: item.progress.status === 'completed' ? '#D1FAE5' :
+                                      item.progress.status === 'in_progress' ? '#FEF3C7' : '#F3F4F6',
+                          color: item.progress.status === 'completed' ? '#065F46' :
+                                 item.progress.status === 'in_progress' ? '#92400E' : '#6B7280',
+                        }}>
+                          {item.progress.status === 'in_progress' ? 'In Progress' :
+                           item.progress.status === 'completed' ? 'Done' : 'Pending'}
+                        </span>
                       </div>
+                      {item.description && (
+                        <p style={{ fontSize: 12, color: '#9CA3AF', margin: 0, lineHeight: 1.5 }}>{item.description}</p>
+                      )}
+                      {item.targetCount != null && (
+                        <p style={{ fontSize: 12, color: '#9CA3AF', marginTop: 2 }}>
+                          {item.progress.completedCount} / {item.targetCount}
+                        </p>
+                      )}
+                      {item.progress.notes && (
+                        <div style={{ marginTop: 6, padding: '6px 10px', background: '#EFF6FF',
+                          borderRadius: 8, fontSize: 12, color: '#1E40AF' }}>
+                          Note: {item.progress.notes}
+                        </div>
+                      )}
                     </div>
-                  ))}
-                </div>
+                  </div>
+                ))}
               </div>
             )
           })}
 
           {/* Help */}
-          <div className="bg-indigo-50 border border-indigo-100 rounded-2xl p-5">
-            <div className="flex gap-3">
-              <svg className="w-5 h-5 text-indigo-500 flex-shrink-0 mt-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/>
-              </svg>
-              <div>
-                <p className="text-sm font-semibold text-indigo-800 mb-1.5">How requirements are tracked</p>
-                <ul className="text-xs text-indigo-700 space-y-1 list-disc list-inside leading-relaxed">
-                  <li>Some items update automatically (e.g. narrative count)</li>
-                  <li>Document submissions are verified by your teacher</li>
-                  <li>Check back regularly to see updated progress</li>
-                </ul>
-              </div>
+          <div style={{ background: '#EFF6FF', border: '1px solid #BFDBFE', borderRadius: 14,
+            padding: '16px 20px', display: 'flex', gap: 12 }}>
+            <svg style={{ width: 18, height: 18, color: '#3B82F6', flexShrink: 0, marginTop: 1 }}
+              fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2}
+                d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+            </svg>
+            <div>
+              <p style={{ fontSize: 13, fontWeight: 600, color: '#1E40AF', marginBottom: 6 }}>How requirements are tracked</p>
+              <ul style={{ fontSize: 12, color: '#1E40AF', paddingLeft: 16, margin: 0, lineHeight: 1.8 }}>
+                <li>Narrative-type requirements update automatically</li>
+                <li>Documents are verified by your teacher</li>
+                <li>Check back regularly to see your progress</li>
+              </ul>
             </div>
           </div>
         </div>

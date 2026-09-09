@@ -2,145 +2,222 @@
 
 import { useEffect, useState } from 'react'
 import { useRouter } from 'next/navigation'
-import { format } from 'date-fns'
-import { Button } from '@/components/ui/Button'
 import AppShell from '@/components/AppShell'
-import PageHeader from '@/components/PageHeader'
 
 interface Narrative {
   id: string; date: string; content: string
-  isDraft: boolean; submittedAt: string|null; status: string
+  isDraft: boolean; submittedAt: string | null; status: string
 }
-type Filter = 'all'|'submitted'|'draft'
+type Filter = 'all' | 'submitted' | 'draft'
 
 function getTitle(content: string) {
   const m = content.match(/\*\*Activity:\*\*\s*(.+)/i)
   return m ? m[1].trim() : 'Daily Activity'
 }
 
-const STATUS_STYLES: Record<string, string> = {
-  approved:           'bg-emerald-100 text-emerald-700',
-  pending:            'bg-amber-100 text-amber-700',
-  revision_requested: 'bg-orange-100 text-orange-700',
+const STATUS_BG: Record<string, string> = {
+  approved:           '#D1FAE5',
+  pending:            '#FEF3C7',
+  revision_requested: '#FFEDD5',
+}
+const STATUS_COLOR: Record<string, string> = {
+  approved:           '#065F46',
+  pending:            '#92400E',
+  revision_requested: '#9A3412',
+}
+const STATUS_LABEL: Record<string, string> = {
+  approved:           'Approved',
+  pending:            'Pending',
+  revision_requested: 'Revision Needed',
 }
 
 export default function NarrativesPage() {
   const router = useRouter()
   const [narratives, setNarratives] = useState<Narrative[]>([])
-  const [loading, setLoading]       = useState(true)
-  const [filter, setFilter]         = useState<Filter>('all')
+  const [loading,    setLoading]    = useState(true)
+  const [filter,     setFilter]     = useState<Filter>('all')
 
   useEffect(() => {
     let cancelled = false
-    fetch('/api/narratives').then(r=>r.json())
-      .then(d=>{ if(!cancelled){ setNarratives(d.narratives??[]); setLoading(false) } })
-      .catch(()=>{ if(!cancelled) setLoading(false) })
+    fetch('/api/narratives')
+      .then(r => r.json())
+      .then(d => { if (!cancelled) { setNarratives(d.narratives ?? []); setLoading(false) } })
+      .catch(() => { if (!cancelled) setLoading(false) })
     return () => { cancelled = true }
   }, [])
 
-  const counts = { all: narratives.length, submitted: narratives.filter(n=>!n.isDraft).length, draft: narratives.filter(n=>n.isDraft).length }
-  const filtered = narratives.filter(n => filter==='all' ? true : filter==='draft' ? n.isDraft : !n.isDraft)
+  const counts = {
+    all:       narratives.length,
+    submitted: narratives.filter(n => !n.isDraft).length,
+    draft:     narratives.filter(n =>  n.isDraft).length,
+  }
+  const filtered = narratives.filter(n =>
+    filter === 'all'       ? true :
+    filter === 'draft'     ? n.isDraft :
+    !n.isDraft
+  )
 
   if (loading) return (
     <AppShell>
-      <div className="flex items-center justify-center py-24">
-        <div className="w-10 h-10 border-4 border-indigo-200 border-t-indigo-600 rounded-full animate-spin" />
+      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '80px 0' }}>
+        <div style={{ width: 40, height: 40, border: '4px solid #E0E7FF',
+          borderTopColor: '#4F46E5', borderRadius: '50%', animation: 'spin 1s linear infinite' }} />
       </div>
     </AppShell>
   )
 
   return (
     <AppShell>
-      <PageHeader
-        title="My Narratives"
-        subtitle={`${counts.all} total submission${counts.all!==1?'s':''}`}
-        backHref="/dashboard" backLabel="Dashboard"
-        shareOptions={{ title: 'Work Immersion Portal', text: 'Track your daily work immersion narratives.' }}
-        action={
-          <Button size="sm" onClick={()=>router.push('/narratives/create')}>
-            <svg className="w-4 h-4 mr-1.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4"/>
+      {/* Header row */}
+      <div style={{ marginBottom: 24 }}>
+        <button onClick={() => router.push('/dashboard')} style={{
+          display: 'flex', alignItems: 'center', gap: 6,
+          fontSize: 13, color: '#6B7280', background: 'none',
+          border: 'none', cursor: 'pointer', marginBottom: 8, padding: 0, fontFamily: 'inherit',
+        }}>
+          <svg style={{ width: 16, height: 16 }} fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
+          </svg>
+          Dashboard
+        </button>
+
+        <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', gap: 12 }}>
+          <div>
+            <h1 style={{ fontSize: 24, fontWeight: 800, color: '#111827', margin: 0 }}>My Narratives</h1>
+            <p style={{ fontSize: 13, color: '#9CA3AF', marginTop: 4 }}>
+              {counts.all} total submission{counts.all !== 1 ? 's' : ''}
+            </p>
+          </div>
+          <button
+            onClick={() => router.push('/narratives/create')}
+            style={{
+              display: 'flex', alignItems: 'center', gap: 6,
+              padding: '10px 18px', background: '#4F46E5', color: 'white',
+              border: 'none', borderRadius: 10, fontSize: 14, fontWeight: 600,
+              cursor: 'pointer', flexShrink: 0, fontFamily: 'inherit',
+            }}
+          >
+            <svg style={{ width: 16, height: 16 }} fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M12 4v16m8-8H4" />
             </svg>
-            New
-          </Button>
-        }
-      />
+            New Narrative
+          </button>
+        </div>
+      </div>
 
       {/* Filter tabs */}
-      <div className="flex gap-2 flex-wrap mb-5">
-        {(['all','submitted','draft'] as Filter[]).map(f=>(
-          <button key={f} onClick={()=>setFilter(f)}
-            className={`px-4 py-1.5 rounded-full text-sm font-medium transition-all ${
-              filter===f
-                ? 'bg-indigo-600 text-white shadow-sm'
-                : 'bg-white text-gray-600 border border-gray-200 hover:border-indigo-200 hover:text-indigo-600'
-            }`}>
-            {f.charAt(0).toUpperCase()+f.slice(1)} ({counts[f]})
+      <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap', marginBottom: 20 }}>
+        {(['all', 'submitted', 'draft'] as Filter[]).map(f => (
+          <button key={f} onClick={() => setFilter(f)} style={{
+            padding: '7px 16px', borderRadius: 999, fontSize: 13, fontWeight: 600,
+            border: filter === f ? 'none' : '1.5px solid #E5E7EB',
+            background: filter === f ? '#4F46E5' : 'white',
+            color: filter === f ? 'white' : '#6B7280',
+            cursor: 'pointer', fontFamily: 'inherit',
+          }}>
+            {f.charAt(0).toUpperCase() + f.slice(1)} ({counts[f]})
           </button>
         ))}
       </div>
 
+      {/* List */}
       {filtered.length === 0 ? (
-        <div className="bg-white rounded-2xl border border-gray-100 shadow-sm">
-          <div className="empty-state">
-            <div className="empty-state-icon">
-              <svg className="w-7 h-7" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5}
-                  d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/>
-              </svg>
-            </div>
-            <p className="font-medium text-gray-700 text-sm">
-              {filter==='draft' ? 'No drafts saved.' : filter==='submitted' ? 'No submitted narratives.' : 'No narratives yet.'}
-            </p>
-            <Button size="sm" onClick={()=>router.push('/narratives/create')}>Write Your First Narrative</Button>
+        <div style={{
+          background: 'white', borderRadius: 16, border: '1px solid #E5E7EB',
+          display: 'flex', flexDirection: 'column', alignItems: 'center',
+          justifyContent: 'center', padding: '64px 24px', gap: 16, textAlign: 'center',
+        }}>
+          <div style={{ width: 56, height: 56, background: '#F3F4F6', borderRadius: 14,
+            display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+            <svg style={{ width: 28, height: 28, color: '#9CA3AF' }} fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5}
+                d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+            </svg>
           </div>
+          <p style={{ fontSize: 15, fontWeight: 600, color: '#374151' }}>
+            {filter === 'draft' ? 'No drafts saved.' :
+             filter === 'submitted' ? 'No submitted narratives.' :
+             'No narratives yet.'}
+          </p>
+          <button onClick={() => router.push('/narratives/create')} style={{
+            padding: '10px 24px', background: '#4F46E5', color: 'white',
+            border: 'none', borderRadius: 10, fontSize: 14, fontWeight: 600,
+            cursor: 'pointer', fontFamily: 'inherit',
+          }}>
+            Write Your First Narrative
+          </button>
         </div>
       ) : (
-        <div className="space-y-3">
-          {filtered.map(n => (
-            <div key={n.id} className="bg-white rounded-2xl border border-gray-100 shadow-sm
-              hover:shadow-md hover:border-indigo-100 transition-all p-5">
-              <div className="flex flex-col sm:flex-row sm:items-start gap-3">
-                <div className="flex-1 min-w-0">
-                  <div className="flex flex-wrap items-center gap-2 mb-2">
-                    <h3 className="font-semibold text-gray-900 text-sm truncate">{getTitle(n.content)}</h3>
-                    {n.isDraft
-                      ? <span className="badge bg-gray-100 text-gray-600">Draft</span>
-                      : <span className={`badge ${STATUS_STYLES[n.status]??'bg-gray-100 text-gray-600'}`}>
-                          {n.status==='revision_requested'?'Revision Needed'
-                            :n.status.charAt(0).toUpperCase()+n.status.slice(1)}
-                        </span>
-                    }
-                  </div>
-                  <div className="flex flex-wrap gap-3 text-xs text-gray-400">
-                    <span className="flex items-center gap-1">
-                      <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2}
-                          d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"/>
-                      </svg>
-                      {format(new Date(n.date),'MMM dd, yyyy')}
-                    </span>
-                    {n.submittedAt && (
-                      <span className="flex items-center gap-1">
-                        <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2}
-                            d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"/>
-                        </svg>
-                        {format(new Date(n.submittedAt),'MMM dd, h:mm a')}
+        <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
+          {filtered.map(n => {
+            const dateStr = new Date(n.date).toLocaleDateString('en-US', {
+              month: 'short', day: 'numeric', year: 'numeric',
+            })
+            const submitStr = n.submittedAt ? new Date(n.submittedAt).toLocaleDateString('en-US', {
+              month: 'short', day: 'numeric', hour: 'numeric', minute: '2-digit',
+            }) : null
+
+            return (
+              <div key={n.id} style={{
+                background: 'white', borderRadius: 16, border: '1px solid #E5E7EB',
+                padding: '18px 20px', boxSizing: 'border-box',
+              }}>
+                <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
+                  {/* Title + badge */}
+                  <div style={{ display: 'flex', flexWrap: 'wrap', alignItems: 'center', gap: 8 }}>
+                    <h3 style={{ fontWeight: 700, fontSize: 15, color: '#111827', margin: 0 }}>
+                      {getTitle(n.content)}
+                    </h3>
+                    {n.isDraft ? (
+                      <span style={{ fontSize: 11, fontWeight: 600, background: '#F3F4F6',
+                        color: '#6B7280', padding: '2px 10px', borderRadius: 999 }}>Draft</span>
+                    ) : (
+                      <span style={{
+                        fontSize: 11, fontWeight: 600, padding: '2px 10px', borderRadius: 999,
+                        background: STATUS_BG[n.status] ?? '#F3F4F6',
+                        color: STATUS_COLOR[n.status] ?? '#6B7280',
+                      }}>
+                        {STATUS_LABEL[n.status] ?? n.status}
                       </span>
                     )}
                   </div>
-                  <p className="text-xs text-gray-400 mt-2 line-clamp-2 leading-relaxed">
-                    {n.content.replace(/\*\*/g,'').slice(0,160)}...
+
+                  {/* Meta */}
+                  <div style={{ display: 'flex', flexWrap: 'wrap', gap: 16, fontSize: 12, color: '#9CA3AF' }}>
+                    <span>📅 {dateStr}</span>
+                    {submitStr && <span>⏰ Submitted {submitStr}</span>}
+                  </div>
+
+                  {/* Excerpt */}
+                  <p style={{ fontSize: 13, color: '#6B7280', lineHeight: 1.5, margin: 0,
+                    overflow: 'hidden', display: '-webkit-box',
+                    WebkitLineClamp: 2, WebkitBoxOrient: 'vertical' as const }}>
+                    {n.content.replace(/\*\*/g, '').slice(0, 200)}
                   </p>
-                </div>
-                <div className="flex gap-2 flex-shrink-0 self-end sm:self-start">
-                  <Button variant="outline" size="sm" onClick={()=>router.push(`/narratives/${n.id}`)}>View</Button>
-                  {n.isDraft && <Button size="sm" onClick={()=>router.push(`/narratives/${n.id}/edit`)}>Edit</Button>}
+
+                  {/* Actions */}
+                  <div style={{ display: 'flex', gap: 8 }}>
+                    <button onClick={() => router.push(`/narratives/${n.id}`)} style={{
+                      padding: '7px 16px', borderRadius: 8, fontSize: 13, fontWeight: 600,
+                      border: '1.5px solid #E5E7EB', background: 'white', color: '#374151',
+                      cursor: 'pointer', fontFamily: 'inherit',
+                    }}>
+                      View
+                    </button>
+                    {n.isDraft && (
+                      <button onClick={() => router.push(`/narratives/${n.id}/edit`)} style={{
+                        padding: '7px 16px', borderRadius: 8, fontSize: 13, fontWeight: 600,
+                        border: 'none', background: '#4F46E5', color: 'white',
+                        cursor: 'pointer', fontFamily: 'inherit',
+                      }}>
+                        Edit
+                      </button>
+                    )}
+                  </div>
                 </div>
               </div>
-            </div>
-          ))}
+            )
+          })}
         </div>
       )}
     </AppShell>
