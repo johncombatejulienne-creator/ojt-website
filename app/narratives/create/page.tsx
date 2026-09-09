@@ -2,181 +2,317 @@
 
 import { useState } from 'react'
 import { useRouter } from 'next/navigation'
+import { useSession } from 'next-auth/react'
 import { Button } from '@/components/ui/Button'
 import { Input } from '@/components/ui/Input'
 import AppShell from '@/components/AppShell'
 import PageHeader from '@/components/PageHeader'
+import VerificationCamera from '@/components/VerificationCamera'
 
 const MIN = 50
 
-function Field({ label, name, value, onChange, rows=4, placeholder, required, hint }: {
-  label:string; name:string; value:string
-  onChange:(e:React.ChangeEvent<HTMLTextAreaElement>)=>void
-  rows?:number; placeholder?:string; required?:boolean
+function Field({ label, name, value, onChange, rows = 4, placeholder, required, hint }: {
+  label: string; name: string; value: string
+  onChange: (e: React.ChangeEvent<HTMLTextAreaElement>) => void
+  rows?: number; placeholder?: string; required?: boolean
   hint?: React.ReactNode
 }) {
   return (
     <div>
-      <label htmlFor={name} className="block text-xs font-semibold text-gray-500 uppercase tracking-wider mb-1.5">
-        {label} {required&&<span className="text-red-500 normal-case tracking-normal">*</span>}
+      <label htmlFor={name} style={{
+        display: 'block', fontSize: 11, fontWeight: 700,
+        color: '#6B7280', textTransform: 'uppercase', letterSpacing: '0.07em', marginBottom: 6,
+      }}>
+        {label}{required && <span style={{ color: '#EF4444', marginLeft: 4 }}>*</span>}
       </label>
-      <textarea id={name} name={name} value={value} onChange={onChange} rows={rows}
+      <textarea
+        id={name} name={name} value={value} onChange={onChange} rows={rows}
         placeholder={placeholder}
-        className="w-full px-4 py-3 border border-gray-200 rounded-xl text-sm bg-white
-          focus:outline-none focus:ring-2 focus:ring-indigo-300 focus:border-indigo-400
-          transition-all resize-y placeholder:text-gray-400" />
-      {hint && <div className="mt-1.5">{hint}</div>}
+        style={{
+          width: '100%', padding: '12px 16px', border: '1.5px solid #E5E7EB',
+          borderRadius: 12, fontSize: 14, background: 'white', resize: 'vertical',
+          outline: 'none', fontFamily: 'inherit', lineHeight: 1.6,
+          boxSizing: 'border-box', color: '#111827',
+          transition: 'border-color 0.15s',
+        }}
+        onFocus={e => { e.target.style.borderColor = '#6366F1' }}
+        onBlur={e => { e.target.style.borderColor = '#E5E7EB' }}
+      />
+      {hint}
     </div>
   )
 }
 
 export default function CreateNarrativePage() {
   const router = useRouter()
-  const [busy, setBusy]       = useState(false)
-  const [draft, setDraft]     = useState(false)
-  const [error, setError]     = useState('')
+  const { data: session } = useSession()
+
+  const [busy,    setBusy]    = useState(false)
+  const [draft,   setDraft]   = useState(false)
+  const [error,   setError]   = useState('')
   const [success, setSuccess] = useState('')
-  const [form, setForm]       = useState({
-    date: new Date().toISOString().split('T')[0],
-    activity:'', narrative:'', learnings:'',
-    skills:'', challenges:'', solutions:'', reflection:'',
+
+  // Camera state
+  const [showCamera, setShowCamera]       = useState(false)
+  const [verifyPhoto, setVerifyPhoto]     = useState<string | null>(null)
+
+  const [form, setForm] = useState({
+    date:        new Date().toISOString().split('T')[0],
+    activity:    '',
+    narrative:   '',
+    learnings:   '',
+    skills:      '',
+    challenges:  '',
+    solutions:   '',
+    reflection:  '',
   })
 
-  const handle = (e: React.ChangeEvent<HTMLInputElement|HTMLTextAreaElement>) => {
-    setForm(p=>({...p,[e.target.name]:e.target.value})); setError('')
+  const handle = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
+    setForm(p => ({ ...p, [e.target.name]: e.target.value }))
+    setError('')
+  }
+
+  const handleSubmitDraft = () => submit(true)
+
+  const handleSubmitFinal = () => {
+    // Require verification photo for final submission
+    if (!verifyPhoto) {
+      setShowCamera(true)
+      return
+    }
+    submit(false)
   }
 
   const submit = async (isDraft: boolean) => {
     setError(''); setSuccess('')
-    if(!isDraft && form.narrative.trim().length < MIN) {
+    if (!isDraft && form.narrative.trim().length < MIN) {
       setError(`Narrative needs at least ${MIN} characters.`); return
     }
     isDraft ? setDraft(true) : setBusy(true)
     try {
       const content = [
-        `**Activity:** ${form.activity||'Not specified'}`,
+        `**Activity:** ${form.activity || 'Not specified'}`,
         `\n**Narrative:**\n${form.narrative}`,
-        `\n**What I Learned:**\n${form.learnings||'Not specified'}`,
-        `\n**Skills Demonstrated:**\n${form.skills||'Not specified'}`,
-        `\n**Challenges:**\n${form.challenges||'Not specified'}`,
-        `\n**How I Handled It:**\n${form.solutions||'Not specified'}`,
-        `\n**Reflection:**\n${form.reflection||'Not specified'}`,
+        `\n**What I Learned:**\n${form.learnings || 'Not specified'}`,
+        `\n**Skills Demonstrated:**\n${form.skills || 'Not specified'}`,
+        `\n**Challenges:**\n${form.challenges || 'Not specified'}`,
+        `\n**How I Handled It:**\n${form.solutions || 'Not specified'}`,
+        `\n**Reflection:**\n${form.reflection || 'Not specified'}`,
       ].join('\n')
 
       const res = await fetch('/api/narratives', {
-        method:'POST', headers:{'Content-Type':'application/json'},
-        body: JSON.stringify({ date: new Date(form.date).toISOString(), content, isDraft }),
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          date:                 new Date(form.date).toISOString(),
+          content,
+          isDraft,
+          verificationPhotoUrl: isDraft ? undefined : verifyPhoto,
+        }),
       })
-      if(!res.ok){ const d=await res.json(); throw new Error(d.error) }
-      setSuccess(isDraft?'Draft saved!':'Narrative submitted!')
-      setTimeout(()=>router.push('/narratives'),1200)
-    } catch(e:unknown){ setError(e instanceof Error?e.message:'An error occurred') }
-    finally { setBusy(false); setDraft(false) }
+
+      if (!res.ok) {
+        const d = await res.json()
+        throw new Error(d.error ?? 'Submission failed')
+      }
+
+      setSuccess(isDraft ? 'Draft saved!' : 'Narrative submitted successfully!')
+      setTimeout(() => router.push('/narratives'), 1400)
+    } catch (e: unknown) {
+      setError(e instanceof Error ? e.message : 'An error occurred')
+    } finally {
+      setBusy(false); setDraft(false)
+    }
   }
 
   const chars = form.narrative.length
   const ready = chars >= MIN
 
+  const studentName = session?.user?.name ?? session?.user?.email?.split('@')[0] ?? 'Student'
+
   return (
     <AppShell>
+      {/* Verification Camera Modal */}
+      {showCamera && (
+        <VerificationCamera
+          studentName={studentName}
+          onCapture={photo => {
+            setVerifyPhoto(photo)
+            setShowCamera(false)
+            // Auto-submit after capturing
+            setTimeout(() => submit(false), 100)
+          }}
+          onCancel={() => setShowCamera(false)}
+        />
+      )}
+
       <PageHeader
         title="New Narrative Assessment"
         subtitle="Document your daily work immersion activities"
         backHref="/narratives" backLabel="Narratives"
       />
 
-      <div className="max-w-3xl space-y-5">
+      <div style={{ maxWidth: 720 }}>
+
         {/* Alerts */}
         {error && (
-          <div className="flex items-start gap-3 p-4 bg-red-50 border border-red-200 rounded-xl
-            text-sm text-red-700 animate-fade-in">
-            <svg className="w-5 h-5 flex-shrink-0 mt-0.5 text-red-500" fill="currentColor" viewBox="0 0 20 20">
+          <div style={{
+            display: 'flex', gap: 12, padding: '14px 16px',
+            background: '#FEF2F2', border: '1px solid #FECACA',
+            borderRadius: 12, marginBottom: 16, color: '#DC2626', fontSize: 14,
+          }}>
+            <svg style={{ width: 18, height: 18, flexShrink: 0, marginTop: 1 }} fill="currentColor" viewBox="0 0 20 20">
               <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z" clipRule="evenodd"/>
             </svg>
             {error}
           </div>
         )}
         {success && (
-          <div className="flex items-start gap-3 p-4 bg-emerald-50 border border-emerald-200 rounded-xl
-            text-sm text-emerald-700 animate-fade-in">
-            <svg className="w-5 h-5 flex-shrink-0 mt-0.5 text-emerald-500" fill="currentColor" viewBox="0 0 20 20">
+          <div style={{
+            display: 'flex', gap: 12, padding: '14px 16px',
+            background: '#ECFDF5', border: '1px solid #A7F3D0',
+            borderRadius: 12, marginBottom: 16, color: '#065F46', fontSize: 14,
+          }}>
+            <svg style={{ width: 18, height: 18, flexShrink: 0, marginTop: 1 }} fill="currentColor" viewBox="0 0 20 20">
               <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd"/>
             </svg>
             {success}
           </div>
         )}
 
-        {/* Form card */}
-        <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-6 space-y-5">
-          <div className="grid sm:grid-cols-2 gap-4">
-            <div className="max-w-xs">
-              <Input label="Date of Activity" type="date" name="date" value={form.date}
-                onChange={handle} max={new Date().toISOString().split('T')[0]} required />
+        {/* Verification photo preview */}
+        {verifyPhoto && (
+          <div style={{
+            background: '#ECFDF5', border: '1.5px solid #6EE7B7',
+            borderRadius: 14, padding: '12px 16px', marginBottom: 16,
+            display: 'flex', alignItems: 'center', gap: 12,
+          }}>
+            {/* eslint-disable-next-line @next/next/no-img-element */}
+            <img src={verifyPhoto} alt="Verification" style={{
+              width: 52, height: 52, borderRadius: 8, objectFit: 'cover', flexShrink: 0,
+            }} />
+            <div style={{ flex: 1 }}>
+              <p style={{ fontSize: 13, fontWeight: 700, color: '#065F46' }}>
+                Verification photo captured
+              </p>
+              <p style={{ fontSize: 11, color: '#6EE7B7', marginTop: 2 }}>
+                Your name and timestamp are stamped on the photo
+              </p>
             </div>
-            <Input label="Activity / Task Title" type="text" name="activity" value={form.activity}
-              onChange={handle} placeholder="e.g. Customer Service Training" maxLength={200} />
+            <button
+              onClick={() => setVerifyPhoto(null)}
+              style={{ fontSize: 11, color: '#6B7280', background: 'none', border: 'none', cursor: 'pointer' }}
+            >
+              Retake
+            </button>
+          </div>
+        )}
+
+        {/* Form */}
+        <div style={{
+          background: 'white', borderRadius: 16, border: '1px solid #E5E7EB',
+          boxShadow: '0 1px 4px rgba(0,0,0,0.06)', padding: 24,
+          display: 'flex', flexDirection: 'column', gap: 20,
+        }}>
+          {/* Date + Activity */}
+          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 16 }}>
+            <Input
+              label="Date of Activity" type="date" name="date" value={form.date}
+              onChange={handle} max={new Date().toISOString().split('T')[0]} required
+            />
+            <Input
+              label="Activity / Task Title" type="text" name="activity" value={form.activity}
+              onChange={handle} placeholder="e.g. Customer Service Training" maxLength={200}
+            />
           </div>
 
-          <Field label="Narrative Description" name="narrative" value={form.narrative}
+          <Field
+            label="Narrative Description" name="narrative" value={form.narrative}
             onChange={handle} rows={8} required
-            placeholder="Describe in detail what you did, tasks completed, and observations..."
+            placeholder="Describe in detail what you did, the tasks you completed, and your observations..."
             hint={
-              <div className="flex justify-between text-xs">
-                <span className={ready?'text-emerald-600 font-medium':'text-gray-400'}>
-                  {ready ? `Ready (${chars} chars)` : `${MIN-chars} more characters needed`}
+              <div style={{ display: 'flex', justifyContent: 'space-between', marginTop: 6 }}>
+                <span style={{
+                  fontSize: 11,
+                  color: ready ? '#059669' : '#9CA3AF',
+                  fontWeight: ready ? 600 : 400,
+                }}>
+                  {ready ? `Ready (${chars} chars)` : `${MIN - chars} more characters needed`}
                 </span>
-                <span className="text-gray-400">{chars}</span>
+                <span style={{ fontSize: 11, color: '#9CA3AF' }}>{chars}</span>
               </div>
             }
           />
+
           <Field label="What I Learned" name="learnings" value={form.learnings}
             onChange={handle} rows={3} placeholder="New knowledge or insights gained today..." />
           <Field label="Skills Demonstrated" name="skills" value={form.skills}
             onChange={handle} rows={3} placeholder="Skills you used or developed..." />
           <Field label="Challenges Encountered" name="challenges" value={form.challenges}
-            onChange={handle} rows={3} placeholder="Difficulties or obstacles faced..." />
+            onChange={handle} rows={3} placeholder="Difficulties or obstacles you faced..." />
           <Field label="How I Handled It" name="solutions" value={form.solutions}
-            onChange={handle} rows={3} placeholder="How you overcame challenges..." />
+            onChange={handle} rows={3} placeholder="How you overcame the challenges..." />
           <Field label="Personal Reflection" name="reflection" value={form.reflection}
             onChange={handle} rows={4} placeholder="Your thoughts and insights about today..." />
 
-          {/* Notice */}
-          <div className="flex gap-3 p-4 bg-indigo-50 border border-indigo-100 rounded-xl text-xs text-indigo-800">
-            <svg className="w-4 h-4 flex-shrink-0 mt-0.5 text-indigo-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/>
+          {/* Info box */}
+          <div style={{
+            display: 'flex', gap: 10, padding: '12px 14px',
+            background: '#EFF6FF', border: '1px solid #BFDBFE',
+            borderRadius: 10, fontSize: 12, color: '#1E40AF',
+          }}>
+            <svg style={{ width: 16, height: 16, flexShrink: 0, marginTop: 1 }} fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2}
+                d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/>
             </svg>
-            <ul className="space-y-0.5 list-disc list-inside leading-relaxed">
-              <li>Submission timestamp is recorded automatically</li>
+            <ul style={{ listStyle: 'disc inside', lineHeight: 1.7 }}>
+              <li>Submission date and time are automatically recorded</li>
+              <li><strong>Final submission requires a verification selfie</strong> with a date/time stamp</li>
               <li>Save as draft if you need to continue later</li>
               <li>Submitted narratives are reviewed by your supervisor</li>
             </ul>
           </div>
 
-          {/* Actions */}
-          <div className="flex flex-col sm:flex-row gap-3 pt-1">
-            <Button type="button" variant="outline" size="lg" className="flex-1"
-              isLoading={draft} disabled={busy} onClick={()=>submit(true)}>
+          {/* Action buttons */}
+          <div style={{ display: 'flex', gap: 12 }}>
+            <Button
+              type="button" variant="outline" size="lg"
+              style={{ flex: 1 }}
+              isLoading={draft} disabled={busy}
+              onClick={handleSubmitDraft}
+            >
               Save as Draft
             </Button>
-            <Button type="button" size="lg" className="flex-1"
-              isLoading={busy} disabled={draft||!ready} onClick={()=>submit(false)}>
-              Submit Narrative
+            <Button
+              type="button" size="lg"
+              style={{ flex: 1 }}
+              isLoading={busy} disabled={draft || !ready}
+              onClick={handleSubmitFinal}
+            >
+              {verifyPhoto ? 'Submit Narrative' : 'Take Verification Photo & Submit'}
             </Button>
           </div>
         </div>
 
         {/* Guidelines */}
-        <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-6">
-          <h3 className="font-semibold text-gray-900 mb-3 text-sm">Writing Guidelines</h3>
-          <ul className="space-y-1.5 text-sm text-gray-500">
-            {['Be specific and detailed about your activities',
+        <div style={{
+          background: 'white', borderRadius: 16, border: '1px solid #E5E7EB',
+          padding: 20, marginTop: 16,
+        }}>
+          <p style={{ fontWeight: 700, fontSize: 14, color: '#111827', marginBottom: 12 }}>
+            Writing Guidelines
+          </p>
+          <ul style={{ listStyle: 'none', padding: 0, margin: 0, display: 'flex', flexDirection: 'column', gap: 8 }}>
+            {[
+              'Be specific and detailed about your daily activities',
               'Use complete sentences and proper grammar',
               'Focus on what you learned and how you contributed',
-              'Reflect honestly and thoughtfully',
-              `Minimum ${MIN} characters for the narrative section`,
-            ].map(tip=>(
-              <li key={tip} className="flex gap-2">
-                <span className="text-indigo-400 flex-shrink-0 mt-0.5">&#8226;</span>
+              'Reflect honestly and thoughtfully on your experience',
+              `Minimum ${MIN} characters required for the narrative section`,
+              'A verification selfie with date/time stamp is required for final submission',
+            ].map(tip => (
+              <li key={tip} style={{ display: 'flex', gap: 8, fontSize: 13, color: '#6B7280' }}>
+                <span style={{ color: '#6366F1', flexShrink: 0 }}>&#8226;</span>
                 {tip}
               </li>
             ))}
