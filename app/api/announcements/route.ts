@@ -6,197 +6,139 @@ import { authOptions } from '@/lib/auth'
 export async function GET(request: NextRequest) {
   try {
     const session = await getServerSession(authOptions)
-    
-    if (!session || !session.user) {
+    if (!session?.user) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
     }
 
     const { searchParams } = new URL(request.url)
     const type = searchParams.get('type')
 
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    const where: any = { isActive: true }
+    // Teachers see ALL active announcements (all their own + others)
+    if (session.user.role === 'teacher') {
+      const where: Record<string, unknown> = { isActive: true }
+      if (type) where.type = type
 
-    // Students see announcements for their strand/section
+      const announcements = await prisma.announcement.findMany({
+        where,
+        include: {
+          teacher: { select: { name: true, email: true } },
+          strand:  { select: { name: true } },
+          section: { select: { name: true } },
+        },
+        orderBy: { publishedAt: 'desc' },
+        take: 100,
+      })
+      return NextResponse.json({ announcements })
+    }
+
+    // Students see announcements targeted at their strand/section/all
     if (session.user.role === 'student') {
       const student = await prisma.student.findUnique({
-        where: { email: session.user.email! },
+        where:  { email: session.user.email! },
         select: { strandId: true, sectionId: true },
       })
+      if (!student) return NextResponse.json({ error: 'Student not found' }, { status: 404 })
 
-      if (!student) {
-        return NextResponse.json({ error: 'Student not found' }, { status: 404 })
-      }
-
-      where.OR = [
-        { targetType: 'all' },
-        { targetType: 'strand', strandId: student.strandId },
-        { targetType: 'section', sectionId: student.sectionId },
-        { 
-          targetType: 'strand_section',
-          strandId: student.strandId,
-          sectionId: student.sectionId,
+      const announcements = await prisma.announcement.findMany({
+        where: {
+          isActive: true,
+          ...(type ? { type } : {}),
+          OR: [
+            { targetType: 'all' },
+            { targetType: 'strand',  strandId:  student.strandId  },
+            { targetType: 'section', sectionId: student.sectionId },
+            { targetType: 'strand_section',
+              strandId:  student.strandId,
+              sectionId: student.sectionId },
+          ],
         },
-      ]
-    } 
-    // Teachers see their own announcements
-    else if (session.user.role === 'teacher') {
-      const teacher = await prisma.teacher.findUnique({
-        where: { email: session.user.email! },
+        include: {
+          teacher: { select: { name: true, email: true } },
+          strand:  { select: { name: true } },
+          section: { select: { name: true } },
+        },
+        orderBy: { publishedAt: 'desc' },
+        take: 50,
       })
-
-      if (!teacher) {
-        return NextResponse.json({ error: 'Teacher not found' }, { status: 404 })
-      }
-
-      where.teacherId = teacher.id
+      return NextResponse.json({ announcements })
     }
 
-    if (type) {
-      where.type = type
-    }
-
-    // Filter by expiration date
-    where.OR.push({ expiresAt: null })
-    where.OR.push({ expiresAt: { gt: new Date() } })
-
-    const announcements = await prisma.announcement.findMany({
-      where,
-      include: {
-        teacher: {
-          select: {
-            name: true,
-            email: true,
-          },
-        },
-        strand: {
-          select: {
-            name: true,
-          },
-        },
-        section: {
-          select: {
-            name: true,
-          },
-        },
-      },
-      orderBy: { publishedAt: 'desc' },
-      take: 50,
-    })
-
-    return NextResponse.json({ announcements })
+    return NextResponse.json({ announcements: [] })
   } catch (error) {
-    console.error('Error fetching announcements:', error)
-    return NextResponse.json(
-      { error: 'Failed to fetch announcements' },
-      { status: 500 }
-    )
+    console.error('GET announcements error:', error)
+    return NextResponse.json({ error: 'Failed to fetch announcements' }, { status: 500 })
   }
 }
 
 export async function POST(request: NextRequest) {
   try {
     const session = await getServerSession(authOptions)
-    
-    if (!session || !session.user || session.user.role !== 'teacher') {
+    if (!session?.user || session.user.role !== 'teacher') {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
     }
 
-    const teacher = await prisma.teacher.findUnique({
-      where: { email: session.user.email! },
-    })
-
-    if (!teacher) {
-      return NextResponse.json({ error: 'Teacher not found' }, { status: 404 })
-    }
+    const teacher = await prisma.teacher.findUnique({ where: { email: session.user.email! } })
+    if (!teacher) return NextResponse.json({ error: 'Teacher not found' }, { status: 404 })
 
     const body = await request.json()
-    const {
-      title,
-      content,
-      type,
-      targetType,
-      strandId,
-      sectionId,
-      expiresAt,
-    } = body
+    const { title, content, type = 'reminder', targetType = 'all', strandId, sectionId, expiresAt } = body
 
-    if (!title || !content || !type || !targetType) {
-      return NextResponse.json(
-        { error: 'Title, content, type, and target type are required' },
-        { status: 400 }
-      )
-    }
-
-    // Validate target type
-    const validTargetTypes = ['all', 'strand', 'section', 'strand_section']
-    if (!validTargetTypes.includes(targetType)) {
-      return NextResponse.json(
-        { error: 'Invalid target type' },
-        { status: 400 }
-      )
-    }
-
-    // Validate required fields based on target type
-    if (targetType === 'strand' && !strandId) {
-      return NextResponse.json(
-        { error: 'Strand ID required for strand targeting' },
-        { status: 400 }
-      )
-    }
-
-    if (targetType === 'section' && !sectionId) {
-      return NextResponse.json(
-        { error: 'Section ID required for section targeting' },
-        { status: 400 }
-      )
-    }
-
-    if (targetType === 'strand_section' && (!strandId || !sectionId)) {
-      return NextResponse.json(
-        { error: 'Strand ID and Section ID required for strand_section targeting' },
-        { status: 400 }
-      )
-    }
+    if (!title?.trim()) return NextResponse.json({ error: 'Title is required' }, { status: 400 })
+    if (!content?.trim()) return NextResponse.json({ error: 'Content is required' }, { status: 400 })
 
     const announcement = await prisma.announcement.create({
       data: {
-        title,
-        content,
+        title:     title.trim(),
+        content:   content.trim(),
         type,
         targetType,
-        strandId: strandId || null,
+        strandId:  strandId  || null,
         sectionId: sectionId || null,
         teacherId: teacher.id,
         expiresAt: expiresAt ? new Date(expiresAt) : null,
       },
       include: {
-        strand: true,
-        section: true,
+        teacher: { select: { name: true, email: true } },
+        strand:  { select: { name: true } },
+        section: { select: { name: true } },
       },
     })
 
-    // Create audit log
     await prisma.auditLog.create({
       data: {
-        userId: teacher.id,
-        userType: 'teacher',
-        action: 'announcement_created',
+        userId:      teacher.id,
+        userType:    'teacher',
+        action:      'announcement_created',
         description: `Created announcement: ${title}`,
-        metadata: JSON.stringify({
-          announcementId: announcement.id,
-          targetType,
-          type,
-        }),
+        metadata:    JSON.stringify({ announcementId: announcement.id, targetType, type }),
       },
-    })
+    }).catch(() => {})
 
     return NextResponse.json({ success: true, announcement })
   } catch (error) {
-    console.error('Error creating announcement:', error)
-    return NextResponse.json(
-      { error: 'Failed to create announcement' },
-      { status: 500 }
-    )
+    console.error('POST announcement error:', error)
+    return NextResponse.json({ error: 'Failed to create announcement' }, { status: 500 })
+  }
+}
+
+export async function DELETE(request: NextRequest) {
+  try {
+    const session = await getServerSession(authOptions)
+    if (!session?.user || session.user.role !== 'teacher') {
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+    }
+
+    const { id } = await request.json()
+    if (!id) return NextResponse.json({ error: 'ID required' }, { status: 400 })
+
+    await prisma.announcement.update({
+      where: { id },
+      data:  { isActive: false },
+    })
+
+    return NextResponse.json({ success: true })
+  } catch (error) {
+    console.error('DELETE announcement error:', error)
+    return NextResponse.json({ error: 'Failed to delete announcement' }, { status: 500 })
   }
 }

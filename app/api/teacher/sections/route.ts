@@ -11,11 +11,27 @@ export async function GET() {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
     }
 
-    // ── All sections with their students ────────────────────────
+    // ── ALL students (regardless of section assignment) ──────────
+    const allStudents = await prisma.student.findMany({
+      select: {
+        id: true, studentId: true, name: true, email: true,
+        profilePicture: true, gradeLevel: true,
+        sectionId: true,
+        section: { select: { name: true } },
+        strand:  { select: { name: true } },
+        narratives: {
+          select: { id: true, status: true, submittedAt: true },
+          orderBy: { submittedAt: 'desc' },
+        },
+      },
+      orderBy: { name: 'asc' },
+    })
+
+    // ── Sections for filter tabs ─────────────────────────────────
     const sections = await prisma.section.findMany({
       where: { isActive: true },
       include: {
-        strand: { select: { id: true, name: true } },
+        strand:  { select: { id: true, name: true } },
         teacher: { select: { id: true, name: true, email: true } },
         students: {
           select: {
@@ -34,47 +50,27 @@ export async function GET() {
       orderBy: [{ strand: { name: 'asc' } }, { name: 'asc' }],
     })
 
-    // ── Students with no section assigned (unassigned) ───────────
-    const unassignedStudents = await prisma.student.findMany({
-      where: { sectionId: null },
-      select: {
-        id: true, studentId: true, name: true, email: true,
-        profilePicture: true, gradeLevel: true,
-        section: { select: { name: true } },
-        strand:  { select: { name: true } },
-        narratives: {
-          select: { id: true, status: true, submittedAt: true },
-          orderBy: { submittedAt: 'desc' },
-        },
-      },
-      orderBy: { name: 'asc' },
-    })
-
-    // Add unassigned as a virtual section so the dashboard shows them
+    // Add unassigned group if there are students without sections
+    const unassigned = allStudents.filter(s => !s.sectionId)
     const allSections = [
       ...sections,
-      ...(unassignedStudents.length > 0 ? [{
-        id:        'unassigned',
-        name:      'Unassigned',
-        gradeLevel: 0,
-        strandId:  null,
-        teacherId: null,
-        isActive:  true,
-        createdAt: new Date(),
-        updatedAt: new Date(),
-        strand:    { id: 'none', name: 'No Strand' },
-        teacher:   null,
-        students:  unassignedStudents,
+      ...(unassigned.length > 0 ? [{
+        id: 'unassigned', name: 'Unassigned', gradeLevel: 0,
+        strandId: null, teacherId: null, isActive: true,
+        createdAt: new Date(), updatedAt: new Date(),
+        strand: { id: 'none', name: 'No Strand' },
+        teacher: null,
+        students: unassigned,
       }] : []),
     ]
 
-    const totalStudents      = await prisma.student.count()
-    const pendingNarratives  = await prisma.narrative.count({ where: { status: 'pending' } })
+    const pendingNarratives = await prisma.narrative.count({ where: { status: 'pending' } })
 
     return NextResponse.json({
-      sections: allSections,
+      sections:    allSections,
+      allStudents, // flat list for "All Students" tab
       stats: {
-        totalStudents,
+        totalStudents:    allStudents.length,
         totalSections:    sections.length,
         pendingNarratives,
       },
