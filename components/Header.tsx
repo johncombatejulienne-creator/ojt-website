@@ -83,10 +83,13 @@ export default function Header({ strandCode }: { strandCode?: string }) {
   if (!session) return null
 
   const isTeacher    = session.user?.role === 'teacher'
-  const dashPath     = isTeacher ? '/teacher/dashboard' : '/dashboard'
+  // Use URL path as fallback in case session hasn't refreshed yet
+  const isOnTeacherPage    = typeof window !== 'undefined' && window.location.pathname.startsWith('/teacher')
+  const effectiveIsTeacher = isTeacher || isOnTeacherPage
+  const dashPath     = effectiveIsTeacher ? '/teacher/dashboard' : '/dashboard'
   const userName     = session.user?.name ?? session.user?.email?.split('@')[0] ?? 'User'
   const userEmail    = session.user?.email ?? ''
-  const userRole     = isTeacher ? 'Teacher' : 'Student'
+  const userRole     = effectiveIsTeacher ? 'Teacher' : 'Student'
   const profilePic   = session.user?.profilePicture
 
   // Strand accent colour for the header bar
@@ -215,7 +218,7 @@ export default function Header({ strandCode }: { strandCode?: string }) {
                         }
                       />
 
-                      {!isTeacher && (
+                      {!effectiveIsTeacher && (
                         <NavItem
                           label="Edit Profile"
                           onClick={() => { setOpen(false); router.push('/profile/edit') }}

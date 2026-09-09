@@ -64,7 +64,7 @@ function StatCard({ label, value, icon, bg }: { label:string; value:number; icon
 
 /* ─── Page ───────────────────────────────────────────────── */
 export default function TeacherDashboard() {
-  const { data: session, status } = useSession()
+  const { data: session, status, update: updateSession } = useSession()
   const router  = useRouter()
   const [loading,  setLoading]        = useState(true)
   const [sections, setSections]       = useState<Section[]>([])
@@ -78,6 +78,16 @@ export default function TeacherDashboard() {
 
   const fetchData = async () => {
     try {
+      // Ensure this user has a Teacher record — creates one if missing
+      const promoteRes = await fetch('/api/auth/promote-to-teacher', { method: 'POST' })
+      if (promoteRes.ok) {
+        const data = await promoteRes.json()
+        // If we just promoted them, force a session refresh so the header updates
+        if (data.promoted) {
+          await updateSession()
+        }
+      }
+
       const res = await fetch('/api/teacher/sections')
       if (res.ok) {
         const { sections: data } = await res.json()
