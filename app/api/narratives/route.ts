@@ -148,14 +148,15 @@ export async function POST(request: NextRequest) {
         include: { photos: true },
       })
     } catch (createError) {
-      // If new columns don't exist in DB yet, create with only original columns
+      // If new columns don't exist in DB yet, create with only original required columns
       console.error('Full create failed, trying minimal:', createError)
       narrative = await prisma.narrative.create({
         data: {
-          studentId: student.id,
-          date:      narrativeDate,
+          studentId:      student.id,
+          date:           narrativeDate,
           content,
-          isDraft:   isDraft ?? false,
+          isDraft:        isDraft ?? false,
+          submissionTime, // required by schema
         },
         include: { photos: true },
       })
