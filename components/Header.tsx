@@ -71,8 +71,7 @@ export default function Header({ strandCode }: { strandCode?: string }) {
 
   if (!session) return null
 
-  const isTeacher = session.user?.role === 'teacher' ||
-    (typeof window !== 'undefined' && window.location.pathname.startsWith('/teacher'))
+  const isTeacher = session.user?.role === 'teacher'
   const dashPath  = isTeacher ? '/teacher/dashboard' : '/dashboard'
   const grad      = isTeacher
     ? STRAND_GRAD.TEACHER
@@ -91,10 +90,10 @@ export default function Header({ strandCode }: { strandCode?: string }) {
     { label: 'Profile',       path: '/profile/edit' },
   ]
   const teacherNav = [
-    { label: 'Dashboard',     path: '/teacher/dashboard' },
-    { label: 'Students',      path: '/teacher/dashboard' },
-    { label: 'Announcements', path: '/teacher/dashboard' },
-    { label: 'Teachers',      path: '/teacher/dashboard' },
+    { label: 'Dashboard',     path: '/teacher/dashboard', tab: '' },
+    { label: 'Students',      path: '/teacher/dashboard?tab=students',      tab: 'students' },
+    { label: 'Announcements', path: '/teacher/dashboard?tab=announcements', tab: 'announcements' },
+    { label: 'Teachers',      path: '/teacher/dashboard?tab=teachers',      tab: 'teachers' },
   ]
   const navItems = isTeacher ? teacherNav : studentNav
 
@@ -132,9 +131,19 @@ export default function Header({ strandCode }: { strandCode?: string }) {
             <nav style={{ display: 'flex', alignItems: 'center', gap: 4, flex: 1, overflow: 'hidden' }}
               className="header-nav">
               {navItems.map(item => (
-                <NavLink key={item.path + item.label} label={item.label} path={item.path}
-                  current={pathname === item.path}
-                  onClick={() => router.push(item.path)} />
+                <NavLink
+                  key={item.label}
+                  label={item.label}
+                  path={item.path}
+                  current={
+                    isTeacher
+                      ? (item as { tab?: string }).tab
+                        ? (typeof window !== 'undefined' && window.location.search.includes(`tab=${(item as { tab?: string }).tab}`))
+                        : pathname === '/teacher/dashboard' && !window.location.search.includes('tab=')
+                      : pathname === item.path
+                  }
+                  onClick={() => router.push(item.path)}
+                />
               ))}
             </nav>
 
@@ -223,8 +232,11 @@ export default function Header({ strandCode }: { strandCode?: string }) {
                       {/* Menu items */}
                       <div style={{ padding: '6px 0' }}>
                         {[
-                          { label: 'Dashboard',    path: dashPath,        icon: 'M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6' },
-                          ...(!isTeacher ? [{ label: 'Edit Profile', path: '/profile/edit', icon: 'M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z' }] : []),
+                          { label: 'Dashboard',    path: dashPath,           icon: 'M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6' },
+                          ...(isTeacher
+                            ? [{ label: 'Edit Profile', path: '/teacher/profile', icon: 'M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z' }]
+                            : [{ label: 'Edit Profile', path: '/profile/edit',    icon: 'M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z' }]
+                          ),
                         ].map(item => (
                           <button key={item.path + item.label}
                             onClick={() => { setMenuOpen(false); router.push(item.path) }}

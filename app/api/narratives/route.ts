@@ -105,17 +105,18 @@ export async function POST(request: NextRequest) {
 
     const submissionDate = new Date()
     const narrativeDate  = new Date(date)
+    // Fix UTC offset: parse date string as local date, not UTC midnight
+    const [year, month, day] = date.split('T')[0].split('-').map(Number)
+    const localDate = new Date(year, month - 1, day) // local midnight
+    const sameDay = submissionDate.toDateString() === localDate.toDateString()
+    const verificationStatus = sameDay ? 'on_time' : 'late'
 
-    // Build safe time string without locale-specific methods
     const h  = submissionDate.getHours()
     const m  = submissionDate.getMinutes()
     const s  = submissionDate.getSeconds()
     const ap = h >= 12 ? 'PM' : 'AM'
     const hh = ((h % 12) || 12).toString().padStart(2, '0')
     const submissionTime = `${hh}:${m.toString().padStart(2, '0')}:${s.toString().padStart(2, '0')} ${ap}`
-
-    const sameDay = submissionDate.toDateString() === narrativeDate.toDateString()
-    const verificationStatus = sameDay ? 'on_time' : 'late'
 
     const ua = request.headers.get('user-agent') ?? ''
     const deviceUsed = /mobile|android|iphone|ipad/i.test(ua) ? 'Mobile' : 'Desktop'

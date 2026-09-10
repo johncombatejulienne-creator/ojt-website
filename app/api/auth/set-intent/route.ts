@@ -11,7 +11,7 @@ export async function POST(request: NextRequest) {
 
   const response = NextResponse.json({ ok: true })
   response.cookies.set('signin_intent', validIntent, {
-    httpOnly: false,  // needs to be readable server-side in signIn callback
+    httpOnly: true,   // not needed by client JS; keep it server-only
     secure:   process.env.NODE_ENV === 'production',
     sameSite: 'lax',
     maxAge:   300,    // 5 minutes — only needed during OAuth flow

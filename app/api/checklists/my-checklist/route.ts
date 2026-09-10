@@ -31,13 +31,10 @@ export async function GET() {
       where: {
         isActive: true,
         OR: [
-          { targetType: 'strand', strandId: student.strandId },
-          { targetType: 'section', sectionId: student.sectionId },
-          {
-            targetType: 'strand_section',
-            strandId: student.strandId,
-            sectionId: student.sectionId,
-          },
+          { targetType: 'all' },
+          { targetType: 'strand',         strandId:  student.strandId  },
+          { targetType: 'section',        sectionId: student.sectionId },
+          { targetType: 'strand_section', strandId:  student.strandId, sectionId: student.sectionId },
         ],
       },
       include: {

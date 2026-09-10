@@ -6,7 +6,7 @@ import AppShell from '@/components/AppShell'
 
 interface Narrative {
   id: string; date: string; content: string
-  isDraft: boolean; submittedAt: string | null; status: string
+  isDraft: boolean; submissionDate: string | null; submittedAt: string | null; status: string
 }
 type Filter = 'all' | 'submitted' | 'draft'
 
@@ -153,9 +153,11 @@ export default function NarrativesPage() {
             const dateStr = new Date(n.date).toLocaleDateString('en-US', {
               month: 'short', day: 'numeric', year: 'numeric',
             })
-            const submitStr = n.submittedAt ? new Date(n.submittedAt).toLocaleDateString('en-US', {
-              month: 'short', day: 'numeric', hour: 'numeric', minute: '2-digit',
-            }) : null
+            const submitStr = (n.submissionDate ?? n.submittedAt)
+              ? new Date(n.submissionDate ?? n.submittedAt!).toLocaleDateString('en-US', {
+                  month: 'short', day: 'numeric', hour: 'numeric', minute: '2-digit',
+                })
+              : null
 
             return (
               <div key={n.id} style={{

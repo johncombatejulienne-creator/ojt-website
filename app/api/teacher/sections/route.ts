@@ -20,8 +20,8 @@ export async function GET() {
         section: { select: { name: true } },
         strand:  { select: { name: true } },
         narratives: {
-          select: { id: true, status: true, submittedAt: true },
-          orderBy: { submittedAt: 'desc' },
+          select: { id: true, status: true, submissionDate: true },
+          orderBy: { submissionDate: 'desc' },
         },
       },
       orderBy: { name: 'asc' },
@@ -37,11 +37,12 @@ export async function GET() {
           select: {
             id: true, studentId: true, name: true, email: true,
             profilePicture: true, gradeLevel: true,
+            sectionId: true,
             section: { select: { name: true } },
             strand:  { select: { name: true } },
             narratives: {
-              select: { id: true, status: true, submittedAt: true },
-              orderBy: { submittedAt: 'desc' },
+              select: { id: true, status: true, submissionDate: true },
+              orderBy: { submissionDate: 'desc' },
             },
           },
           orderBy: { name: 'asc' },

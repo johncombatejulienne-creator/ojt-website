@@ -242,7 +242,11 @@ export default function TeacherDashboard() {
 
   /* ── Filtered students ──────────────────────────────────── */
   const filteredStudents = students
-    .filter(s => sectionFilter === 'all' || s.section?.name === sectionFilter)
+    .filter(s => {
+      if (sectionFilter === 'all') return true
+      if (sectionFilter === 'Unassigned') return !s.section?.name
+      return s.section?.name === sectionFilter
+    })
     .filter(s => !search.trim() ||
       s.name.toLowerCase().includes(search.toLowerCase()) ||
       s.email.toLowerCase().includes(search.toLowerCase()) ||
