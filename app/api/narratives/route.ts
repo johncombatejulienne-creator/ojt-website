@@ -88,7 +88,15 @@ export async function POST(request: NextRequest) {
   try {
     const session = await getServerSession(authOptions)
     if (!session?.user || session.user.role !== 'student') {
-      return NextResponse.json({ error: 'Unauthorized — students only' }, { status: 401 })
+      // Also allow if email is in Student table (handles stale JWT edge case)
+      if (session?.user?.email) {
+        const s = await prisma.student.findUnique({
+          where: { email: session.user.email }, select: { id: true },
+        })
+        if (!s) return NextResponse.json({ error: 'Unauthorized — students only' }, { status: 401 })
+      } else {
+        return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+      }
     }
 
     const student = await prisma.student.findUnique({

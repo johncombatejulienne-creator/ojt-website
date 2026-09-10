@@ -114,24 +114,12 @@ export default function CreateNarrativePage() {
     if (!savedNarrativeId.current) { setStep('done'); return }
     setUploadingPic(true)
     try {
-      // Convert data URL to blob
-      const res = await fetch(photoDataUrl)
-      const blob = await res.blob()
-      const formData = new FormData()
-      formData.append('file', blob, `verification-${Date.now()}.jpg`)
-      formData.append('narrativeId', savedNarrativeId.current)
-
-      await fetch('/api/students/profile-picture', {
-        method: 'POST', body: formData,
-      }).catch(() => {}) // Non-critical
-
-      // Update narrative with verification photo via dedicated endpoint
       await fetch(`/api/narratives/${savedNarrativeId.current}/verification-photo`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ photoDataUrl }),
-      }).catch(() => {})
-    } catch { /* non-critical */ }
+      })
+    } catch { /* non-critical — narrative was already saved */ }
     finally {
       setUploadingPic(false)
       setStep('done')
