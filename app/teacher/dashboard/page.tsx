@@ -169,7 +169,7 @@ function ConfirmModal({ title, body, confirmLabel = 'Confirm', danger = false,
 type ActiveTab = 'students' | 'teachers' | 'announcements'
 
 export default function TeacherDashboard() {
-  const { data: session, status, update: updateSession } = useSession()
+  const { data: session, status } = useSession()
   const router = useRouter()
 
   const [loading,   setLoading]   = useState(true)
@@ -202,43 +202,54 @@ export default function TeacherDashboard() {
 
   /* ── Load all data ──────────────────────────────────────── */
   const loadData = useCallback(async () => {
+    setLoading(true)
     try {
-      // Auto-promote to teacher if needed
-      const promote = await fetch('/api/auth/promote-to-teacher', { method: 'POST' })
-      if (promote.ok) {
-        const d = await promote.json()
-        if (d.promoted) await updateSession()
-      }
-
+      // Fetch all three in parallel — each error is handled independently
       const [secRes, teachRes, annoRes] = await Promise.all([
-        fetch('/api/teacher/sections'),
-        fetch('/api/teacher/list'),
-        fetch('/api/announcements'),
+        fetch('/api/teacher/sections').catch(() => null),
+        fetch('/api/teacher/list').catch(() => null),
+        fetch('/api/announcements').catch(() => null),
       ])
 
-      if (secRes.ok) {
-        const d = await secRes.json()
-        setSections(d.sections ?? [])
-        setStudents((d.allStudents ?? []).sort((a: Student, b: Student) =>
-          a.name.localeCompare(b.name)))
+      if (secRes?.ok) {
+        try {
+          const d = await secRes.json()
+          setSections(d.sections ?? [])
+          setStudents((d.allStudents ?? []).sort((a: Student, b: Student) =>
+            a.name.localeCompare(b.name)))
+        } catch (e) { console.error('sections parse error', e) }
+      } else {
+        console.warn('sections API status:', secRes?.status)
       }
-      if (teachRes.ok) {
-        const d = await teachRes.json()
-        setTeachers(d.teachers ?? [])
+
+      if (teachRes?.ok) {
+        try {
+          const d = await teachRes.json()
+          setTeachers(d.teachers ?? [])
+        } catch (e) { console.error('teachers parse error', e) }
+      } else {
+        console.warn('teachers API status:', teachRes?.status)
       }
-      if (annoRes.ok) {
-        const d = await annoRes.json()
-        setAnnouncements(d.announcements ?? [])
+
+      if (annoRes?.ok) {
+        try {
+          const d = await annoRes.json()
+          setAnnouncements(d.announcements ?? [])
+        } catch (e) { console.error('announcements parse error', e) }
+      } else {
+        console.warn('announcements API status:', annoRes?.status)
       }
-    } catch (e) { console.error(e) }
-    finally { setLoading(false) }
-  }, [updateSession])
+    } catch (e) {
+      console.error('loadData error', e)
+    } finally {
+      setLoading(false)
+    }
+  }, [])
 
   useEffect(() => {
     if (status === 'unauthenticated') router.push('/login')
-    // eslint-disable-next-line react-hooks/set-state-in-effect
     else if (status === 'authenticated') void loadData()
-  }, [status]) // eslint-disable-line react-hooks/exhaustive-deps
+  }, [status, loadData]) // eslint-disable-line react-hooks/exhaustive-deps
 
   /* ── Filtered students ──────────────────────────────────── */
   const filteredStudents = students

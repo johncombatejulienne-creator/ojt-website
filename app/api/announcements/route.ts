@@ -3,9 +3,19 @@ import { prisma } from '@/lib/prisma'
 import { getServerSession } from 'next-auth'
 import { authOptions } from '@/lib/auth'
 
-// Always look up teacher by email — handles stale JWT
 async function findTeacher(email: string) {
   return prisma.teacher.findUnique({ where: { email } })
+}
+
+/* ─── Helpers ──────────────────────────────────────────────
+   We guard every query that touches optional columns
+   (isActive, publishedAt, expiresAt, updatedAt) so the API
+   works even if the Supabase table hasn't been migrated yet.
+──────────────────────────────────────────────────────────── */
+
+/** Try a Prisma call; on error return null so callers can fall back */
+async function tryQuery<T>(fn: () => Promise<T>): Promise<T | null> {
+  try { return await fn() } catch { return null }
 }
 
 export async function GET(request: NextRequest) {
@@ -18,57 +28,96 @@ export async function GET(request: NextRequest) {
     const { searchParams } = new URL(request.url)
     const type = searchParams.get('type')
 
-    // Check if this user is a teacher (by DB, not JWT role)
     const teacher = await findTeacher(session.user.email)
-    if (teacher) {
-      // Teachers see ALL active announcements
-      const where: Record<string, unknown> = { isActive: true }
-      if (type) where.type = type
 
-      const announcements = await prisma.announcement.findMany({
-        where,
-        include: {
-          teacher: { select: { name: true, email: true } },
-          strand:  { select: { name: true } },
-          section: { select: { name: true } },
-        },
-        orderBy: { publishedAt: 'desc' },
-        take: 100,
-      })
-      return NextResponse.json({ announcements })
+    if (teacher) {
+      // ── Teacher: try with isActive filter, fall back without it ──
+      const whereWithActive: Record<string, unknown> = { isActive: true }
+      if (type) whereWithActive.type = type
+
+      const whereBasic: Record<string, unknown> = {}
+      if (type) whereBasic.type = type
+
+      let announcements = await tryQuery(() =>
+        prisma.announcement.findMany({
+          where: whereWithActive,
+          include: {
+            teacher: { select: { name: true, email: true } },
+            strand:  { select: { name: true } },
+            section: { select: { name: true } },
+          },
+          orderBy: { createdAt: 'desc' },
+          take: 100,
+        })
+      )
+
+      // Fallback: no isActive / publishedAt columns yet
+      if (!announcements) {
+        announcements = await tryQuery(() =>
+          prisma.announcement.findMany({
+            where: whereBasic,
+            include: {
+              teacher: { select: { name: true, email: true } },
+              strand:  { select: { name: true } },
+              section: { select: { name: true } },
+            },
+            orderBy: { createdAt: 'desc' },
+            take: 100,
+          })
+        )
+      }
+
+      return NextResponse.json({ announcements: announcements ?? [] })
     }
 
-    // Student: filter by their strand/section
+    // ── Student ──────────────────────────────────────────────
     const student = await prisma.student.findUnique({
       where: { email: session.user.email },
       select: { strandId: true, sectionId: true },
     })
 
-    if (!student) {
-      // Neither teacher nor student found — return empty
-      return NextResponse.json({ announcements: [] })
+    if (!student) return NextResponse.json({ announcements: [] })
+
+    const studentWhere = {
+      OR: [
+        { targetType: 'all' },
+        { targetType: 'strand',         strandId:  student.strandId  },
+        { targetType: 'section',        sectionId: student.sectionId },
+        { targetType: 'strand_section', strandId:  student.strandId, sectionId: student.sectionId },
+      ],
+      ...(type ? { type } : {}),
     }
 
-    const announcements = await prisma.announcement.findMany({
-      where: {
-        isActive: true,
-        ...(type ? { type } : {}),
-        OR: [
-          { targetType: 'all' },
-          { targetType: 'strand',         strandId:  student.strandId  },
-          { targetType: 'section',        sectionId: student.sectionId },
-          { targetType: 'strand_section', strandId:  student.strandId, sectionId: student.sectionId },
-        ],
-      },
-      include: {
-        teacher: { select: { name: true, email: true } },
-        strand:  { select: { name: true } },
-        section: { select: { name: true } },
-      },
-      orderBy: { publishedAt: 'desc' },
-      take: 50,
-    })
-    return NextResponse.json({ announcements })
+    let announcements = await tryQuery(() =>
+      prisma.announcement.findMany({
+        where: { isActive: true, ...studentWhere },
+        include: {
+          teacher: { select: { name: true, email: true } },
+          strand:  { select: { name: true } },
+          section: { select: { name: true } },
+        },
+        orderBy: { createdAt: 'desc' },
+        take: 50,
+      })
+    )
+
+    // Fallback without isActive
+    if (!announcements) {
+      announcements = await tryQuery(() =>
+        prisma.announcement.findMany({
+          where: studentWhere,
+          include: {
+            teacher: { select: { name: true, email: true } },
+            strand:  { select: { name: true } },
+            section: { select: { name: true } },
+          },
+          orderBy: { createdAt: 'desc' },
+          take: 50,
+        })
+      )
+    }
+
+    return NextResponse.json({ announcements: announcements ?? [] })
   } catch (error) {
     console.error('GET announcements error:', error)
     return NextResponse.json({ error: 'Failed to fetch announcements' }, { status: 500 })
@@ -82,11 +131,10 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
     }
 
-    // Find teacher by email — works even with stale JWT
     const teacher = await findTeacher(session.user.email)
     if (!teacher) {
       return NextResponse.json({
-        error: 'Teacher account not found. Make sure you signed in via the Teacher tab.',
+        error: 'Teacher account not found. Sign in via the Teacher tab.',
       }, { status: 403 })
     }
 
@@ -96,24 +144,54 @@ export async function POST(request: NextRequest) {
     if (!title?.trim())   return NextResponse.json({ error: 'Title is required' },   { status: 400 })
     if (!content?.trim()) return NextResponse.json({ error: 'Content is required' }, { status: 400 })
 
-    const announcement = await prisma.announcement.create({
-      data: {
-        title:     title.trim(),
-        content:   content.trim(),
-        type,
-        targetType,
-        strandId:  strandId  || null,
-        sectionId: sectionId || null,
-        teacherId: teacher.id,
-        expiresAt: expiresAt ? new Date(expiresAt) : null,
-      },
-      include: {
-        teacher: { select: { name: true, email: true } },
-        strand:  { select: { name: true } },
-        section: { select: { name: true } },
-      },
-    })
+    // ── Attempt 1: full create with all optional columns ──
+    let announcement = await tryQuery(() =>
+      prisma.announcement.create({
+        data: {
+          title:     title.trim(),
+          content:   content.trim(),
+          type,
+          targetType,
+          strandId:  strandId  || null,
+          sectionId: sectionId || null,
+          teacherId: teacher.id,
+          isActive:  true,
+          expiresAt: expiresAt ? new Date(expiresAt) : null,
+        },
+        include: {
+          teacher: { select: { name: true, email: true } },
+          strand:  { select: { name: true } },
+          section: { select: { name: true } },
+        },
+      })
+    )
 
+    // ── Attempt 2: minimal create (no optional columns) ──
+    if (!announcement) {
+      console.warn('Full announcement create failed — trying minimal create')
+      announcement = await tryQuery(() =>
+        prisma.announcement.create({
+          data: {
+            title:     title.trim(),
+            content:   content.trim(),
+            type,
+            targetType,
+            teacherId: teacher.id,
+          },
+          include: {
+            teacher: { select: { name: true, email: true } },
+            strand:  { select: { name: true } },
+            section: { select: { name: true } },
+          },
+        })
+      )
+    }
+
+    if (!announcement) {
+      return NextResponse.json({ error: 'Failed to create announcement. Please run the Supabase SQL migration first.' }, { status: 500 })
+    }
+
+    // Audit log — non-critical
     await prisma.auditLog.create({
       data: {
         userId: teacher.id, userType: 'teacher', action: 'announcement_created',
@@ -125,7 +203,8 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({ success: true, announcement })
   } catch (error) {
     console.error('POST announcement error:', error)
-    return NextResponse.json({ error: 'Failed to create announcement' }, { status: 500 })
+    const detail = error instanceof Error ? error.message : 'Unknown error'
+    return NextResponse.json({ error: 'Failed to create announcement', detail }, { status: 500 })
   }
 }
 
@@ -142,7 +221,16 @@ export async function DELETE(request: NextRequest) {
     const { id } = await request.json()
     if (!id) return NextResponse.json({ error: 'ID required' }, { status: 400 })
 
-    await prisma.announcement.update({ where: { id }, data: { isActive: false } })
+    // ── Try soft-delete first (isActive = false) ──
+    const softDeleted = await tryQuery(() =>
+      prisma.announcement.update({ where: { id }, data: { isActive: false } })
+    )
+
+    // ── Fall back to hard delete if isActive column doesn't exist ──
+    if (!softDeleted) {
+      await prisma.announcement.delete({ where: { id } })
+    }
+
     return NextResponse.json({ success: true })
   } catch (error) {
     console.error('DELETE announcement error:', error)

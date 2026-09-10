@@ -148,6 +148,7 @@ export default function VerificationCamera({
       display: 'flex', alignItems: 'center', justifyContent: 'center',
       padding: 16,
     }}>
+      <style>{`@keyframes spin{to{transform:rotate(360deg)}}`}</style>
       <div style={{
         background: '#111827', borderRadius: 20, overflow: 'hidden',
         width: '100%', maxWidth: 520,
