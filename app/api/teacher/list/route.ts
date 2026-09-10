@@ -3,6 +3,22 @@ import { prisma } from '@/lib/prisma'
 import { getServerSession } from 'next-auth'
 import { authOptions } from '@/lib/auth'
 
+/** Find or auto-create a Teacher record for this email */
+async function ensureTeacher(email: string, name?: string | null, image?: string | null) {
+  const existing = await prisma.teacher.findUnique({ where: { email } })
+  if (existing) return existing
+  return prisma.teacher.create({
+    data: {
+      email,
+      name:           name ?? email.split('@')[0],
+      teacherId:      `TCH-${Date.now()}`,
+      role:           'teacher',
+      accessLevel:    'teacher',
+      profilePicture: image ?? null,
+    },
+  })
+}
+
 export async function GET() {
   try {
     const session = await getServerSession(authOptions)
@@ -10,14 +26,12 @@ export async function GET() {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
     }
 
-    // Check by DB not JWT role
-    const requester = await prisma.teacher.findUnique({
-      where: { email: session.user.email },
-      select: { id: true },
-    })
-    if (!requester) {
-      return NextResponse.json({ error: 'Teacher account not found' }, { status: 403 })
-    }
+    // Auto-create Teacher record if missing (handles first-time teacher sign-in)
+    const teacher = await ensureTeacher(
+      session.user.email,
+      session.user.name,
+      session.user.image ?? null,
+    )
 
     const teachers = await prisma.teacher.findMany({
       select: {
@@ -28,6 +42,9 @@ export async function GET() {
       },
       orderBy: { name: 'asc' },
     })
+
+    // Suppress unused variable warning
+    void teacher
 
     return NextResponse.json({ teachers })
   } catch (error) {

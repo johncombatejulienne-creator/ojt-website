@@ -3,6 +3,23 @@ import { prisma } from '@/lib/prisma'
 import { getServerSession } from 'next-auth'
 import { authOptions } from '@/lib/auth'
 
+/** Find or auto-create a Teacher record for this email */
+async function ensureTeacher(email: string, name?: string | null, image?: string | null) {
+  const existing = await prisma.teacher.findUnique({ where: { email }, select: { id: true } })
+  if (existing) return existing
+  return prisma.teacher.create({
+    data: {
+      email,
+      name:           name ?? email.split('@')[0],
+      teacherId:      `TCH-${Date.now()}`,
+      role:           'teacher',
+      accessLevel:    'teacher',
+      profilePicture: image ?? null,
+    },
+    select: { id: true },
+  })
+}
+
 export async function GET() {
   try {
     const session = await getServerSession(authOptions)
@@ -10,14 +27,8 @@ export async function GET() {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
     }
 
-    // Always check DB directly — never trust JWT role alone
-    const teacher = await prisma.teacher.findUnique({
-      where: { email: session.user.email },
-      select: { id: true },
-    })
-    if (!teacher) {
-      return NextResponse.json({ error: 'Teacher account not found' }, { status: 403 })
-    }
+    // Auto-create Teacher record if missing (first-time teacher sign-in)
+    await ensureTeacher(session.user.email, session.user.name, session.user.image ?? null)
 
     // ALL students — flat list regardless of section
     const allStudents = await prisma.student.findMany({
@@ -59,7 +70,7 @@ export async function GET() {
       orderBy: [{ strand: { name: 'asc' } }, { name: 'asc' }],
     })
 
-    // Add virtual "Unassigned" section for students with no section
+    // Virtual "Unassigned" section for students with no section
     const unassigned = allStudents.filter(s => !s.sectionId)
     const allSections = [
       ...sections,

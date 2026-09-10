@@ -81,21 +81,23 @@ export default function LoginPage() {
 
   useEffect(() => {
     if (status === 'authenticated' && session?.user) {
-      router.push(session.user.role === 'teacher' ? '/teacher/dashboard' : '/dashboard')
+      const role = session.user.role
+      // Only redirect once the role is resolved (not 'pending')
+      if (role === 'teacher') router.push('/teacher/dashboard')
+      else if (role === 'student') router.push('/dashboard')
+      // role === 'pending' means finalize hasn't run yet — stay on login
     }
   }, [status, session, router])
 
   const handleGoogleSignIn = async (asTeacher = false) => {
     setLoading(true); setError('')
     try {
-      await fetch('/api/auth/set-intent', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ intent: asTeacher ? 'teacher' : 'student' }),
-      })
-      await signOut({ redirect: false })
-      await new Promise(r => setTimeout(r, 200))
-      await signIn('google', { callbackUrl: asTeacher ? '/teacher/dashboard' : '/dashboard', redirect: true })
+      // Intent is embedded in the callbackUrl — 100% reliable, no cookie needed.
+      // After OAuth, Google redirects to /api/auth/finalize?intent=...
+      // which creates the DB record then redirects to the final destination.
+      const finalDest   = asTeacher ? '/teacher/dashboard' : '/dashboard'
+      const callbackUrl = `/api/auth/finalize?intent=${asTeacher ? 'teacher' : 'student'}&next=${encodeURIComponent(finalDest)}`
+      await signIn('google', { callbackUrl, redirect: true })
     } catch { setError('An error occurred. Please try again.'); setLoading(false) }
   }
 

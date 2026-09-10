@@ -3,7 +3,6 @@ import GoogleProvider from "next-auth/providers/google"
 import CredentialsProvider from "next-auth/providers/credentials"
 import { prisma } from "./prisma"
 import bcrypt from "bcryptjs"
-import { cookies } from "next/headers"
 
 export const authOptions: NextAuthOptions = {
   providers: [
@@ -36,65 +35,20 @@ export const authOptions: NextAuthOptions = {
   ],
 
   callbacks: {
-    async signIn({ user, account }) {
-      if (account?.provider !== "google") return true
-
-      try {
-        const email = user.email!
-
-        // Read the intent cookie set by the login page before Google redirect
-        const cookieStore = await cookies()
-        const intent = cookieStore.get("signin_intent")?.value ?? "student"
-        const isTeacher = intent === "teacher"
-
-        // Check existing records
-        const existingTeacher = await prisma.teacher.findUnique({ where: { email } })
-        const existingStudent = await prisma.student.findUnique({ where: { email } })
-
-        if (isTeacher) {
-          // TEACHER TAB: ensure Teacher record exists
-          if (!existingTeacher) {
-            await prisma.teacher.create({
-              data: {
-                email,
-                name:           existingStudent?.name ?? user.name ?? email.split("@")[0],
-                teacherId:      `TCH-${Date.now()}`,
-                role:           "teacher",
-                accessLevel:    "teacher",
-                profilePicture: existingStudent?.profilePicture ?? user.image ?? null,
-              },
-            })
-          } else if (!existingTeacher.profilePicture && user.image) {
-            await prisma.teacher.update({
-              where: { id: existingTeacher.id },
-              data:  { profilePicture: user.image },
-            })
-          }
-        } else {
-          // STUDENT TAB: always ensure Student record exists
-          // (even if they also have a Teacher record)
-          if (!existingStudent) {
-            await prisma.student.create({
-              data: {
-                email,
-                name:           user.name ?? email.split("@")[0],
-                studentId:      `STU-${Date.now()}`,
-                profilePicture: user.image ?? null,
-              },
-            })
-          } else if (!existingStudent.profilePicture && user.image) {
-            await prisma.student.update({
-              where: { id: existingStudent.id },
-              data:  { profilePicture: user.image },
-            })
-          }
-        }
-
-        return true
-      } catch (e) {
-        console.error("signIn error:", e)
-        return true
+    // signIn: just allow everyone through — record creation happens in /api/auth/finalize
+    async signIn({ user }) {
+      // Keep Google profile picture up to date
+      if (user?.email && user?.image) {
+        await prisma.teacher.updateMany({
+          where: { email: user.email, profilePicture: null },
+          data:  { profilePicture: user.image },
+        }).catch(() => {})
+        await prisma.student.updateMany({
+          where: { email: user.email, profilePicture: null },
+          data:  { profilePicture: user.image },
+        }).catch(() => {})
       }
+      return true
     },
 
     async jwt({ token, user, trigger, session }) {
@@ -107,7 +61,7 @@ export const authOptions: NextAuthOptions = {
       if (!email) return token
 
       try {
-        // Teacher always takes priority
+        // Teacher takes priority — if a Teacher record exists, they are a teacher
         const teacher = await prisma.teacher.findUnique({
           where:  { email },
           select: { id: true, teacherId: true, name: true, profilePicture: true },
@@ -138,7 +92,8 @@ export const authOptions: NextAuthOptions = {
           return token
         }
 
-        token.role = "student"
+        // No DB record yet — will be created by /api/auth/finalize
+        token.role = "pending"
       } catch (err) {
         console.error("jwt error:", err)
       }
@@ -148,7 +103,7 @@ export const authOptions: NextAuthOptions = {
 
     async session({ session, token }) {
       if (session.user) {
-        session.user.id             = (token.userId as string) ?? token.sub!
+        session.user.id             = (token.userId as string) ?? token.sub ?? ""
         session.user.role           = (token.role   as string) ?? "student"
         session.user.studentId      = token.studentId  as string | undefined
         session.user.teacherId      = token.teacherId  as string | undefined

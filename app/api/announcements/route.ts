@@ -3,21 +3,28 @@ import { prisma } from '@/lib/prisma'
 import { getServerSession } from 'next-auth'
 import { authOptions } from '@/lib/auth'
 
-async function findTeacher(email: string) {
-  return prisma.teacher.findUnique({ where: { email } })
+/** Find or auto-create Teacher record */
+async function ensureTeacher(email: string, name?: string | null, image?: string | null) {
+  const existing = await prisma.teacher.findUnique({ where: { email } })
+  if (existing) return existing
+  return prisma.teacher.create({
+    data: {
+      email,
+      name:           name ?? email.split('@')[0],
+      teacherId:      `TCH-${Date.now()}`,
+      role:           'teacher',
+      accessLevel:    'teacher',
+      profilePicture: image ?? null,
+    },
+  })
 }
 
-/* ─── Helpers ──────────────────────────────────────────────
-   We guard every query that touches optional columns
-   (isActive, publishedAt, expiresAt, updatedAt) so the API
-   works even if the Supabase table hasn't been migrated yet.
-──────────────────────────────────────────────────────────── */
-
-/** Try a Prisma call; on error return null so callers can fall back */
+/** Safely try a Prisma call; returns null on error (schema mismatch fallback) */
 async function tryQuery<T>(fn: () => Promise<T>): Promise<T | null> {
   try { return await fn() } catch { return null }
 }
 
+/* ─── GET ─────────────────────────────────────────────────── */
 export async function GET(request: NextRequest) {
   try {
     const session = await getServerSession(authOptions)
@@ -28,13 +35,14 @@ export async function GET(request: NextRequest) {
     const { searchParams } = new URL(request.url)
     const type = searchParams.get('type')
 
-    const teacher = await findTeacher(session.user.email)
+    // Check if teacher record exists (don't auto-create on GET — only reads)
+    const isTeacher = !!(await tryQuery(() =>
+      prisma.teacher.findUnique({ where: { email: session.user.email! }, select: { id: true } })
+    ))
 
-    if (teacher) {
-      // ── Teacher: try with isActive filter, fall back without it ──
+    if (isTeacher) {
       const whereWithActive: Record<string, unknown> = { isActive: true }
       if (type) whereWithActive.type = type
-
       const whereBasic: Record<string, unknown> = {}
       if (type) whereBasic.type = type
 
@@ -50,8 +58,6 @@ export async function GET(request: NextRequest) {
           take: 100,
         })
       )
-
-      // Fallback: no isActive / publishedAt columns yet
       if (!announcements) {
         announcements = await tryQuery(() =>
           prisma.announcement.findMany({
@@ -66,16 +72,14 @@ export async function GET(request: NextRequest) {
           })
         )
       }
-
       return NextResponse.json({ announcements: announcements ?? [] })
     }
 
-    // ── Student ──────────────────────────────────────────────
+    // ── Student ────────────────────────────────────────────
     const student = await prisma.student.findUnique({
       where: { email: session.user.email },
       select: { strandId: true, sectionId: true },
     })
-
     if (!student) return NextResponse.json({ announcements: [] })
 
     const studentWhere = {
@@ -100,8 +104,6 @@ export async function GET(request: NextRequest) {
         take: 50,
       })
     )
-
-    // Fallback without isActive
     if (!announcements) {
       announcements = await tryQuery(() =>
         prisma.announcement.findMany({
@@ -116,7 +118,6 @@ export async function GET(request: NextRequest) {
         })
       )
     }
-
     return NextResponse.json({ announcements: announcements ?? [] })
   } catch (error) {
     console.error('GET announcements error:', error)
@@ -124,6 +125,7 @@ export async function GET(request: NextRequest) {
   }
 }
 
+/* ─── POST ────────────────────────────────────────────────── */
 export async function POST(request: NextRequest) {
   try {
     const session = await getServerSession(authOptions)
@@ -131,12 +133,12 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
     }
 
-    const teacher = await findTeacher(session.user.email)
-    if (!teacher) {
-      return NextResponse.json({
-        error: 'Teacher account not found. Sign in via the Teacher tab.',
-      }, { status: 403 })
-    }
+    // Auto-create teacher if needed (they clicked "Teacher" tab and hit this endpoint)
+    const teacher = await ensureTeacher(
+      session.user.email,
+      session.user.name,
+      session.user.image ?? null,
+    )
 
     const body = await request.json()
     const { title, content, type = 'reminder', targetType = 'all', strandId, sectionId, expiresAt } = body
@@ -144,7 +146,7 @@ export async function POST(request: NextRequest) {
     if (!title?.trim())   return NextResponse.json({ error: 'Title is required' },   { status: 400 })
     if (!content?.trim()) return NextResponse.json({ error: 'Content is required' }, { status: 400 })
 
-    // ── Attempt 1: full create with all optional columns ──
+    // Attempt 1: full create with all columns
     let announcement = await tryQuery(() =>
       prisma.announcement.create({
         data: {
@@ -166,9 +168,9 @@ export async function POST(request: NextRequest) {
       })
     )
 
-    // ── Attempt 2: minimal create (no optional columns) ──
+    // Attempt 2: minimal create (no optional columns — pre-migration DB)
     if (!announcement) {
-      console.warn('Full announcement create failed — trying minimal create')
+      console.warn('Full announcement create failed — trying minimal')
       announcement = await tryQuery(() =>
         prisma.announcement.create({
           data: {
@@ -188,10 +190,11 @@ export async function POST(request: NextRequest) {
     }
 
     if (!announcement) {
-      return NextResponse.json({ error: 'Failed to create announcement. Please run the Supabase SQL migration first.' }, { status: 500 })
+      return NextResponse.json({
+        error: 'Failed to create announcement. Please run RUN_THIS_IN_SUPABASE.sql in your Supabase SQL editor first.',
+      }, { status: 500 })
     }
 
-    // Audit log — non-critical
     await prisma.auditLog.create({
       data: {
         userId: teacher.id, userType: 'teacher', action: 'announcement_created',
@@ -208,6 +211,7 @@ export async function POST(request: NextRequest) {
   }
 }
 
+/* ─── DELETE ──────────────────────────────────────────────── */
 export async function DELETE(request: NextRequest) {
   try {
     const session = await getServerSession(authOptions)
@@ -215,18 +219,16 @@ export async function DELETE(request: NextRequest) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
     }
 
-    const teacher = await findTeacher(session.user.email)
-    if (!teacher) return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
+    const teacher = await prisma.teacher.findUnique({ where: { email: session.user.email }, select: { id: true } })
+    if (!teacher) return NextResponse.json({ error: 'Forbidden — not a teacher account' }, { status: 403 })
 
     const { id } = await request.json()
     if (!id) return NextResponse.json({ error: 'ID required' }, { status: 400 })
 
-    // ── Try soft-delete first (isActive = false) ──
+    // Try soft-delete first (isActive=false), fall back to hard delete
     const softDeleted = await tryQuery(() =>
       prisma.announcement.update({ where: { id }, data: { isActive: false } })
     )
-
-    // ── Fall back to hard delete if isActive column doesn't exist ──
     if (!softDeleted) {
       await prisma.announcement.delete({ where: { id } })
     }

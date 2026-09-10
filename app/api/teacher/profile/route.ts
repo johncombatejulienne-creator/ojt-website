@@ -3,6 +3,22 @@ import { getServerSession } from 'next-auth'
 import { authOptions } from '@/lib/auth'
 import { prisma } from '@/lib/prisma'
 
+/** Find or auto-create Teacher record */
+async function ensureTeacher(email: string, name?: string | null, image?: string | null) {
+  const existing = await prisma.teacher.findUnique({ where: { email } })
+  if (existing) return existing
+  return prisma.teacher.create({
+    data: {
+      email,
+      name:           name ?? email.split('@')[0],
+      teacherId:      `TCH-${Date.now()}`,
+      role:           'teacher',
+      accessLevel:    'teacher',
+      profilePicture: image ?? null,
+    },
+  })
+}
+
 export async function GET() {
   try {
     const session = await getServerSession(authOptions)
@@ -10,9 +26,10 @@ export async function GET() {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
     }
 
-    // Find by email — works even if JWT still says "student"
-    const teacher = await prisma.teacher.findUnique({
-      where: { email: session.user.email },
+    const teacher = await ensureTeacher(session.user.email, session.user.name, session.user.image ?? null)
+
+    const full = await prisma.teacher.findUnique({
+      where: { id: teacher.id },
       select: {
         id: true, teacherId: true, name: true, email: true,
         profilePicture: true, role: true, accessLevel: true,
@@ -21,8 +38,7 @@ export async function GET() {
       },
     })
 
-    if (!teacher) return NextResponse.json({ error: 'Teacher not found' }, { status: 404 })
-    return NextResponse.json({ teacher })
+    return NextResponse.json({ teacher: full })
   } catch (error) {
     console.error('GET teacher profile error:', error)
     return NextResponse.json({ error: 'Failed to fetch profile' }, { status: 500 })
@@ -36,14 +52,7 @@ export async function PUT(request: NextRequest) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
     }
 
-    // Find by email — works even if JWT still says "student"
-    const teacher = await prisma.teacher.findUnique({
-      where: { email: session.user.email },
-      select: { id: true },
-    })
-    if (!teacher) {
-      return NextResponse.json({ error: 'Teacher record not found. Please sign in via the Teacher tab.' }, { status: 404 })
-    }
+    const teacher = await ensureTeacher(session.user.email, session.user.name, session.user.image ?? null)
 
     const body = await request.json()
     const { name } = body
@@ -52,7 +61,7 @@ export async function PUT(request: NextRequest) {
     }
 
     const updated = await prisma.teacher.update({
-      where: { email: session.user.email },
+      where: { id: teacher.id },
       data:  { name: name.trim() },
       select: { id: true, teacherId: true, name: true, email: true, profilePicture: true },
     })
