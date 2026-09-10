@@ -3,49 +3,48 @@ import { prisma } from '@/lib/prisma'
 import { getServerSession } from 'next-auth'
 import { authOptions } from '@/lib/auth'
 
+// Helper: find student by email regardless of JWT role
+async function getStudentByEmail(email: string) {
+  return prisma.student.findUnique({ where: { email }, select: { id: true, name: true, supervisorId: true } })
+}
+
+// Helper: find teacher by email regardless of JWT role
+async function getTeacherByEmail(email: string) {
+  return prisma.teacher.findUnique({ where: { email }, select: { id: true } }).catch(() => null)
+}
+
 export async function GET(request: NextRequest) {
   try {
     const session = await getServerSession(authOptions)
-    if (!session?.user) {
+    if (!session?.user?.email) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
     }
 
     const { searchParams } = new URL(request.url)
-    const wantsStats    = searchParams.get('stats') === 'true'
+    const wantsStats     = searchParams.get('stats') === 'true'
     const studentIdParam = searchParams.get('studentId')
-    const statusParam   = searchParams.get('status')
+    const statusParam    = searchParams.get('status')
     const page  = parseInt(searchParams.get('page')  || '1')
     const limit = parseInt(searchParams.get('limit') || '20')
     const skip  = (page - 1) * limit
 
     const where: Record<string, unknown> = {}
 
-    // Always try to scope by student email unless a specific studentId is requested
-    // This handles stale JWT where role may not be 'student' yet
-    if (studentIdParam && session.user.role === 'teacher') {
-      // Teacher requesting a specific student's narratives
-      where.studentId = studentIdParam
-    } else if (session.user.role === 'teacher' && !studentIdParam) {
-      // Teacher with no filter — return all (for teacher dashboard)
-      // where remains empty
-    } else {
-      // Student (or anyone else) — scope to their own narratives by email
-      const student = await prisma.student.findUnique({
-        where:  { email: session.user.email! },
-        select: { id: true },
-      })
-      if (!student) {
-        // Not found as student — check if teacher accidentally hit this endpoint
-        const teacher = await prisma.teacher.findUnique({
-          where: { email: session.user.email! }, select: { id: true },
-        }).catch(() => null)
-        if (teacher) {
-          // Teacher hitting student endpoint — return empty safely
-          return NextResponse.json({ narratives: [], pagination: { page, limit, total: 0, totalPages: 0 } })
-        }
-        return NextResponse.json({ error: 'Student not found' }, { status: 404 })
-      }
+    // Determine who is calling this endpoint
+    const student = await getStudentByEmail(session.user.email)
+    const isTeacher = !student || session.user.role === 'teacher'
+      ? await getTeacherByEmail(session.user.email).then(t => !!t)
+      : false
+
+    if (student) {
+      // Student: always scope to their own narratives
       where.studentId = student.id
+    } else if (isTeacher) {
+      // Teacher: optionally filter by specific student
+      if (studentIdParam) where.studentId = studentIdParam
+      // else no filter — teacher sees all
+    } else {
+      return NextResponse.json({ error: 'Account not found. Please complete your profile.' }, { status: 404 })
     }
 
     if (statusParam) where.status = statusParam
@@ -60,14 +59,11 @@ export async function GET(request: NextRequest) {
 
         const [total, thisWeek, pending] = await Promise.all([
           prisma.narrative.count({ where: { ...where, isDraft: false } }),
-          prisma.narrative.count({
-            where: { ...where, isDraft: false, submissionDate: { gte: weekStart } },
-          }),
+          prisma.narrative.count({ where: { ...where, isDraft: false, submissionDate: { gte: weekStart } } }),
           prisma.narrative.count({ where: { ...where, isDraft: false, status: 'pending' } }),
         ])
         return NextResponse.json({ stats: { total, thisWeek, pending } })
       } catch {
-        // If new columns don't exist yet, return safe defaults
         const total = await prisma.narrative.count({ where: { ...where, isDraft: false } }).catch(() => 0)
         return NextResponse.json({ stats: { total, thisWeek: 0, pending: 0 } })
       }
@@ -79,10 +75,8 @@ export async function GET(request: NextRequest) {
         where,
         include: {
           student: { select: { name: true, studentId: true, email: true, company: true } },
-          photos: true,
-          reviews: {
-            include: { teacher: { select: { name: true, email: true } } },
-          },
+          photos:  true,
+          reviews: { include: { teacher: { select: { name: true, email: true } } } },
         },
         orderBy: { date: 'desc' },
         skip,
@@ -104,23 +98,17 @@ export async function GET(request: NextRequest) {
 export async function POST(request: NextRequest) {
   try {
     const session = await getServerSession(authOptions)
-    if (!session?.user || session.user.role !== 'student') {
-      // Also allow if email is in Student table (handles stale JWT edge case)
-      if (session?.user?.email) {
-        const s = await prisma.student.findUnique({
-          where: { email: session.user.email }, select: { id: true },
-        })
-        if (!s) return NextResponse.json({ error: 'Unauthorized — students only' }, { status: 401 })
-      } else {
-        return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
-      }
+    if (!session?.user?.email) {
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
     }
 
-    const student = await prisma.student.findUnique({
-      where:  { email: session.user.email! },
-      select: { id: true, name: true, supervisorId: true },
-    })
-    if (!student) return NextResponse.json({ error: 'Student not found' }, { status: 404 })
+    // Find student by email — works regardless of JWT role
+    const student = await getStudentByEmail(session.user.email)
+    if (!student) {
+      return NextResponse.json({
+        error: 'Student account not found. Make sure you signed in via the Student tab, not the Teacher tab.',
+      }, { status: 404 })
+    }
 
     const body = await request.json()
     const { date, content, isDraft, verificationPhotoUrl } = body
@@ -129,11 +117,9 @@ export async function POST(request: NextRequest) {
     if (!content) return NextResponse.json({ error: 'Content is required' }, { status: 400 })
 
     const submissionDate = new Date()
-    const narrativeDate  = new Date(date)
-    // Fix UTC offset: parse date string as local date, not UTC midnight
     const [year, month, day] = date.split('T')[0].split('-').map(Number)
-    const localDate = new Date(year, month - 1, day) // local midnight
-    const sameDay = submissionDate.toDateString() === localDate.toDateString()
+    const localDate = new Date(year, month - 1, day)
+    const sameDay   = submissionDate.toDateString() === localDate.toDateString()
     const verificationStatus = sameDay ? 'on_time' : 'late'
 
     const h  = submissionDate.getHours()
@@ -146,77 +132,51 @@ export async function POST(request: NextRequest) {
     const ua = request.headers.get('user-agent') ?? ''
     const deviceUsed = /mobile|android|iphone|ipad/i.test(ua) ? 'Mobile' : 'Desktop'
 
-    // Try with all optional fields first, fall back to minimal if schema is missing columns
     let narrative
     try {
       narrative = await prisma.narrative.create({
         data: {
-          studentId:          student.id,
-          date:               narrativeDate,
+          studentId: student.id,
+          date:      new Date(date),
           content,
-          isDraft:            isDraft ?? false,
-          status:             'pending',
+          isDraft:   isDraft ?? false,
+          status:    'pending',
           verificationStatus,
           submissionDate,
           submissionTime,
-          timezone:           'Asia/Manila',
+          timezone:  'Asia/Manila',
           deviceUsed,
           ...(verificationPhotoUrl && !isDraft ? {
-            photos: {
-              create: [{
-                url:        verificationPhotoUrl,
-                filename:   `verification-${Date.now()}.jpg`,
-                isVerified: true,
-              }],
-            },
+            photos: { create: [{ url: verificationPhotoUrl, filename: `verification-${Date.now()}.jpg`, isVerified: true }] },
           } : {}),
         },
         include: { photos: true },
       })
     } catch (createError) {
-      // If new columns don't exist in DB yet, create with only original required columns
       console.error('Full create failed, trying minimal:', createError)
       narrative = await prisma.narrative.create({
-        data: {
-          studentId:      student.id,
-          date:           narrativeDate,
-          content,
-          isDraft:        isDraft ?? false,
-          submissionTime, // required by schema
-        },
+        data: { studentId: student.id, date: new Date(date), content, isDraft: isDraft ?? false, submissionTime },
         include: { photos: true },
       })
     }
 
-    // Audit log (non-critical)
     await prisma.auditLog.create({
-      data: {
-        userId:      student.id,
-        userType:    'student',
-        action:      isDraft ? 'draft_saved' : 'narrative_submitted',
+      data: { userId: student.id, userType: 'student', action: isDraft ? 'draft_saved' : 'narrative_submitted',
         description: `Narrative ${isDraft ? 'draft' : 'submitted'} for ${date}`,
-        metadata:    JSON.stringify({ narrativeId: narrative.id }),
-      },
+        metadata: JSON.stringify({ narrativeId: narrative.id }) },
     }).catch(() => {})
 
-    // Notify supervisor (non-critical)
     if (!isDraft && student.supervisorId) {
       await prisma.notification.create({
-        data: {
-          userId:   student.supervisorId,
-          userType: 'teacher',
-          type:     verificationStatus === 'late' ? 'late_submission' : 'new_submission',
-          title:    'New Narrative Submitted',
-          message:  `${student.name} submitted a narrative`,
-          link:     `/teacher/narratives/${narrative.id}`,
-        },
+        data: { userId: student.supervisorId, userType: 'teacher', type: 'new_submission',
+          title: 'New Narrative Submitted', message: `${student.name} submitted a narrative`,
+          link: `/teacher/narratives/${narrative.id}` },
       }).catch(() => {})
     }
 
     return NextResponse.json({ success: true, narrative })
   } catch (error) {
     console.error('POST narrative error:', error)
-    const msg = error instanceof Error ? error.message : 'Unknown error'
-    return NextResponse.json({ error: 'Failed to create narrative', detail: msg }, { status: 500 })
+    return NextResponse.json({ error: 'Failed to create narrative', detail: error instanceof Error ? error.message : 'Unknown' }, { status: 500 })
   }
 }

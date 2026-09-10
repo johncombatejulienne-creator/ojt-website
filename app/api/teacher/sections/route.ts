@@ -10,22 +10,16 @@ export async function GET() {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
     }
 
-    // Allow if role is teacher OR if email exists in Teacher table
-    // This handles stale JWT tokens where role hasn't refreshed yet
-    let isTeacher = session.user.role === 'teacher'
-    if (!isTeacher) {
-      const teacherRecord = await prisma.teacher.findUnique({
-        where: { email: session.user.email },
-        select: { id: true },
-      })
-      isTeacher = !!teacherRecord
+    // Always check DB directly — never trust JWT role alone
+    const teacher = await prisma.teacher.findUnique({
+      where: { email: session.user.email },
+      select: { id: true },
+    })
+    if (!teacher) {
+      return NextResponse.json({ error: 'Teacher account not found' }, { status: 403 })
     }
 
-    if (!isTeacher) {
-      return NextResponse.json({ error: 'Unauthorized — teacher access only' }, { status: 401 })
-    }
-
-    // ALL students flat list
+    // ALL students — flat list regardless of section
     const allStudents = await prisma.student.findMany({
       select: {
         id: true, studentId: true, name: true, email: true,
@@ -33,8 +27,9 @@ export async function GET() {
         section: { select: { name: true } },
         strand:  { select: { name: true } },
         narratives: {
-          select: { id: true, status: true, submissionDate: true },
+          select: { id: true, status: true, submissionDate: true, isDraft: true },
           orderBy: { submissionDate: 'desc' },
+          take: 5,
         },
       },
       orderBy: { name: 'asc' },
@@ -53,8 +48,9 @@ export async function GET() {
             section: { select: { name: true } },
             strand:  { select: { name: true } },
             narratives: {
-              select: { id: true, status: true, submissionDate: true },
+              select: { id: true, status: true, submissionDate: true, isDraft: true },
               orderBy: { submissionDate: 'desc' },
+              take: 5,
             },
           },
           orderBy: { name: 'asc' },
@@ -63,6 +59,7 @@ export async function GET() {
       orderBy: [{ strand: { name: 'asc' } }, { name: 'asc' }],
     })
 
+    // Add virtual "Unassigned" section for students with no section
     const unassigned = allStudents.filter(s => !s.sectionId)
     const allSections = [
       ...sections,
@@ -78,11 +75,13 @@ export async function GET() {
 
     let pendingNarratives = 0
     try {
-      pendingNarratives = await prisma.narrative.count({ where: { status: 'pending', isDraft: false } })
-    } catch { /* status column may not exist */ }
+      pendingNarratives = await prisma.narrative.count({
+        where: { status: 'pending', isDraft: false },
+      })
+    } catch { /* column may not exist */ }
 
     return NextResponse.json({
-      sections: allSections,
+      sections:    allSections,
       allStudents,
       stats: {
         totalStudents:    allStudents.length,

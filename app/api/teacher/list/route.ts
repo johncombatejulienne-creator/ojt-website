@@ -10,18 +10,13 @@ export async function GET() {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
     }
 
-    // Allow if role is teacher OR if email exists in Teacher table
-    let isTeacher = session.user.role === 'teacher'
-    if (!isTeacher) {
-      const teacherRecord = await prisma.teacher.findUnique({
-        where: { email: session.user.email },
-        select: { id: true },
-      })
-      isTeacher = !!teacherRecord
-    }
-
-    if (!isTeacher) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+    // Check by DB not JWT role
+    const requester = await prisma.teacher.findUnique({
+      where: { email: session.user.email },
+      select: { id: true },
+    })
+    if (!requester) {
+      return NextResponse.json({ error: 'Teacher account not found' }, { status: 403 })
     }
 
     const teachers = await prisma.teacher.findMany({
