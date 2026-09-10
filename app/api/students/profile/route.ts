@@ -82,7 +82,10 @@ export async function PUT(request: NextRequest) {
 
     const updateData: Record<string, unknown> = {}
     if (name           !== undefined) updateData.name           = name
-    if (studentId      !== undefined) updateData.studentId      = studentId
+    // Only update studentId if it's a real value (not the auto-generated STU-timestamp placeholder)
+    if (studentId !== undefined && studentId.trim() && !studentId.startsWith('STU-')) {
+      updateData.studentId = studentId
+    }
     if (strandId       !== undefined) updateData.strandId       = strandId
     if (sectionId      !== undefined) updateData.sectionId      = sectionId
     if (company        !== undefined) updateData.company        = company
@@ -91,18 +94,29 @@ export async function PUT(request: NextRequest) {
     if (profilePicture !== undefined) updateData.profilePicture = profilePicture
     if (supervisorId   !== undefined) updateData.supervisorId   = supervisorId
 
-    const student = await prisma.student.update({
-      where: { email: session.user.email },
-      data:  updateData,
-      select: {
-        id: true, studentId: true, name: true, email: true,
-        profilePicture: true, company: true, course: true,
-        gradeLevel: true, strandId: true, sectionId: true, supervisorId: true,
-        strand:    { select: { id: true, name: true } },
-        section:   { select: { id: true, name: true, gradeLevel: true } },
-        supervisor:{ select: { id: true, name: true, email: true } },
-      },
-    })
+    // eslint-disable-next-line prefer-const
+    let student: { id: string; studentId: string; name: string; email: string; profilePicture: string | null; company: string | null; course: string | null; gradeLevel: number | null; strandId: string | null; sectionId: string | null; supervisorId: string | null; strand: { id: string; name: string } | null; section: { id: string; name: string; gradeLevel: number } | null; supervisor: { id: string; name: string; email: string } | null }
+    try {
+      student = await prisma.student.update({
+        where: { email: session.user.email },
+        data:  updateData,
+        select: {
+          id: true, studentId: true, name: true, email: true,
+          profilePicture: true, company: true, course: true,
+          gradeLevel: true, strandId: true, sectionId: true, supervisorId: true,
+          strand:    { select: { id: true, name: true } },
+          section:   { select: { id: true, name: true, gradeLevel: true } },
+          supervisor:{ select: { id: true, name: true, email: true } },
+        },
+      })
+    } catch (updateError: unknown) {
+      // Unique constraint on studentId — someone else already has that ID
+      const msg = updateError instanceof Error ? updateError.message : ''
+      if (msg.includes('Unique') || msg.includes('unique') || msg.includes('studentId')) {
+        return NextResponse.json({ error: 'That Student ID is already taken. Please use a different one.' }, { status: 400 })
+      }
+      throw updateError
+    }
 
     await prisma.auditLog.create({
       data: {
