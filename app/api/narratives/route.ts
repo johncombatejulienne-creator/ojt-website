@@ -31,16 +31,18 @@ export async function GET(request: NextRequest) {
     const where: Record<string, unknown> = {}
 
     const student = await getStudentByEmail(session.user.email)
-    const teacherRecord = !student ? await getTeacherByEmail(session.user.email) : null
-    const isTeacher = !!teacherRecord && !student
+    // Teacher check is INDEPENDENT — someone can have both records (signed in both tabs)
+    // Teacher always takes priority for viewing all narratives
+    const teacherRecord = await getTeacherByEmail(session.user.email)
+    const isTeacher = !!teacherRecord
 
-    if (student) {
-      // Student: always scope to their own narratives
-      where.studentId = student.id
-    } else if (isTeacher) {
+    if (isTeacher) {
       // Teacher: optionally filter by specific student
       if (studentIdParam) where.studentId = studentIdParam
       // else no filter — teacher sees all
+    } else if (student) {
+      // Student: always scope to their own narratives
+      where.studentId = student.id
     } else {
       // Neither found — could be a new account, return empty safely
       return NextResponse.json({ narratives: [], pagination: { page, limit, total: 0, totalPages: 0 } })

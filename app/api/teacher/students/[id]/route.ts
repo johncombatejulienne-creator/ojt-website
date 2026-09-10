@@ -3,10 +3,6 @@ import { getServerSession } from 'next-auth'
 import { authOptions } from '@/lib/auth'
 import { prisma } from '@/lib/prisma'
 
-/**
- * DELETE /api/teacher/students/[id]
- * Teacher permanently deletes a student account and all related records.
- */
 export async function DELETE(
   _req: NextRequest,
   { params }: { params: Promise<{ id: string }> }
@@ -17,13 +13,13 @@ export async function DELETE(
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
     }
 
-    // Check teacher by DB (handles stale JWT)
+    // Always check DB by email — never trust JWT role
     const teacher = await prisma.teacher.findUnique({
       where: { email: session.user.email },
       select: { id: true, name: true },
     })
     if (!teacher) {
-      return NextResponse.json({ error: 'Unauthorized — teacher access only' }, { status: 403 })
+      return NextResponse.json({ error: 'Teacher account required.' }, { status: 403 })
     }
 
     const { id } = await params

@@ -1,6 +1,6 @@
 ﻿'use client'
 
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { signOut, useSession } from 'next-auth/react'
 import { useRouter, usePathname } from 'next/navigation'
 import Image from 'next/image'
@@ -67,10 +67,17 @@ export default function Header({ strandCode, forceTeacher }: {
   forceTeacher?: boolean  // set to true on teacher pages to bypass stale session
 }) {
   const { data: session } = useSession()
-  const router   = useRouter()
-  const pathname = usePathname()
-  const [menuOpen, setMenuOpen] = useState(false)
-  const [mobileNav, setMobileNav] = useState(false)
+  const router      = useRouter()
+  const pathname    = usePathname()
+  const [menuOpen,   setMenuOpen]   = useState(false)
+  const [mobileNav,  setMobileNav]  = useState(false)
+  const [activeTab,  setActiveTab]  = useState('')
+
+  // Read ?tab= from URL safely on client only (avoids SSR crash)
+  useEffect(() => {
+    const tab = new URLSearchParams(window.location.search).get('tab') ?? ''
+    setActiveTab(tab)
+  }, [pathname])
 
   if (!session) return null
 
@@ -144,8 +151,8 @@ export default function Header({ strandCode, forceTeacher }: {
                   current={
                     isTeacher
                       ? (item as { tab?: string }).tab
-                        ? (typeof window !== 'undefined' && window.location.search.includes(`tab=${(item as { tab?: string }).tab}`))
-                        : pathname === '/teacher/dashboard' && !window.location.search.includes('tab=')
+                        ? activeTab === (item as { tab?: string }).tab
+                        : pathname === '/teacher/dashboard' && !activeTab
                       : pathname === item.path
                   }
                   onClick={() => router.push(item.path)}

@@ -20,8 +20,8 @@ export async function GET(
           select: {
             id: true, name: true, studentId: true, email: true,
             company: true, gradeLevel: true,
-            strand:  { select: { name: true } },
-            section: { select: { name: true } },
+            strand:     { select: { name: true } },
+            section:    { select: { name: true } },
             supervisor: { select: { name: true } },
           },
         },
@@ -31,17 +31,18 @@ export async function GET(
     })
     if (!narrative) return NextResponse.json({ error: 'Narrative not found' }, { status: 404 })
 
-    // Students can only read their own
-    const student = await prisma.student.findUnique({
+    // Auth: teacher can see all; student can only see their own
+    const teacher = await prisma.teacher.findUnique({
       where: { email: session.user.email }, select: { id: true },
     }).catch(() => null)
 
-    if (student && narrative.studentId !== student.id) {
-      // Check if requester is a teacher (can see all)
-      const teacher = await prisma.teacher.findUnique({
+    if (!teacher) {
+      const student = await prisma.student.findUnique({
         where: { email: session.user.email }, select: { id: true },
       }).catch(() => null)
-      if (!teacher) return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
+      if (!student || narrative.studentId !== student.id) {
+        return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
+      }
     }
 
     return NextResponse.json({ narrative })
@@ -51,11 +52,7 @@ export async function GET(
   }
 }
 
-/**
- * DELETE /api/narratives/[id]
- * Only the student who owns the narrative can delete it.
- * Cascade deletes all photos and reviews via Prisma onDelete: Cascade.
- */
+/** DELETE /api/narratives/[id] — student deletes own narrative; teacher can also delete */
 export async function DELETE(
   _req: NextRequest,
   { params }: { params: Promise<{ id: string }> }
@@ -66,42 +63,45 @@ export async function DELETE(
 
     const { id } = await params
 
-    // Find the narrative
     const narrative = await prisma.narrative.findUnique({
       where: { id },
       select: { studentId: true },
     })
     if (!narrative) return NextResponse.json({ error: 'Narrative not found' }, { status: 404 })
 
-    // Find student by email (not role — handles stale JWT)
-    const student = await prisma.student.findUnique({
-      where: { email: session.user.email },
-      select: { id: true },
-    })
-    if (!student) {
-      return NextResponse.json({
-        error: 'Student account not found for this email.',
-      }, { status: 403 })
-    }
-    if (narrative.studentId !== student.id) {
-      return NextResponse.json({ error: 'Forbidden — you can only delete your own narratives' }, { status: 403 })
+    // Teachers can delete any narrative
+    const teacher = await prisma.teacher.findUnique({
+      where: { email: session.user.email }, select: { id: true },
+    }).catch(() => null)
+
+    if (!teacher) {
+      // Must be the owning student
+      const student = await prisma.student.findUnique({
+        where: { email: session.user.email }, select: { id: true },
+      }).catch(() => null)
+
+      if (!student) {
+        return NextResponse.json({ error: 'Account not found. Please sign in again.' }, { status: 403 })
+      }
+      if (narrative.studentId !== student.id) {
+        return NextResponse.json({ error: 'Forbidden — you can only delete your own narratives.' }, { status: 403 })
+      }
     }
 
-    // Cascade delete — schema has onDelete: Cascade for Photo and NarrativeReview
-    // but we manually clean up PhotoMetadata first (no cascade from Photo → PhotoMetadata yet)
+    // Clean up PhotoMetadata first (no Prisma cascade for this)
     await prisma.photoMetadata.deleteMany({
       where: { photo: { narrativeId: id } },
     }).catch(() => {})
 
+    // Delete narrative (cascades to Photo, NarrativeReview via schema)
     await prisma.narrative.delete({ where: { id } })
 
-    // Audit log
     await prisma.auditLog.create({
       data: {
-        userId:      student.id,
-        userType:    'student',
+        userId:      (teacher?.id ?? narrative.studentId),
+        userType:    teacher ? 'teacher' : 'student',
         action:      'narrative_deleted',
-        description: `Student deleted narrative ${id}`,
+        description: `Narrative ${id} deleted`,
       },
     }).catch(() => {})
 

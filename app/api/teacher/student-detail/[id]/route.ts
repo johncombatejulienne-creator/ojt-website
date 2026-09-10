@@ -9,8 +9,17 @@ export async function GET(
 ) {
   try {
     const session = await getServerSession(authOptions)
-    if (!session?.user || session.user.role !== 'teacher') {
+    if (!session?.user?.email) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+    }
+
+    // Always check DB by email — never trust JWT role (can be stale or 'pending')
+    const teacher = await prisma.teacher.findUnique({
+      where: { email: session.user.email },
+      select: { id: true },
+    })
+    if (!teacher) {
+      return NextResponse.json({ error: 'Teacher access required' }, { status: 403 })
     }
 
     const { id } = await params
@@ -34,7 +43,6 @@ export async function GET(
     })
 
     if (!student) return NextResponse.json({ error: 'Student not found' }, { status: 404 })
-
     return NextResponse.json({ student })
   } catch (error) {
     console.error('student-detail error:', error)
