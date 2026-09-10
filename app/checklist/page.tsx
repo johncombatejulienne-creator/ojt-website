@@ -1,4 +1,4 @@
-'use client'
+﻿'use client'
 
 import { useEffect, useState } from 'react'
 import { useRouter } from 'next/navigation'
@@ -55,8 +55,8 @@ export default function ChecklistPage() {
   if (loading) return (
     <AppShell>
       <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '80px 0' }}>
-        <div style={{ width: 40, height: 40, border: '4px solid #E0E7FF',
-          borderTopColor: '#4F46E5', borderRadius: '50%', animation: 'spin 1s linear infinite' }} />
+        <div style={{ width: 40, height: 40, border: '4px solid #FFEDD5',
+          borderTopColor: '#F97316', borderRadius: '50%', animation: 'spin 1s linear infinite' }} />
       </div>
     </AppShell>
   )
@@ -96,7 +96,7 @@ export default function ChecklistPage() {
         <div style={{ display: 'flex', flexDirection: 'column', gap: 20 }}>
           {checklists.map(cl => {
             const pct = cl.stats.progressPercentage
-            const barColor = pct === 100 ? '#10B981' : pct >= 50 ? '#F59E0B' : '#4F46E5'
+            const barColor = pct === 100 ? '#10B981' : pct >= 50 ? '#F59E0B' : '#F97316'
             return (
               <div key={cl.id} style={{ background: 'white', borderRadius: 16, border: '1px solid #E5E7EB', overflow: 'hidden' }}>
                 {/* Header */}
@@ -107,7 +107,7 @@ export default function ChecklistPage() {
                       {cl.description && <p style={{ fontSize: 13, color: '#9CA3AF', marginTop: 4 }}>{cl.description}</p>}
                     </div>
                     <div style={{ textAlign: 'right', flexShrink: 0 }}>
-                      <p style={{ fontSize: 28, fontWeight: 900, color: '#4F46E5', lineHeight: 1, margin: 0 }}>{pct}%</p>
+                      <p style={{ fontSize: 28, fontWeight: 900, color: '#F97316', lineHeight: 1, margin: 0 }}>{pct}%</p>
                       <p style={{ fontSize: 12, color: '#9CA3AF', marginTop: 2 }}>
                         {cl.stats.completedItems}/{cl.stats.totalItems} done
                       </p>

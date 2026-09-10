@@ -1,115 +1,112 @@
-'use client'
+﻿'use client'
 
 import { useEffect, useState } from 'react'
 import { useSession } from 'next-auth/react'
 import { useRouter } from 'next/navigation'
 import Image from 'next/image'
-import { Button } from '@/components/ui/Button'
-import { ShareCard } from '@/components/ui/ShareButton'
 import AppShell from '@/components/AppShell'
 
 /* ─── Types ──────────────────────────────────────────────── */
 interface StudentData {
   id: string; name: string; studentId: string; email: string
   profilePicture?: string | null; company?: string; gradeLevel?: number
-  strand?: { id: string; name: string; code?: string }
+  strand?: { id: string; name: string }
   section?: { name: string }
   supervisor?: { name: string }
 }
 interface ChecklistStats { totalItems: number; completedItems: number; progressPercentage: number }
 interface NarrativeStats  { total: number; thisWeek: number; pending: number }
 
-/* ─── Strand themes ───────────────────────────────────────── */
-const THEMES: Record<string, { bg: string; tagline: string }> = {
-  STEM:  { bg: 'linear-gradient(135deg,#0EA5E9,#4F46E5)', tagline: 'Science, Technology, Engineering & Math' },
-  ABM:   { bg: 'linear-gradient(135deg,#059669,#0D9488)', tagline: 'Accountancy, Business & Management' },
-  HUMSS: { bg: 'linear-gradient(135deg,#7C3AED,#A855F7)', tagline: 'Humanities & Social Sciences' },
-  TVL:   { bg: 'linear-gradient(135deg,#EA580C,#D97706)', tagline: 'Technical-Vocational-Livelihood' },
-  DEFAULT:{ bg: 'linear-gradient(135deg,#4F46E5,#7C3AED)', tagline: 'Senior High School Work Immersion' },
+/* ─── Strand themes ──────────────────────────────────────── */
+const STRAND_THEME: Record<string, { grad: string; light: string; text: string }> = {
+  STEM:    { grad: 'linear-gradient(135deg,#F97316,#FBBF24)', light: '#EFF6FF', text: '#1E40AF' },
+  ABM:     { grad: 'linear-gradient(135deg,#D97706,#F59E0B)', light: '#ECFDF5', text: '#065F46' },
+  HUMSS:   { grad: 'linear-gradient(135deg,#B45309,#D97706)', light: '#F5F3FF', text: '#5B21B6' },
+  TVL:     { grad: 'linear-gradient(135deg,#EA580C,#F97316)', light: '#FFF7ED', text: '#9A3412' },
+  DEFAULT: { grad: 'linear-gradient(135deg,#F97316,#FBBF24)', light: '#FFF7ED', text: '#92400E' },
+}
+
+/* ─── Helpers ────────────────────────────────────────────── */
+function getGreeting() {
+  const h = new Date().getHours()
+  if (h < 12) return 'Good morning'
+  if (h < 17) return 'Good afternoon'
+  return 'Good evening'
 }
 
 /* ─── Avatar ─────────────────────────────────────────────── */
-function Avatar({ src, name, size = 56 }: { src?: string|null; name?: string|null; size?: number }) {
+function Avatar({ src, name, size = 56 }: { src?: string | null; name?: string | null; size?: number }) {
   const [err, setErr] = useState(false)
-  const initials = name ? name.split(' ').map(w=>w[0]).join('').toUpperCase().slice(0,2) : '?'
-  const base = {
-    width: size, height: size, borderRadius: '14px',
-    flexShrink: 0, border: '3px solid rgba(255,255,255,0.4)',
-    display: 'flex', alignItems: 'center', justifyContent: 'center',
-    fontWeight: 800, color: 'white', fontSize: Math.round(size * 0.34),
-  }
+  const initials = name ? name.split(' ').map(w => w[0]).join('').toUpperCase().slice(0, 2) : '?'
   if (src && !err) return (
-    <div style={{ ...base, overflow: 'hidden', background: 'transparent' }}>
-      <Image src={src} alt={name??'Profile'} width={size} height={size}
-        style={{ width:'100%', height:'100%', objectFit:'cover' }}
+    <div style={{ width: size, height: size, borderRadius: 14, overflow: 'hidden',
+      flexShrink: 0, border: '3px solid rgba(255,255,255,0.5)', boxShadow: '0 4px 12px rgba(0,0,0,0.15)' }}>
+      <Image src={src} alt={name ?? 'Profile'} width={size} height={size}
+        style={{ width: '100%', height: '100%', objectFit: 'cover' }}
         unoptimized={src.startsWith('data:')} onError={() => setErr(true)} />
     </div>
   )
   return (
-    <div style={{ ...base, background: 'rgba(255,255,255,0.25)' }}>{initials}</div>
+    <div style={{ width: size, height: size, borderRadius: 14, flexShrink: 0,
+      background: 'rgba(255,255,255,0.2)', border: '3px solid rgba(255,255,255,0.4)',
+      display: 'flex', alignItems: 'center', justifyContent: 'center',
+      color: 'white', fontWeight: 800, fontSize: Math.round(size * 0.34) }}>
+      {initials}
+    </div>
   )
 }
 
 /* ─── Stat Card ──────────────────────────────────────────── */
-function StatCard({ label, value, sub, bg }: {
-  label: string; value: string|number; sub?: string; bg: string
+function StatCard({ label, value, sub, icon, bg }: {
+  label: string; value: string | number; sub?: string; icon: React.ReactNode; bg: string
 }) {
   return (
-    <div style={{
-      background: bg,
-      borderRadius: 16,
-      padding: '16px 18px',
-      display: 'flex',
-      flexDirection: 'column',
-      gap: 4,
-      overflow: 'hidden',
-      minWidth: 0,
-      boxSizing: 'border-box',
-    }}>
-      <p style={{ color: 'rgba(255,255,255,0.8)', fontSize: 11, fontWeight: 700,
-        textTransform: 'uppercase', letterSpacing: '0.07em',
-        overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', lineHeight: 1.3 }}>
-        {label}
-      </p>
-      <p style={{ color: 'white', fontSize: 32, fontWeight: 900, lineHeight: 1 }}>{value}</p>
-      {sub && (
-        <p style={{ color: 'rgba(255,255,255,0.65)', fontSize: 11, marginTop: 2,
-          overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
-          {sub}
-        </p>
-      )}
+    <div style={{ background: bg, borderRadius: 18, padding: '20px 22px', color: 'white',
+      display: 'flex', flexDirection: 'column', gap: 12, overflow: 'hidden',
+      boxSizing: 'border-box', boxShadow: '0 4px 16px rgba(0,0,0,0.12)' }}>
+      <div style={{ width: 40, height: 40, background: 'rgba(255,255,255,0.18)', borderRadius: 10,
+        display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+        {icon}
+      </div>
+      <div>
+        <p style={{ fontSize: 11, fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.08em',
+          color: 'rgba(255,255,255,0.7)', margin: '0 0 4px', overflow: 'hidden',
+          textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{label}</p>
+        <p style={{ fontSize: 30, fontWeight: 900, color: 'white', lineHeight: 1, margin: 0 }}>{value}</p>
+        {sub && <p style={{ fontSize: 12, color: 'rgba(255,255,255,0.6)', margin: '4px 0 0' }}>{sub}</p>}
+      </div>
     </div>
   )
 }
 
 /* ─── Quick Action ───────────────────────────────────────── */
-function QuickAction({ label, desc, icon, onClick, primary }: {
-  label:string; desc:string; icon:React.ReactNode; onClick:()=>void; primary?:boolean
+function QuickAction({ label, desc, icon, onClick, accent }: {
+  label: string; desc: string; icon: React.ReactNode; onClick: () => void; accent?: string
 }) {
+  const [hov, setHov] = useState(false)
   return (
-    <button onClick={onClick} style={{
-      display: 'flex', flexDirection: 'column', gap: 12, padding: 18,
-      borderRadius: 16, border: `2px solid ${primary ? '#C7D2FE' : '#E5E7EB'}`,
-      background: primary ? '#EEF2FF' : 'white',
-      cursor: 'pointer', textAlign: 'left', width: '100%',
-      transition: 'all 0.15s ease', boxSizing: 'border-box',
-    }}
-      onMouseEnter={e => { (e.currentTarget as HTMLElement).style.boxShadow = '0 4px 12px rgba(0,0,0,0.1)' }}
-      onMouseLeave={e => { (e.currentTarget as HTMLElement).style.boxShadow = 'none' }}
-    >
-      <div style={{
-        width: 40, height: 40, borderRadius: 10, flexShrink: 0,
-        display: 'flex', alignItems: 'center', justifyContent: 'center',
-        background: primary ? '#4F46E5' : '#F3F4F6', color: primary ? 'white' : '#6B7280',
+    <button onClick={onClick}
+      onMouseEnter={() => setHov(true)} onMouseLeave={() => setHov(false)}
+      style={{
+        display: 'flex', flexDirection: 'column', gap: 12, padding: '20px',
+        borderRadius: 18, border: `2px solid ${hov ? (accent ?? '#F97316') + '40' : '#E5E7EB'}`,
+        background: hov ? (accent ?? '#F97316') + '08' : 'white',
+        cursor: 'pointer', textAlign: 'left', width: '100%',
+        transition: 'all 0.18s ease', fontFamily: 'inherit',
+        transform: hov ? 'translateY(-2px)' : 'none',
+        boxShadow: hov ? '0 8px 24px rgba(0,0,0,0.08)' : '0 1px 4px rgba(0,0,0,0.04)',
+        boxSizing: 'border-box',
       }}>
+      <div style={{ width: 44, height: 44, borderRadius: 12,
+        background: hov ? (accent ?? '#F97316') : '#F3F4F6',
+        display: 'flex', alignItems: 'center', justifyContent: 'center',
+        color: hov ? 'white' : '#6B7280', transition: 'all 0.18s ease', flexShrink: 0 }}>
         {icon}
       </div>
       <div style={{ minWidth: 0 }}>
-        <p style={{ fontWeight: 600, fontSize: 13, color: primary ? '#3730A3' : '#111827',
-          lineHeight: 1.3, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
-          {label}
-        </p>
-        <p style={{ fontSize: 11, color: '#9CA3AF', marginTop: 3, lineHeight: 1.4 }}>{desc}</p>
+        <p style={{ fontWeight: 700, fontSize: 14, color: '#111827', margin: '0 0 3px',
+          overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{label}</p>
+        <p style={{ fontSize: 12, color: '#9CA3AF', margin: 0, lineHeight: 1.4 }}>{desc}</p>
       </div>
     </button>
   )
@@ -118,16 +115,12 @@ function QuickAction({ label, desc, icon, onClick, primary }: {
 /* ─── Info Pill ──────────────────────────────────────────── */
 function InfoPill({ label, value }: { label: string; value?: string }) {
   return (
-    <div style={{
-      background: 'white', border: '1px solid #E5E7EB',
-      borderRadius: 16, padding: '16px 20px', boxSizing: 'border-box',
-    }}>
-      <p style={{ fontSize: 11, fontWeight: 700, color: '#9CA3AF',
-        textTransform: 'uppercase', letterSpacing: '0.07em', marginBottom: 6 }}>
-        {label}
-      </p>
-      <p style={{ fontWeight: 600, fontSize: 14, color: value ? '#111827' : '#9CA3AF',
-        fontStyle: value ? 'normal' : 'italic',
+    <div style={{ background: 'white', border: '1px solid #E5E7EB', borderRadius: 14,
+      padding: '16px 20px', boxSizing: 'border-box', flex: 1, minWidth: 140 }}>
+      <p style={{ fontSize: 11, fontWeight: 700, color: '#9CA3AF', textTransform: 'uppercase',
+        letterSpacing: '0.07em', margin: '0 0 6px' }}>{label}</p>
+      <p style={{ fontSize: 14, fontWeight: 600, color: value ? '#111827' : '#D1D5DB',
+        fontStyle: value ? 'normal' : 'italic', margin: 0,
         overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
         {value || 'Not set'}
       </p>
@@ -135,15 +128,32 @@ function InfoPill({ label, value }: { label: string; value?: string }) {
   )
 }
 
+/* ─── Icons ──────────────────────────────────────────────── */
+const iconProps = { width: 22, height: 22, fill: 'none', stroke: 'currentColor', viewBox: '0 0 24 24' } as const
+
+const icons = {
+  narratives: <svg {...iconProps}><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/></svg>,
+  week:       <svg {...iconProps}><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"/></svg>,
+  pending:    <svg {...iconProps}><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>,
+  progress:   <svg {...iconProps}><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"/></svg>,
+  newNarr:    <svg {...iconProps}><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4"/></svg>,
+  myNarr:     <svg {...iconProps}><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/></svg>,
+  checklist:  <svg {...iconProps}><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-6 9l2 2 4-4"/></svg>,
+  announce:   <svg {...iconProps}><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9"/></svg>,
+  profile:    <svg {...iconProps}><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"/></svg>,
+  clock:      <svg {...iconProps}><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>,
+}
+
 /* ─── Page ───────────────────────────────────────────────── */
 export default function StudentDashboard() {
   const { data: session, status } = useSession()
   const router  = useRouter()
-  const [student,   setStudent]  = useState<StudentData | null>(null)
-  const [cl, setCl] = useState<ChecklistStats>({ totalItems:0, completedItems:0, progressPercentage:0 })
-  const [ns, setNs] = useState<NarrativeStats>({ total:0, thisWeek:0, pending:0 })
-  const [loading,   setLoading]  = useState(true)
-  const [needsReg,  setNeedsReg] = useState(false)
+
+  const [student,   setStudent]   = useState<StudentData | null>(null)
+  const [cl, setCl] = useState<ChecklistStats>({ totalItems: 0, completedItems: 0, progressPercentage: 0 })
+  const [ns, setNs] = useState<NarrativeStats>({ total: 0, thisWeek: 0, pending: 0 })
+  const [loading,   setLoading]   = useState(true)
+  const [needsReg,  setNeedsReg]  = useState(false)
 
   useEffect(() => {
     if (status === 'unauthenticated') router.push('/login')
@@ -177,200 +187,229 @@ export default function StudentDashboard() {
     load()
   }, [session])
 
+  /* Loading */
   if (loading || status === 'loading') return (
-    <div style={{ minHeight:'100vh', display:'flex', alignItems:'center', justifyContent:'center', background:'#F8FAFC' }}>
-      <div style={{ textAlign:'center' }}>
-        <div style={{ width:48, height:48, border:'4px solid #C7D2FE',
-          borderTopColor:'#4F46E5', borderRadius:'50%', animation:'spin 1s linear infinite', margin:'0 auto 12px' }} />
-        <p style={{ fontSize:14, color:'#6B7280' }}>Loading your dashboard...</p>
+    <div style={{ minHeight: '100vh', display: 'flex', flexDirection: 'column',
+      alignItems: 'center', justifyContent: 'center', background: '#F8FAFC', gap: 16 }}>
+      <div style={{ width: 52, height: 52, borderRadius: 14,
+        background: 'linear-gradient(135deg,#F97316,#8B5CF6)',
+        display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+        <span style={{ color: 'white', fontWeight: 900, fontSize: 18 }}>WI</span>
       </div>
+      <div style={{ width: 36, height: 36, border: '4px solid #E0E7FF',
+        borderTopColor: '#F97316', borderRadius: '50%', animation: 'spin 1s linear infinite' }} />
+      <p style={{ fontSize: 14, color: '#9CA3AF', margin: 0 }}>Loading your dashboard...</p>
+      <style>{`@keyframes spin { to { transform: rotate(360deg); } }`}</style>
     </div>
   )
 
+  /* Needs registration */
   if (needsReg) return (
     <AppShell>
-      <div style={{ minHeight:'70vh', display:'flex', alignItems:'center', justifyContent:'center' }}>
-        <div style={{ maxWidth:360, width:'100%', background:'white', borderRadius:24,
-          boxShadow:'0 20px 40px rgba(0,0,0,0.1)', padding:40, textAlign:'center' }}>
-          <div style={{ width:64, height:64, background:'#EEF2FF', borderRadius:16,
-            display:'flex', alignItems:'center', justifyContent:'center', margin:'0 auto 16px' }}>
-            <svg style={{ width:32, height:32, color:'#6366F1' }} fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"/>
+      <div style={{ minHeight: '70vh', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+        <div style={{ maxWidth: 380, width: '100%', background: 'white', borderRadius: 24,
+          boxShadow: '0 20px 60px rgba(0,0,0,0.1)', padding: 40, textAlign: 'center' }}>
+          <div style={{ width: 64, height: 64, background: '#FFF7ED', borderRadius: 18,
+            display: 'flex', alignItems: 'center', justifyContent: 'center', margin: '0 auto 20px' }}>
+            <svg style={{ width: 32, height: 32, color: '#F97316' }} fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2}
+                d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"/>
             </svg>
           </div>
-          <h2 style={{ fontSize:20, fontWeight:800, color:'#111827', marginBottom:8 }}>Complete Your Profile</h2>
-          <p style={{ fontSize:14, color:'#6B7280', marginBottom:24, lineHeight:1.6 }}>
-            Fill in your student details to unlock the full dashboard.
+          <h2 style={{ fontSize: 22, fontWeight: 800, color: '#111827', margin: '0 0 10px' }}>Complete Your Profile</h2>
+          <p style={{ fontSize: 14, color: '#6B7280', margin: '0 0 28px', lineHeight: 1.6 }}>
+            Fill in your student details to unlock the full Work Immersion dashboard.
           </p>
-          <Button onClick={() => router.push('/profile/complete')} fullWidth size="lg">
+          <button onClick={() => router.push('/profile/complete')} style={{
+            width: '100%', padding: '14px', background: '#F97316', color: 'white',
+            border: 'none', borderRadius: 12, fontSize: 15, fontWeight: 700,
+            cursor: 'pointer', fontFamily: 'inherit',
+          }}>
             Complete Profile
-          </Button>
+          </button>
         </div>
       </div>
     </AppShell>
   )
 
-  const strandKey  = student?.strand?.name?.toUpperCase().split(' ').find(w => ['STEM','ABM','HUMSS','TVL'].includes(w)) ?? 'DEFAULT'
-  const theme      = THEMES[strandKey] ?? THEMES.DEFAULT
-  const pct        = cl.progressPercentage
-  const barColor   = pct === 100 ? '#10B981' : pct >= 60 ? '#F59E0B' : '#4F46E5'
-  const statusLabel= pct === 100 ? 'Complete ✓' : pct >= 60 ? 'In Progress' : 'Getting Started'
-  const statusBg   = pct === 100 ? '#D1FAE5' : pct >= 60 ? '#FEF3C7' : '#EEF2FF'
-  const statusClr  = pct === 100 ? '#065F46' : pct >= 60 ? '#92400E' : '#3730A3'
-  const userName   = student?.name ?? session?.user?.name ?? 'Student'
+  const strandKey = student?.strand?.name?.toUpperCase().split(' ')
+    .find(w => ['STEM', 'ABM', 'HUMSS', 'TVL'].includes(w)) ?? 'DEFAULT'
+  const theme = STRAND_THEME[strandKey] ?? STRAND_THEME.DEFAULT
+  const pct   = cl.progressPercentage
+  const userName = student?.name ?? session?.user?.name ?? 'Student'
+  const firstName = userName.split(' ')[0]
+
+  const barColor = pct === 100 ? '#10B981' : pct >= 60 ? '#F59E0B' : '#F97316'
+  const statusLabel = pct === 100 ? 'Complete ✓' : pct >= 60 ? 'In Progress' : 'Getting Started'
+  const statusBg    = pct === 100 ? '#D1FAE5' : pct >= 60 ? '#FEF3C7' : '#FFF7ED'
+  const statusColor = pct === 100 ? '#065F46' : pct >= 60 ? '#92400E' : '#92400E'
 
   return (
     <AppShell strandCode={strandKey !== 'DEFAULT' ? strandKey : undefined}>
-      {/* All spacing is inline to guarantee rendering on all platforms */}
-      <div style={{ display:'flex', flexDirection:'column', gap:20 }}>
+      <div style={{ display: 'flex', flexDirection: 'column', gap: 24 }}>
 
         {/* ── Welcome Banner ──────────────────────────────── */}
         <div style={{
-          background: theme.bg,
-          borderRadius: 20,
-          padding: '20px 24px',
-          color: 'white',
-          position: 'relative',
-          overflow: 'hidden',
-          boxShadow: '0 4px 20px rgba(0,0,0,0.15)',
+          background: theme.grad, borderRadius: 24, padding: '28px 32px',
+          color: 'white', position: 'relative', overflow: 'hidden',
+          boxShadow: '0 8px 32px rgba(0,0,0,0.14)',
         }}>
-          <div style={{ display:'flex', alignItems:'flex-start', gap:16, position:'relative', zIndex:1,
-            flexWrap:'wrap' }}>
-            <Avatar src={student?.profilePicture ?? session?.user?.profilePicture} name={userName} size={54} />
-            <div style={{ flex:1, minWidth:0 }}>
-              <p style={{ fontSize:11, color:'rgba(255,255,255,0.7)', fontWeight:600,
-                textTransform:'uppercase', letterSpacing:'0.06em', marginBottom:2 }}>
-                Welcome back
-              </p>
-              <h1 style={{ fontSize:22, fontWeight:900, lineHeight:1.2, marginBottom:10,
-                overflow:'hidden', textOverflow:'ellipsis', whiteSpace:'nowrap', maxWidth:'100%' }}>
-                {userName.split(' ').slice(0,3).join(' ')}
-              </h1>
-              <div style={{ display:'flex', flexWrap:'wrap', gap:6 }}>
-                {student?.studentId && (
-                  <span style={{ background:'rgba(255,255,255,0.2)', fontSize:11, fontWeight:600,
-                    padding:'3px 10px', borderRadius:999, whiteSpace:'nowrap' }}>
-                    ID: {student.studentId}
-                  </span>
-                )}
-                {strandKey !== 'DEFAULT' && (
-                  <span style={{ background:'rgba(255,255,255,0.2)', fontSize:11, fontWeight:600,
-                    padding:'3px 10px', borderRadius:999 }}>
-                    {strandKey}
-                  </span>
-                )}
-                {student?.section?.name && (
-                  <span style={{ background:'rgba(255,255,255,0.2)', fontSize:11, fontWeight:600,
-                    padding:'3px 10px', borderRadius:999 }}>
-                    {student.section.name}
-                  </span>
-                )}
+          {/* Dot pattern */}
+          <div style={{ position: 'absolute', inset: 0, opacity: 0.08, pointerEvents: 'none',
+            backgroundImage: 'radial-gradient(circle, white 1px, transparent 1px)',
+            backgroundSize: '24px 24px' }} />
+
+          <div style={{ position: 'relative', display: 'flex', alignItems: 'flex-start',
+            justifyContent: 'space-between', gap: 20, flexWrap: 'wrap' }}>
+            <div style={{ display: 'flex', alignItems: 'flex-start', gap: 18, flex: 1, minWidth: 0 }}>
+              <Avatar src={student?.profilePicture ?? session?.user?.profilePicture} name={userName} size={60} />
+              <div style={{ minWidth: 0 }}>
+                <p style={{ fontSize: 13, color: 'rgba(255,255,255,0.7)', fontWeight: 500, margin: '0 0 4px' }}>
+                  {getGreeting()},
+                </p>
+                <h1 style={{ fontSize: 26, fontWeight: 900, color: 'white', lineHeight: 1.1,
+                  margin: '0 0 10px', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                  {firstName}!
+                </h1>
+                <p style={{ fontSize: 13, color: 'rgba(255,255,255,0.6)', margin: '0 0 12px' }}>
+                  {`Here's your Work Immersion progress.`}
+                </p>
+                <div style={{ display: 'flex', flexWrap: 'wrap', gap: 8 }}>
+                  {student?.studentId && (
+                    <span style={{ background: 'rgba(255,255,255,0.18)', color: 'white',
+                      fontSize: 11, fontWeight: 600, padding: '4px 10px', borderRadius: 999 }}>
+                      ID: {student.studentId}
+                    </span>
+                  )}
+                  {strandKey !== 'DEFAULT' && (
+                    <span style={{ background: 'rgba(255,255,255,0.18)', color: 'white',
+                      fontSize: 11, fontWeight: 600, padding: '4px 10px', borderRadius: 999 }}>
+                      {strandKey}
+                    </span>
+                  )}
+                  {student?.section?.name && (
+                    <span style={{ background: 'rgba(255,255,255,0.18)', color: 'white',
+                      fontSize: 11, fontWeight: 600, padding: '4px 10px', borderRadius: 999 }}>
+                      {student.section.name}
+                    </span>
+                  )}
+                </div>
               </div>
             </div>
-            <Button variant="outline" size="sm" onClick={() => router.push('/profile/edit')}
-              className="border-white/30 text-white hover:bg-white/10">
+
+            <button onClick={() => router.push('/profile/edit')} style={{
+              padding: '8px 18px', background: 'rgba(255,255,255,0.15)',
+              border: '1px solid rgba(255,255,255,0.3)', borderRadius: 10,
+              color: 'white', fontSize: 13, fontWeight: 600, cursor: 'pointer',
+              fontFamily: 'inherit', flexShrink: 0, transition: 'background 0.2s',
+            }}
+              onMouseEnter={e => { (e.currentTarget as HTMLElement).style.background = 'rgba(255,255,255,0.25)' }}
+              onMouseLeave={e => { (e.currentTarget as HTMLElement).style.background = 'rgba(255,255,255,0.15)' }}
+            >
               Edit Profile
-            </Button>
+            </button>
           </div>
-          {strandKey !== 'DEFAULT' && (
-            <p style={{ position:'relative', zIndex:1, marginTop:12,
-              fontSize:11, color:'rgba(255,255,255,0.55)' }}>
-              {theme.tagline}
-            </p>
-          )}
         </div>
 
-        {/* ── Stats ───────────────────────────────────────── */}
-        <div style={{
-          display: 'grid',
-          gridTemplateColumns: 'repeat(2, minmax(0, 1fr))',
-          gap: 12,
-          width: '100%',
-          boxSizing: 'border-box',
-        }}>
-          <StatCard label="Narratives"  value={ns.total}    sub="submitted"    bg="linear-gradient(135deg,#4F46E5,#6366F1)" />
-          <StatCard label="This Week"   value={ns.thisWeek} sub="narratives"   bg="linear-gradient(135deg,#7C3AED,#9333EA)" />
-          <StatCard label="Pending"     value={ns.pending}  sub="under review" bg="linear-gradient(135deg,#F59E0B,#EF4444)" />
-          <StatCard label="Progress"    value={`${pct}%`}   sub={`${cl.completedItems}/${cl.totalItems} items`} bg="linear-gradient(135deg,#10B981,#0D9488)" />
+        {/* ── Stats Grid ───────────────────────────────────── */}
+        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2, minmax(0,1fr))', gap: 14 }}>
+          <StatCard label="Narratives" value={ns.total} sub="submitted"
+            bg="linear-gradient(135deg,#F97316,#F97316)" icon={icons.narratives} />
+          <StatCard label="This Week" value={ns.thisWeek} sub="narratives"
+            bg="linear-gradient(135deg,#8B5CF6,#6D28D9)" icon={icons.week} />
+          <StatCard label="Pending Review" value={ns.pending} sub="under review"
+            bg="linear-gradient(135deg,#F59E0B,#D97706)" icon={icons.pending} />
+          <StatCard label="Requirements" value={`${pct}%`} sub={`${cl.completedItems}/${cl.totalItems} done`}
+            bg="linear-gradient(135deg,#10B981,#059669)" icon={icons.progress} />
         </div>
 
-        {/* ── Progress Bar ────────────────────────────────── */}
-        <div style={{ background:'white', borderRadius:16, border:'1px solid #E5E7EB', padding:'18px 20px', boxSizing:'border-box' }}>
-          <div style={{ display:'flex', alignItems:'flex-start', justifyContent:'space-between', gap:12, flexWrap:'wrap', marginBottom:12 }}>
+        {/* ── Progress Section ─────────────────────────────── */}
+        <div style={{ background: 'white', borderRadius: 20, border: '1px solid #E5E7EB',
+          boxShadow: '0 1px 8px rgba(0,0,0,0.05)', padding: '24px 28px', boxSizing: 'border-box' }}>
+          <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between',
+            gap: 12, flexWrap: 'wrap', marginBottom: 16 }}>
             <div>
-              <p style={{ fontWeight:700, fontSize:15, color:'#111827' }}>Overall Requirements Progress</p>
-              <p style={{ fontSize:13, color:'#9CA3AF', marginTop:2 }}>
-                {cl.completedItems} of {cl.totalItems} items completed
+              <h2 style={{ fontSize: 16, fontWeight: 800, color: '#111827', margin: '0 0 4px' }}>
+                Overall Requirements Progress
+              </h2>
+              <p style={{ fontSize: 13, color: '#9CA3AF', margin: 0 }}>
+                {cl.completedItems} of {cl.totalItems} checklist items completed
               </p>
             </div>
-            <span style={{ background:statusBg, color:statusClr, fontSize:12, fontWeight:700,
-              padding:'4px 12px', borderRadius:999, whiteSpace:'nowrap' }}>
+            <span style={{ background: statusBg, color: statusColor, fontSize: 12, fontWeight: 700,
+              padding: '5px 14px', borderRadius: 999, whiteSpace: 'nowrap' }}>
               {statusLabel}
             </span>
           </div>
-          <div style={{ width:'100%', height:8, background:'#E5E7EB', borderRadius:999, overflow:'hidden' }}>
-            <div style={{ height:'100%', width:`${pct}%`, background:barColor,
-              borderRadius:999, transition:'width 0.6s ease' }} />
+          {/* Progress bar */}
+          <div style={{ height: 10, background: '#F3F4F6', borderRadius: 999, overflow: 'hidden' }}>
+            <div style={{ height: '100%', width: `${pct}%`, background: barColor,
+              borderRadius: 999, transition: 'width 0.8s cubic-bezier(0.4,0,0.2,1)' }} />
+          </div>
+          {/* Mini milestones */}
+          <div style={{ display: 'flex', justifyContent: 'space-between', marginTop: 8 }}>
+            {[0, 25, 50, 75, 100].map(m => (
+              <span key={m} style={{ fontSize: 10, color: pct >= m ? '#F97316' : '#D1D5DB', fontWeight: 600 }}>
+                {m}%
+              </span>
+            ))}
           </div>
         </div>
 
-        {/* ── Quick Actions ────────────────────────────────── */}
+        {/* ── Quick Actions ─────────────────────────────────── */}
         <div>
-          <p style={{ fontWeight:700, fontSize:15, color:'#111827', marginBottom:12 }}>Quick Actions</p>
-          <div style={{ display:'grid', gridTemplateColumns:'repeat(2, minmax(0, 1fr))', gap:12 }}>
-            <QuickAction primary label="New Narrative" desc="Document today's activities"
-              onClick={() => router.push('/narratives/create')}
-              icon={<svg style={{width:20,height:20}} fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4"/></svg>}
-            />
+          <h2 style={{ fontSize: 16, fontWeight: 800, color: '#111827', margin: '0 0 14px' }}>
+            Quick Actions
+          </h2>
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2, minmax(0,1fr))', gap: 12 }}>
+            <QuickAction label="New Narrative" desc="Document today's activities"
+              accent="#F97316" onClick={() => router.push('/narratives/create')} icon={icons.newNarr} />
             <QuickAction label="My Narratives" desc="View all submissions"
-              onClick={() => router.push('/narratives')}
-              icon={<svg style={{width:20,height:20}} fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/></svg>}
-            />
+              accent="#8B5CF6" onClick={() => router.push('/narratives')} icon={icons.myNarr} />
             <QuickAction label="Requirements" desc="Track your checklist"
-              onClick={() => router.push('/checklist')}
-              icon={<svg style={{width:20,height:20}} fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-6 9l2 2 4-4"/></svg>}
-            />
+              accent="#10B981" onClick={() => router.push('/checklist')} icon={icons.checklist} />
             <QuickAction label="Announcements" desc="Latest from teachers"
-              onClick={() => router.push('/announcements')}
-              icon={<svg style={{width:20,height:20}} fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9"/></svg>}
-            />
+              accent="#F59E0B" onClick={() => router.push('/announcements')} icon={icons.announce} />
           </div>
         </div>
 
         {/* ── Info Row ─────────────────────────────────────── */}
-        <div style={{ display:'grid', gridTemplateColumns:'repeat(auto-fit, minmax(200px, 1fr))', gap:12 }}>
+        <div style={{ display: 'flex', flexWrap: 'wrap', gap: 12 }}>
           <InfoPill label="Company" value={student?.company} />
           <InfoPill label="Supervisor" value={student?.supervisor?.name} />
           <InfoPill label="Grade & Section"
             value={student?.gradeLevel && student?.section?.name
-              ? `Grade ${student.gradeLevel} — ${student.section.name}`
-              : undefined} />
+              ? `Grade ${student.gradeLevel} — ${student.section.name}` : undefined} />
         </div>
 
-        {/* ── Share ────────────────────────────────────────── */}
-        <ShareCard
-          title="Share the Work Immersion Portal"
-          description="Invite classmates or share the platform."
-          shareOptions={{ title: 'Work Immersion Portal', text: 'Track your work immersion journey.' }}
-        />
-
-        {/* ── Recent Activity ──────────────────────────────── */}
-        <div style={{ background:'white', borderRadius:16, border:'1px solid #E5E7EB', padding:'20px 24px', boxSizing:'border-box' }}>
-          <p style={{ fontWeight:700, fontSize:15, color:'#111827', marginBottom:16 }}>Recent Activity</p>
-          <div style={{ display:'flex', flexDirection:'column', alignItems:'center', justifyContent:'center',
-            padding:'32px 0', gap:12, textAlign:'center' }}>
-            <div style={{ width:48, height:48, background:'#F3F4F6', borderRadius:12,
-              display:'flex', alignItems:'center', justifyContent:'center' }}>
-              <svg style={{ width:24, height:24, color:'#9CA3AF' }} fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5}
-                  d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"/>
-              </svg>
+        {/* ── Recent Activity ───────────────────────────────── */}
+        <div style={{ background: 'white', borderRadius: 20, border: '1px solid #E5E7EB',
+          boxShadow: '0 1px 8px rgba(0,0,0,0.05)', padding: '24px 28px', boxSizing: 'border-box' }}>
+          <h2 style={{ fontSize: 16, fontWeight: 800, color: '#111827', margin: '0 0 20px' }}>
+            Recent Activity
+          </h2>
+          <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center',
+            justifyContent: 'center', padding: '32px 0', gap: 12, textAlign: 'center' }}>
+            <div style={{ width: 52, height: 52, background: '#F3F4F6', borderRadius: 14,
+              display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#9CA3AF' }}>
+              {icons.clock}
             </div>
-            <p style={{ fontSize:13, color:'#9CA3AF' }}>Your recent submissions will appear here</p>
+            <p style={{ fontSize: 14, color: '#9CA3AF', margin: 0 }}>
+              Your recent submissions will appear here
+            </p>
+            <button onClick={() => router.push('/narratives/create')} style={{
+              padding: '9px 22px', background: '#F97316', color: 'white',
+              border: 'none', borderRadius: 10, fontSize: 13, fontWeight: 600,
+              cursor: 'pointer', fontFamily: 'inherit',
+            }}>
+              Write Your First Narrative
+            </button>
           </div>
         </div>
 
       </div>
+
+      <style>{`@keyframes spin { to { transform: rotate(360deg); } }`}</style>
     </AppShell>
   )
 }

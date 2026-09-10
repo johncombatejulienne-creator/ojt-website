@@ -1,4 +1,4 @@
-'use client'
+﻿'use client'
 
 import { useState } from 'react'
 import { useRouter } from 'next/navigation'
@@ -35,7 +35,7 @@ function Field({ label, name, value, onChange, rows = 4, placeholder, required, 
           boxSizing: 'border-box', color: '#111827',
           transition: 'border-color 0.15s',
         }}
-        onFocus={e => { e.target.style.borderColor = '#6366F1' }}
+        onFocus={e => { e.target.style.borderColor = '#F97316' }}
         onBlur={e => { e.target.style.borderColor = '#E5E7EB' }}
       />
       {hint}
@@ -287,7 +287,7 @@ export default function CreateNarrativePage() {
             </Button>
             <Button
               type="button" size="lg"
-              style={{ flex: 1, background: '#4F46E5', color: 'white' }}
+              style={{ flex: 1, background: '#F97316', color: 'white' }}
               isLoading={busy} disabled={draft || !ready}
               onClick={handleSubmitFinal}
             >
@@ -314,7 +314,7 @@ export default function CreateNarrativePage() {
               'A verification selfie with date/time stamp is required for final submission',
             ].map(tip => (
               <li key={tip} style={{ display: 'flex', gap: 8, fontSize: 13, color: '#6B7280' }}>
-                <span style={{ color: '#6366F1', flexShrink: 0 }}>&#8226;</span>
+                <span style={{ color: '#F97316', flexShrink: 0 }}>&#8226;</span>
                 {tip}
               </li>
             ))}

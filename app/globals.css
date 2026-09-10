@@ -6,18 +6,18 @@
 ───────────────────────────────────────────────────────── */
 
 @theme {
-  /* ── Base palette ───────────────────────────────────── */
-  --color-primary:     #4F46E5;
-  --color-primary-50:  #EEF2FF;
-  --color-primary-100: #E0E7FF;
-  --color-primary-200: #C7D2FE;
-  --color-primary-300: #A5B4FC;
-  --color-primary-400: #818CF8;
-  --color-primary-500: #6366F1;
-  --color-primary-600: #4F46E5;
-  --color-primary-700: #4338CA;
-  --color-primary-800: #3730A3;
-  --color-primary-900: #312E81;
+  /* ── PSBC Brand: Yellow / Orange / Gray ─────────────── */
+  --color-primary:     #F97316;
+  --color-primary-50:  #FFF7ED;
+  --color-primary-100: #FFEDD5;
+  --color-primary-200: #FED7AA;
+  --color-primary-300: #FDBA74;
+  --color-primary-400: #FB923C;
+  --color-primary-500: #F97316;
+  --color-primary-600: #EA580C;
+  --color-primary-700: #C2410C;
+  --color-primary-800: #9A3412;
+  --color-primary-900: #7C2D12;
 
   /* ── Neutrals ───────────────────────────────────────── */
   --color-gray-50:  #F9FAFB;
@@ -37,44 +37,44 @@
   --color-error:    #EF4444;
   --color-info:     #3B82F6;
 
-  /* ── Strand: STEM (blue-cyan science) ──────────────── */
-  --strand-stem-primary:   #0EA5E9;
-  --strand-stem-secondary: #06B6D4;
-  --strand-stem-accent:    #6366F1;
-  --strand-stem-bg:        #F0F9FF;
-  --strand-stem-surface:   #E0F2FE;
+  /* ── Strand: STEM ──────────────────────────────────── */
+  --strand-stem-primary:   #F97316;
+  --strand-stem-secondary: #FBBF24;
+  --strand-stem-accent:    #EA580C;
+  --strand-stem-bg:        #FFF7ED;
+  --strand-stem-surface:   #FFEDD5;
 
-  /* ── Strand: ABM (emerald business) ────────────────── */
-  --strand-abm-primary:   #059669;
-  --strand-abm-secondary: #10B981;
-  --strand-abm-accent:    #F59E0B;
-  --strand-abm-bg:        #ECFDF5;
-  --strand-abm-surface:   #D1FAE5;
+  /* ── Strand: ABM ────────────────────────────────────── */
+  --strand-abm-primary:   #D97706;
+  --strand-abm-secondary: #F59E0B;
+  --strand-abm-accent:    #92400E;
+  --strand-abm-bg:        #FFFBEB;
+  --strand-abm-surface:   #FEF3C7;
 
-  /* ── Strand: HUMSS (violet humanities) ─────────────── */
-  --strand-humss-primary:   #7C3AED;
-  --strand-humss-secondary: #8B5CF6;
-  --strand-humss-accent:    #EC4899;
-  --strand-humss-bg:        #F5F3FF;
-  --strand-humss-surface:   #EDE9FE;
+  /* ── Strand: HUMSS ──────────────────────────────────── */
+  --strand-humss-primary:   #B45309;
+  --strand-humss-secondary: #D97706;
+  --strand-humss-accent:    #78350F;
+  --strand-humss-bg:        #FFFBEB;
+  --strand-humss-surface:   #FDE68A;
 
-  /* ── Strand: TVL (orange industrial) ───────────────── */
+  /* ── Strand: TVL ────────────────────────────────────── */
   --strand-tvl-primary:   #EA580C;
   --strand-tvl-secondary: #F97316;
-  --strand-tvl-accent:    #EAB308;
+  --strand-tvl-accent:    #9A3412;
   --strand-tvl-bg:        #FFF7ED;
   --strand-tvl-surface:   #FFEDD5;
 
   /* ── Spacing scale (8px base) ───────────────────────── */
-  --space-1:  0.25rem;   /* 4px  */
-  --space-2:  0.5rem;    /* 8px  */
-  --space-3:  0.75rem;   /* 12px */
-  --space-4:  1rem;      /* 16px */
-  --space-5:  1.25rem;   /* 20px */
-  --space-6:  1.5rem;    /* 24px */
-  --space-8:  2rem;      /* 32px */
-  --space-10: 2.5rem;    /* 40px */
-  --space-12: 3rem;      /* 48px */
+  --space-1:  0.25rem;
+  --space-2:  0.5rem;
+  --space-3:  0.75rem;
+  --space-4:  1rem;
+  --space-5:  1.25rem;
+  --space-6:  1.5rem;
+  --space-8:  2rem;
+  --space-10: 2.5rem;
+  --space-12: 3rem;
   --space-16: 4rem;      /* 64px */
 
   /* ── Radius ─────────────────────────────────────────── */

@@ -25,7 +25,7 @@ const TYPE_COLORS: Record<string, { bg: string; color: string }> = {
   schedule_change: { bg: '#FEF3C7', color: '#92400E' },
   instruction:     { bg: '#D1FAE5', color: '#065F46' },
   meeting:         { bg: '#EDE9FE', color: '#5B21B6' },
-  document:        { bg: '#E0E7FF', color: '#3730A3' },
+  document:        { bg: '#FFEDD5', color: '#92400E' },
   emergency:       { bg: '#FEE2E2', color: '#991B1B' },
 }
 
@@ -46,8 +46,8 @@ export default function AnnouncementsPage() {
   if (loading) return (
     <AppShell>
       <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '80px 0' }}>
-        <div style={{ width: 40, height: 40, border: '4px solid #E0E7FF',
-          borderTopColor: '#4F46E5', borderRadius: '50%', animation: 'spin 1s linear infinite' }} />
+        <div style={{ width: 40, height: 40, border: '4px solid #FFEDD5',
+          borderTopColor: '#F97316', borderRadius: '50%', animation: 'spin 1s linear infinite' }} />
       </div>
     </AppShell>
   )

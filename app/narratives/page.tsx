@@ -1,4 +1,4 @@
-'use client'
+﻿'use client'
 
 import { useEffect, useState } from 'react'
 import { useRouter } from 'next/navigation'
@@ -60,8 +60,8 @@ export default function NarrativesPage() {
   if (loading) return (
     <AppShell>
       <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '80px 0' }}>
-        <div style={{ width: 40, height: 40, border: '4px solid #E0E7FF',
-          borderTopColor: '#4F46E5', borderRadius: '50%', animation: 'spin 1s linear infinite' }} />
+        <div style={{ width: 40, height: 40, border: '4px solid #FFEDD5',
+          borderTopColor: '#F97316', borderRadius: '50%', animation: 'spin 1s linear infinite' }} />
       </div>
     </AppShell>
   )
@@ -92,7 +92,7 @@ export default function NarrativesPage() {
             onClick={() => router.push('/narratives/create')}
             style={{
               display: 'flex', alignItems: 'center', gap: 6,
-              padding: '10px 18px', background: '#4F46E5', color: 'white',
+              padding: '10px 18px', background: '#F97316', color: 'white',
               border: 'none', borderRadius: 10, fontSize: 14, fontWeight: 600,
               cursor: 'pointer', flexShrink: 0, fontFamily: 'inherit',
             }}
@@ -111,7 +111,7 @@ export default function NarrativesPage() {
           <button key={f} onClick={() => setFilter(f)} style={{
             padding: '7px 16px', borderRadius: 999, fontSize: 13, fontWeight: 600,
             border: filter === f ? 'none' : '1.5px solid #E5E7EB',
-            background: filter === f ? '#4F46E5' : 'white',
+            background: filter === f ? '#F97316' : 'white',
             color: filter === f ? 'white' : '#6B7280',
             cursor: 'pointer', fontFamily: 'inherit',
           }}>
@@ -140,7 +140,7 @@ export default function NarrativesPage() {
              'No narratives yet.'}
           </p>
           <button onClick={() => router.push('/narratives/create')} style={{
-            padding: '10px 24px', background: '#4F46E5', color: 'white',
+            padding: '10px 24px', background: '#F97316', color: 'white',
             border: 'none', borderRadius: 10, fontSize: 14, fontWeight: 600,
             cursor: 'pointer', fontFamily: 'inherit',
           }}>
@@ -207,7 +207,7 @@ export default function NarrativesPage() {
                     {n.isDraft && (
                       <button onClick={() => router.push(`/narratives/${n.id}/edit`)} style={{
                         padding: '7px 16px', borderRadius: 8, fontSize: 13, fontWeight: 600,
-                        border: 'none', background: '#4F46E5', color: 'white',
+                        border: 'none', background: '#F97316', color: 'white',
                         cursor: 'pointer', fontFamily: 'inherit',
                       }}>
                         Edit
