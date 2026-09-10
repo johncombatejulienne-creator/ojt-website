@@ -215,6 +215,20 @@ export default function NarrativesPage() {
                         Edit
                       </button>
                     )}
+                    {!n.isDraft && (
+                      <a href={`/api/narratives/${n.id}/download`} download style={{
+                        padding: '7px 14px', borderRadius: 8, fontSize: 13, fontWeight: 600,
+                        border: '1.5px solid #FED7AA', background: '#FFF7ED', color: '#C2410C',
+                        cursor: 'pointer', fontFamily: 'inherit', textDecoration: 'none',
+                        display: 'inline-flex', alignItems: 'center', gap: 5,
+                      }}>
+                        <svg style={{ width: 14, height: 14 }} fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2}
+                            d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+                        </svg>
+                        Download
+                      </a>
+                    )}
                   </div>
                 </div>
               </div>

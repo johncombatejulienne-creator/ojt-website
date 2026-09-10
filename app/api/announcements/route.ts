@@ -13,11 +13,31 @@ export async function GET(request: NextRequest) {
     const { searchParams } = new URL(request.url)
     const type = searchParams.get('type')
 
-    // Teachers see ALL active announcements (all their own + others)
+    // Teachers see ALL active announcements
     if (session.user.role === 'teacher') {
       const where: Record<string, unknown> = { isActive: true }
       if (type) where.type = type
+      const announcements = await prisma.announcement.findMany({
+        where,
+        include: {
+          teacher: { select: { name: true, email: true } },
+          strand:  { select: { name: true } },
+          section: { select: { name: true } },
+        },
+        orderBy: { publishedAt: 'desc' },
+        take: 100,
+      })
+      return NextResponse.json({ announcements })
+    }
 
+    // Also check if user is a teacher by DB lookup (handles stale JWT)
+    const teacherByEmail = await prisma.teacher.findUnique({
+      where: { email: session.user.email! },
+      select: { id: true },
+    })
+    if (teacherByEmail) {
+      const where: Record<string, unknown> = { isActive: true }
+      if (type) where.type = type
       const announcements = await prisma.announcement.findMany({
         where,
         include: {
@@ -73,12 +93,13 @@ export async function GET(request: NextRequest) {
 export async function POST(request: NextRequest) {
   try {
     const session = await getServerSession(authOptions)
-    if (!session?.user || session.user.role !== 'teacher') {
+    if (!session?.user?.email) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
     }
 
-    const teacher = await prisma.teacher.findUnique({ where: { email: session.user.email! } })
-    if (!teacher) return NextResponse.json({ error: 'Teacher not found' }, { status: 404 })
+    // Allow if role is teacher OR email exists in Teacher table (stale JWT)
+    const teacher = await prisma.teacher.findUnique({ where: { email: session.user.email } })
+    if (!teacher) return NextResponse.json({ error: 'Teacher not found — sign in via Teacher tab' }, { status: 403 })
 
     const body = await request.json()
     const { title, content, type = 'reminder', targetType = 'all', strandId, sectionId, expiresAt } = body

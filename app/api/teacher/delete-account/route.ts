@@ -6,42 +6,24 @@ import { prisma } from '@/lib/prisma'
 /**
  * DELETE /api/teacher/delete-account
  * Deletes the currently signed-in teacher's own account.
+ * Checks Teacher table directly — works even with stale JWT.
  */
 export async function DELETE() {
   try {
     const session = await getServerSession(authOptions)
-
     if (!session?.user?.email) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
     }
 
-    // Must be teacher role
-    if (session.user.role !== 'teacher') {
-      return NextResponse.json({ error: 'Only teacher accounts can use this endpoint' }, { status: 403 })
-    }
-
-    const email = session.user.email
-
-    const teacher = await prisma.teacher.findUnique({ where: { email } })
-
+    // Find by email — works even if JWT still says "student"
+    const teacher = await prisma.teacher.findUnique({
+      where: { email: session.user.email },
+    })
     if (!teacher) {
-      return NextResponse.json(
-        { error: 'No teacher account found. Please sign out and sign back in via the Teacher tab first.' },
-        { status: 404 }
-      )
+      return NextResponse.json({
+        error: 'No teacher account found for this email. Make sure you are signed in via the Teacher tab.',
+      }, { status: 404 })
     }
-
-    // Unassign students
-    await prisma.student.updateMany({
-      where: { supervisorId: teacher.id },
-      data:  { supervisorId: null },
-    })
-
-    // Unassign sections
-    await prisma.section.updateMany({
-      where: { teacherId: teacher.id },
-      data:  { teacherId: null },
-    })
 
     // Audit log (non-critical)
     await prisma.auditLog.create({
@@ -49,11 +31,23 @@ export async function DELETE() {
         userId:      teacher.id,
         userType:    'teacher',
         action:      'account_deleted',
-        description: `Teacher ${teacher.name} deleted their own account`,
+        description: `Teacher ${teacher.name} (${teacher.email}) deleted their account`,
       },
     }).catch(() => {})
 
-    // Delete teacher record
+    // Unassign students supervised by this teacher
+    await prisma.student.updateMany({
+      where: { supervisorId: teacher.id },
+      data:  { supervisorId: null },
+    })
+
+    // Unassign sections owned by this teacher
+    await prisma.section.updateMany({
+      where: { teacherId: teacher.id },
+      data:  { teacherId: null },
+    })
+
+    // Delete the teacher record (cascade deletes announcements, reviews, notifications)
     await prisma.teacher.delete({ where: { id: teacher.id } })
 
     return NextResponse.json({ success: true })

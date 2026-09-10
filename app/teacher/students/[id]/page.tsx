@@ -72,7 +72,7 @@ export default function TeacherStudentDetailPage() {
   )
 
   return (
-    <AppShell>
+    <AppShell forceTeacher>
       <style>{`@keyframes spin { to { transform: rotate(360deg); } }`}</style>
 
       {/* Back */}

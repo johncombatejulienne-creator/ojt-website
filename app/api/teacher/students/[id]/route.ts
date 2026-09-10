@@ -5,7 +5,7 @@ import { prisma } from '@/lib/prisma'
 
 /**
  * DELETE /api/teacher/students/[id]
- * Teacher deletes a student account permanently.
+ * Teacher permanently deletes a student account and all related records.
  */
 export async function DELETE(
   _req: NextRequest,
@@ -13,38 +13,62 @@ export async function DELETE(
 ) {
   try {
     const session = await getServerSession(authOptions)
-
-    if (!session?.user?.email || session.user.role !== 'teacher') {
+    if (!session?.user?.email) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
     }
 
-    const { id } = await params
+    // Check teacher by DB (handles stale JWT)
+    const teacher = await prisma.teacher.findUnique({
+      where: { email: session.user.email },
+      select: { id: true, name: true },
+    })
+    if (!teacher) {
+      return NextResponse.json({ error: 'Unauthorized — teacher access only' }, { status: 403 })
+    }
 
+    const { id } = await params
     const student = await prisma.student.findUnique({ where: { id } })
     if (!student) {
       return NextResponse.json({ error: 'Student not found' }, { status: 404 })
     }
 
-    // Audit before deletion
-    const teacher = await prisma.teacher.findUnique({
-      where: { email: session.user.email },
-      select: { id: true, name: true },
-    })
-
+    // Audit log (non-critical)
     await prisma.auditLog.create({
       data: {
-        userId:      teacher?.id ?? 'unknown',
+        userId:      teacher.id,
         userType:    'teacher',
         action:      'student_deleted',
-        description: `Teacher ${teacher?.name} deleted student: ${student.name} (${student.studentId})`,
+        description: `Teacher ${teacher.name} deleted student: ${student.name} (${student.studentId})`,
         metadata:    JSON.stringify({ studentId: student.id, studentEmail: student.email }),
       },
-    }).catch(() => {/* non-critical */})
+    }).catch(() => {})
 
-    // Delete student (cascade deletes narratives, photos, checklist progress)
+    // Delete checklist progress
+    await prisma.studentChecklistProgress.deleteMany({ where: { studentId: id } }).catch(() => {})
+
+    // Delete photos attached to this student's narratives
+    const narratives = await prisma.narrative.findMany({
+      where: { studentId: id },
+      select: { id: true },
+    })
+    const narrativeIds = narratives.map(n => n.id)
+    if (narrativeIds.length > 0) {
+      await prisma.photoMetadata.deleteMany({
+        where: { photo: { narrativeId: { in: narrativeIds } } },
+      }).catch(() => {})
+      await prisma.photo.deleteMany({
+        where: { narrativeId: { in: narrativeIds } },
+      }).catch(() => {})
+      await prisma.narrativeReview.deleteMany({
+        where: { narrativeId: { in: narrativeIds } },
+      }).catch(() => {})
+      await prisma.narrative.deleteMany({ where: { studentId: id } }).catch(() => {})
+    }
+
+    // Delete the student record
     await prisma.student.delete({ where: { id } })
 
-    return NextResponse.json({ success: true, message: `Student ${student.name} has been deleted.` })
+    return NextResponse.json({ success: true, message: `Student ${student.name} deleted.` })
   } catch (error) {
     console.error('Delete student error:', error)
     return NextResponse.json({ error: 'Failed to delete student' }, { status: 500 })

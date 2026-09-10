@@ -62,7 +62,10 @@ function NavLink({ label, path, current, onClick }: {
 }
 
 /* ─── Header ─────────────────────────────────────────────── */
-export default function Header({ strandCode }: { strandCode?: string }) {
+export default function Header({ strandCode, forceTeacher }: {
+  strandCode?: string
+  forceTeacher?: boolean  // set to true on teacher pages to bypass stale session
+}) {
   const { data: session } = useSession()
   const router   = useRouter()
   const pathname = usePathname()
@@ -71,7 +74,10 @@ export default function Header({ strandCode }: { strandCode?: string }) {
 
   if (!session) return null
 
-  const isTeacher = session.user?.role === 'teacher'
+  // isTeacher: use explicit prop, session role, OR current URL
+  const isTeacher = forceTeacher === true
+    || session.user?.role === 'teacher'
+    || pathname.startsWith('/teacher')
   const dashPath  = isTeacher ? '/teacher/dashboard' : '/dashboard'
   const grad      = isTeacher
     ? STRAND_GRAD.TEACHER

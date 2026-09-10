@@ -367,7 +367,7 @@ export default function TeacherDashboard() {
   const selectStyle = { ...inputStyle, appearance: 'auto' as const }
 
   return (
-    <AppShell>
+    <AppShell forceTeacher>
       <div style={{ display: 'flex', flexDirection: 'column', gap: 20 }}>
 
         {/* ── Welcome Banner ──────────────────────────────── */}

@@ -165,7 +165,7 @@ export default function TeacherProfilePage() {
   return (
     <>
       <Toasts list={toasts} remove={id => setToasts(p => p.filter(t => t.id !== id))} />
-      <AppShell>
+      <AppShell forceTeacher>
         <style>{`@keyframes spin{to{transform:rotate(360deg)}} @keyframes fadeIn{from{opacity:0}to{opacity:1}}`}</style>
 
         {/* Back */}
