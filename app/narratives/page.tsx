@@ -32,13 +32,28 @@ export default function NarrativesPage() {
   const [deleteId,    setDeleteId]    = useState<string | null>(null)
   const [deleting,    setDeleting]    = useState(false)
   const [deleteError, setDeleteError] = useState('')
+  const [apiError,    setApiError]    = useState('')
 
   const load = () => {
     setLoading(true)
+    setApiError('')
     fetch('/api/narratives')
       .then(r => r.json())
-      .then(d => { setNarratives(d.narratives ?? []); setLoading(false) })
-      .catch(() => setLoading(false))
+      .then(d => {
+        if (d.error) {
+          console.error('Narratives API error:', d.error)
+          setApiError(d.error)
+          setNarratives([])
+        } else {
+          setNarratives(d.narratives ?? [])
+        }
+        setLoading(false)
+      })
+      .catch(err => {
+        console.error('Narratives fetch failed:', err)
+        setApiError('Failed to load narratives')
+        setLoading(false)
+      })
   }
 
   useEffect(() => { load() }, [])
@@ -173,6 +188,25 @@ export default function NarrativesPage() {
           </button>
         ))}
       </div>
+
+      {/* ── API error banner ─────────────────────────────── */}
+      {apiError && (
+        <div style={{ padding: '12px 16px', background: '#FEF2F2', border: '1px solid #FECACA',
+          borderRadius: 12, marginBottom: 16, fontSize: 13, color: '#DC2626',
+          display: 'flex', alignItems: 'center', gap: 10 }}>
+          <svg style={{ width: 16, height: 16, flexShrink: 0 }} fill="currentColor" viewBox="0 0 20 20">
+            <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z" clipRule="evenodd" />
+          </svg>
+          {apiError === 'Student not found'
+            ? 'Your student account was not found. Please complete your profile first.'
+            : apiError}
+          <button onClick={load} style={{ marginLeft: 'auto', fontSize: 12, fontWeight: 600,
+            color: '#DC2626', background: 'none', border: 'none', cursor: 'pointer',
+            textDecoration: 'underline', fontFamily: 'inherit' }}>
+            Retry
+          </button>
+        </div>
+      )}
 
       {/* ── Narrative list ────────────────────────────────── */}
       {filtered.length === 0 ? (

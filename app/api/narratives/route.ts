@@ -20,15 +20,32 @@ export async function GET(request: NextRequest) {
 
     const where: Record<string, unknown> = {}
 
-    if (session.user.role === 'student') {
+    // Always try to scope by student email unless a specific studentId is requested
+    // This handles stale JWT where role may not be 'student' yet
+    if (studentIdParam && session.user.role === 'teacher') {
+      // Teacher requesting a specific student's narratives
+      where.studentId = studentIdParam
+    } else if (session.user.role === 'teacher' && !studentIdParam) {
+      // Teacher with no filter — return all (for teacher dashboard)
+      // where remains empty
+    } else {
+      // Student (or anyone else) — scope to their own narratives by email
       const student = await prisma.student.findUnique({
         where:  { email: session.user.email! },
         select: { id: true },
       })
-      if (!student) return NextResponse.json({ error: 'Student not found' }, { status: 404 })
+      if (!student) {
+        // Not found as student — check if teacher accidentally hit this endpoint
+        const teacher = await prisma.teacher.findUnique({
+          where: { email: session.user.email! }, select: { id: true },
+        }).catch(() => null)
+        if (teacher) {
+          // Teacher hitting student endpoint — return empty safely
+          return NextResponse.json({ narratives: [], pagination: { page, limit, total: 0, totalPages: 0 } })
+        }
+        return NextResponse.json({ error: 'Student not found' }, { status: 404 })
+      }
       where.studentId = student.id
-    } else if (studentIdParam) {
-      where.studentId = studentIdParam
     }
 
     if (statusParam) where.status = statusParam

@@ -73,12 +73,16 @@ export async function DELETE(
     })
     if (!narrative) return NextResponse.json({ error: 'Narrative not found' }, { status: 404 })
 
-    // Only the owning student can delete
+    // Only the owning student can delete — find student by email regardless of JWT role
     const student = await prisma.student.findUnique({
       where: { email: session.user.email },
       select: { id: true },
     })
-    if (!student) return NextResponse.json({ error: 'Student record not found' }, { status: 403 })
+    if (!student) {
+      return NextResponse.json({
+        error: 'No student account found for this email. Make sure you are signed in as a student.',
+      }, { status: 403 })
+    }
     if (narrative.studentId !== student.id) {
       return NextResponse.json({ error: 'Forbidden — you can only delete your own narratives' }, { status: 403 })
     }
