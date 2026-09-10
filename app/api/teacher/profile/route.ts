@@ -6,10 +6,11 @@ import { prisma } from '@/lib/prisma'
 export async function GET() {
   try {
     const session = await getServerSession(authOptions)
-    if (!session?.user?.email || session.user.role !== 'teacher') {
+    if (!session?.user?.email) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
     }
 
+    // Find by email — works even if JWT still says "student"
     const teacher = await prisma.teacher.findUnique({
       where: { email: session.user.email },
       select: {
@@ -31,18 +32,26 @@ export async function GET() {
 export async function PUT(request: NextRequest) {
   try {
     const session = await getServerSession(authOptions)
-    if (!session?.user?.email || session.user.role !== 'teacher') {
+    if (!session?.user?.email) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+    }
+
+    // Find by email — works even if JWT still says "student"
+    const teacher = await prisma.teacher.findUnique({
+      where: { email: session.user.email },
+      select: { id: true },
+    })
+    if (!teacher) {
+      return NextResponse.json({ error: 'Teacher record not found. Please sign in via the Teacher tab.' }, { status: 404 })
     }
 
     const body = await request.json()
     const { name } = body
-
     if (!name?.trim()) {
       return NextResponse.json({ error: 'Name is required' }, { status: 400 })
     }
 
-    const teacher = await prisma.teacher.update({
+    const updated = await prisma.teacher.update({
       where: { email: session.user.email },
       data:  { name: name.trim() },
       select: { id: true, teacherId: true, name: true, email: true, profilePicture: true },
@@ -50,14 +59,14 @@ export async function PUT(request: NextRequest) {
 
     await prisma.auditLog.create({
       data: {
-        userId:      teacher.id,
+        userId:      updated.id,
         userType:    'teacher',
         action:      'profile_update',
-        description: `Teacher updated their profile: ${teacher.name}`,
+        description: `Teacher updated profile: ${updated.name}`,
       },
     }).catch(() => {})
 
-    return NextResponse.json({ success: true, teacher })
+    return NextResponse.json({ success: true, teacher: updated })
   } catch (error) {
     console.error('PUT teacher profile error:', error)
     return NextResponse.json({ error: 'Failed to update profile' }, { status: 500 })

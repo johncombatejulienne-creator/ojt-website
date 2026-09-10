@@ -9,8 +9,16 @@ const MAX_SIZE = 2 * 1024 * 1024
 export async function POST(request: NextRequest) {
   try {
     const session = await getServerSession(authOptions)
-    if (!session?.user?.email || session.user.role !== 'teacher') {
+    if (!session?.user?.email) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+    }
+
+    // Find by email — works even with stale JWT
+    const teacher = await prisma.teacher.findUnique({
+      where: { email: session.user.email }, select: { id: true },
+    })
+    if (!teacher) {
+      return NextResponse.json({ error: 'Teacher record not found' }, { status: 404 })
     }
 
     const formData = await request.formData()
@@ -27,13 +35,13 @@ export async function POST(request: NextRequest) {
     const base64  = buffer.toString('base64')
     const dataUrl = `data:${file.type};base64,${base64}`
 
-    const teacher = await prisma.teacher.update({
+    const updated = await prisma.teacher.update({
       where: { email: session.user.email },
       data:  { profilePicture: dataUrl },
       select: { profilePicture: true },
     })
 
-    return NextResponse.json({ success: true, profilePicture: teacher.profilePicture })
+    return NextResponse.json({ success: true, profilePicture: updated.profilePicture })
   } catch (error) {
     console.error('Teacher profile picture upload error:', error)
     return NextResponse.json({ error: 'Failed to upload' }, { status: 500 })
@@ -43,8 +51,16 @@ export async function POST(request: NextRequest) {
 export async function DELETE() {
   try {
     const session = await getServerSession(authOptions)
-    if (!session?.user?.email || session.user.role !== 'teacher') {
+    if (!session?.user?.email) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+    }
+
+    // Find by email — works even with stale JWT
+    const teacher = await prisma.teacher.findUnique({
+      where: { email: session.user.email }, select: { id: true },
+    })
+    if (!teacher) {
+      return NextResponse.json({ error: 'Teacher record not found' }, { status: 404 })
     }
 
     await prisma.teacher.update({
