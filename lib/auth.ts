@@ -37,17 +37,6 @@ export const authOptions: NextAuthOptions = {
   callbacks: {
     // signIn: just allow everyone through — record creation happens in /api/auth/finalize
     async signIn({ user }) {
-      // Keep Google profile picture up to date
-      if (user?.email && user?.image) {
-        await prisma.teacher.updateMany({
-          where: { email: user.email, profilePicture: null },
-          data:  { profilePicture: user.image },
-        }).catch(() => {})
-        await prisma.student.updateMany({
-          where: { email: user.email, profilePicture: null },
-          data:  { profilePicture: user.image },
-        }).catch(() => {})
-      }
       return true
     },
 
@@ -64,31 +53,29 @@ export const authOptions: NextAuthOptions = {
         // Teacher takes priority — if a Teacher record exists, they are a teacher
         const teacher = await prisma.teacher.findUnique({
           where:  { email },
-          select: { id: true, teacherId: true, name: true, profilePicture: true },
+          select: { id: true, teacherId: true, name: true },
         })
         if (teacher) {
-          token.role           = "teacher"
-          token.userId         = teacher.id
-          token.teacherId      = teacher.teacherId
-          token.studentId      = undefined
-          token.profilePicture = teacher.profilePicture ?? (token.picture as string ?? null)
-          token.sub            = teacher.id
-          token.name           = teacher.name
+          token.role      = "teacher"
+          token.userId    = teacher.id
+          token.teacherId = teacher.teacherId
+          token.studentId = undefined
+          token.sub       = teacher.id
+          token.name      = teacher.name
           return token
         }
 
         const student = await prisma.student.findUnique({
           where:  { email },
-          select: { id: true, studentId: true, name: true, profilePicture: true },
+          select: { id: true, studentId: true, name: true },
         })
         if (student) {
-          token.role           = "student"
-          token.userId         = student.id
-          token.studentId      = student.studentId
-          token.teacherId      = undefined
-          token.profilePicture = student.profilePicture ?? (token.picture as string ?? null)
-          token.sub            = student.id
-          token.name           = student.name
+          token.role      = "student"
+          token.userId    = student.id
+          token.studentId = student.studentId
+          token.teacherId = undefined
+          token.sub       = student.id
+          token.name      = student.name
           return token
         }
 
@@ -103,11 +90,10 @@ export const authOptions: NextAuthOptions = {
 
     async session({ session, token }) {
       if (session.user) {
-        session.user.id             = (token.userId as string) ?? token.sub ?? ""
-        session.user.role           = (token.role   as string) ?? "student"
-        session.user.studentId      = token.studentId  as string | undefined
-        session.user.teacherId      = token.teacherId  as string | undefined
-        session.user.profilePicture = (token.profilePicture as string | null) ?? null
+        session.user.id        = (token.userId as string) ?? token.sub ?? ""
+        session.user.role      = (token.role   as string) ?? "student"
+        session.user.studentId = token.studentId as string | undefined
+        session.user.teacherId = token.teacherId as string | undefined
       }
       return session
     },
