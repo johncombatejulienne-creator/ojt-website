@@ -71,8 +71,9 @@ export const authOptions: NextAuthOptions = {
             })
           }
         } else {
-          // STUDENT TAB: ensure Student record exists (only if not already a teacher)
-          if (!existingTeacher && !existingStudent) {
+          // STUDENT TAB: always ensure Student record exists
+          // (even if they also have a Teacher record)
+          if (!existingStudent) {
             await prisma.student.create({
               data: {
                 email,
@@ -81,14 +82,9 @@ export const authOptions: NextAuthOptions = {
                 profilePicture: user.image ?? null,
               },
             })
-          } else if (existingStudent && !existingStudent.profilePicture && user.image) {
+          } else if (!existingStudent.profilePicture && user.image) {
             await prisma.student.update({
               where: { id: existingStudent.id },
-              data:  { profilePicture: user.image },
-            })
-          } else if (existingTeacher && !existingTeacher.profilePicture && user.image) {
-            await prisma.teacher.update({
-              where: { id: existingTeacher.id },
               data:  { profilePicture: user.image },
             })
           }

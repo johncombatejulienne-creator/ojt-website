@@ -30,11 +30,9 @@ export async function GET(request: NextRequest) {
 
     const where: Record<string, unknown> = {}
 
-    // Determine who is calling this endpoint
     const student = await getStudentByEmail(session.user.email)
-    const isTeacher = !student || session.user.role === 'teacher'
-      ? await getTeacherByEmail(session.user.email).then(t => !!t)
-      : false
+    const teacherRecord = !student ? await getTeacherByEmail(session.user.email) : null
+    const isTeacher = !!teacherRecord && !student
 
     if (student) {
       // Student: always scope to their own narratives
@@ -44,7 +42,8 @@ export async function GET(request: NextRequest) {
       if (studentIdParam) where.studentId = studentIdParam
       // else no filter — teacher sees all
     } else {
-      return NextResponse.json({ error: 'Account not found. Please complete your profile.' }, { status: 404 })
+      // Neither found — could be a new account, return empty safely
+      return NextResponse.json({ narratives: [], pagination: { page, limit, total: 0, totalPages: 0 } })
     }
 
     if (statusParam) where.status = statusParam
@@ -102,11 +101,50 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
     }
 
-    // Find student by email — works regardless of JWT role
-    const student = await getStudentByEmail(session.user.email)
+    // Find student by email (not role — handles stale JWT)
+    let student = await getStudentByEmail(session.user.email)
+
+    // Safety net: if no student record exists but this looks like a student,
+    // auto-create one so they can submit narratives
+    if (!student) {
+      // Check if they have a teacher record
+      const teacher = await getTeacherByEmail(session.user.email)
+      if (teacher) {
+        // They signed in as teacher before — create student record too
+        try {
+          const newStudent = await prisma.student.create({
+            data: {
+              email:     session.user.email,
+              name:      session.user.name ?? session.user.email.split('@')[0],
+              studentId: `STU-${Date.now()}`,
+              profilePicture: session.user.profilePicture ?? null,
+            },
+          })
+          student = { id: newStudent.id, name: newStudent.name, supervisorId: null }
+        } catch {
+          // Student with this email may have been created in a race condition
+          student = await getStudentByEmail(session.user.email)
+        }
+      } else {
+        // No teacher, no student — auto-create student
+        try {
+          const newStudent = await prisma.student.create({
+            data: {
+              email:     session.user.email,
+              name:      session.user.name ?? session.user.email.split('@')[0],
+              studentId: `STU-${Date.now()}`,
+            },
+          })
+          student = { id: newStudent.id, name: newStudent.name, supervisorId: null }
+        } catch {
+          student = await getStudentByEmail(session.user.email)
+        }
+      }
+    }
+
     if (!student) {
       return NextResponse.json({
-        error: 'Student account not found. Make sure you signed in via the Student tab, not the Teacher tab.',
+        error: 'Student account could not be created. Please sign out and sign in again via the Student tab.',
       }, { status: 404 })
     }
 
