@@ -99,17 +99,17 @@ export async function PUT(request: NextRequest) {
     const updateData: Record<string, unknown> = {}
     if (name           !== undefined) updateData.name           = name
     // Always update studentId if provided and non-empty
-    // (allow STU- prefixed IDs — they are valid auto-generated IDs)
     if (studentId !== undefined && studentId.trim()) {
       updateData.studentId = studentId.trim()
     }
-    if (strandId       !== undefined) updateData.strandId       = strandId
-    if (finalSectionId !== undefined) updateData.sectionId      = finalSectionId
-    if (company        !== undefined) updateData.company        = company
-    if (course         !== undefined) updateData.course         = course
+    if (strandId       !== undefined) updateData.strandId       = strandId || null
+    // Convert empty string to null for foreign key fields
+    if (finalSectionId !== undefined) updateData.sectionId      = finalSectionId || null
+    if (company        !== undefined) updateData.company        = company || null
+    if (course         !== undefined) updateData.course         = course || null
     if (gradeLevel     !== undefined) updateData.gradeLevel     = Number(gradeLevel)
-    if (profilePicture !== undefined) updateData.profilePicture = profilePicture
-    if (supervisorId   !== undefined) updateData.supervisorId   = supervisorId
+    if (profilePicture !== undefined) updateData.profilePicture = profilePicture || null
+    if (supervisorId   !== undefined) updateData.supervisorId   = supervisorId || null
 
     let student: { id: string; studentId: string; name: string; email: string; profilePicture: string | null; company: string | null; course: string | null; gradeLevel: number | null; strandId: string | null; sectionId: string | null; supervisorId: string | null; strand: { id: string; name: string } | null; section: { id: string; name: string; gradeLevel: number } | null; supervisor: { id: string; name: string; email: string } | null }
     try {
