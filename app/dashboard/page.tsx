@@ -153,6 +153,9 @@ export default function StudentDashboard() {
   const [cl, setCl] = useState<ChecklistStats>({ totalItems: 0, completedItems: 0, progressPercentage: 0 })
   const [ns, setNs] = useState<NarrativeStats>({ total: 0, thisWeek: 0, pending: 0 })
   const [loading,   setLoading]   = useState(true)
+  const [recentNarratives, setRecentNarratives] = useState<{
+    id: string; date: string; content: string; status: string; isDraft: boolean; submissionDate?: string
+  }[]>([])
 
   // Notifications
   const [notifications,    setNotifications]    = useState<{id:string;title:string;message:string;isRead:boolean;link?:string;type:string}[]>([])
@@ -172,16 +175,16 @@ export default function StudentDashboard() {
     if (!session?.user) return
     const load = async () => {
       try {
-        const [pRes, cRes, nRes, notifRes] = await Promise.all([
+        const [pRes, cRes, nRes, notifRes, recentRes] = await Promise.all([
           fetch('/api/students/profile'),
           fetch('/api/checklists/my-checklist'),
           fetch('/api/narratives?stats=true'),
           fetch('/api/notifications'),
+          fetch('/api/narratives?limit=5&page=1'),
         ])
         if (pRes.ok) {
           const { student: s } = await pRes.json()
           setStudent(s)
-          // Never block dashboard — students can use all features without a complete profile
         }
         if (cRes.ok) {
           const { checklists } = await cRes.json()
@@ -194,6 +197,10 @@ export default function StudentDashboard() {
         if (notifRes.ok) {
           const { notifications: notifs } = await notifRes.json()
           if (notifs) setNotifications(notifs)
+        }
+        if (recentRes.ok) {
+          const { narratives } = await recentRes.json()
+          if (narratives) setRecentNarratives(narratives.slice(0, 5))
         }
         if (nRes.ok) {
           const { stats } = await nRes.json()
@@ -457,26 +464,77 @@ export default function StudentDashboard() {
         {/* ── Recent Activity ───────────────────────────────── */}
         <div style={{ background: 'white', borderRadius: 20, border: '1px solid #E5E7EB',
           boxShadow: '0 1px 8px rgba(0,0,0,0.05)', padding: '24px 28px', boxSizing: 'border-box' }}>
-          <h2 style={{ fontSize: 16, fontWeight: 800, color: '#111827', margin: '0 0 20px' }}>
-            Recent Activity
-          </h2>
-          <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center',
-            justifyContent: 'center', padding: '32px 0', gap: 12, textAlign: 'center' }}>
-            <div style={{ width: 52, height: 52, background: '#F3F4F6', borderRadius: 14,
-              display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#9CA3AF' }}>
-              {icons.clock}
-            </div>
-            <p style={{ fontSize: 14, color: '#9CA3AF', margin: 0 }}>
-              Your recent submissions will appear here
-            </p>
-            <button onClick={() => router.push('/narratives/create')} style={{
-              padding: '9px 22px', background: '#F97316', color: 'white',
-              border: 'none', borderRadius: 10, fontSize: 13, fontWeight: 600,
-              cursor: 'pointer', fontFamily: 'inherit',
-            }}>
-              Write Your First Narrative
-            </button>
+          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 16 }}>
+            <h2 style={{ fontSize: 16, fontWeight: 800, color: '#111827', margin: 0 }}>Recent Activity</h2>
+            {recentNarratives.length > 0 && (
+              <button onClick={() => router.push('/narratives')} style={{
+                fontSize: 12, color: '#F97316', background: 'none', border: 'none',
+                cursor: 'pointer', fontFamily: 'inherit', fontWeight: 600,
+              }}>View All →</button>
+            )}
           </div>
+
+          {recentNarratives.length === 0 ? (
+            <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center',
+              justifyContent: 'center', padding: '32px 0', gap: 12, textAlign: 'center' }}>
+              <div style={{ width: 52, height: 52, background: '#F3F4F6', borderRadius: 14,
+                display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#9CA3AF' }}>
+                {icons.clock}
+              </div>
+              <p style={{ fontSize: 14, color: '#9CA3AF', margin: 0 }}>No narratives submitted yet.</p>
+              <button onClick={() => router.push('/narratives/create')} style={{
+                padding: '9px 22px', background: '#F97316', color: 'white',
+                border: 'none', borderRadius: 10, fontSize: 13, fontWeight: 600,
+                cursor: 'pointer', fontFamily: 'inherit',
+              }}>Write Your First Narrative</button>
+            </div>
+          ) : (
+            <div style={{ display: 'flex', flexDirection: 'column', gap: 0 }}>
+              {recentNarratives.map((n, i) => {
+                const title = n.content.match(/\*\*Activity:\*\*\s*(.+)/i)?.[1] ?? 'Daily Activity'
+                const dateStr = new Date(n.date).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })
+                const STATUS: Record<string, { bg: string; color: string; label: string }> = {
+                  approved:           { bg: '#D1FAE5', color: '#065F46', label: 'Approved' },
+                  pending:            { bg: '#FEF3C7', color: '#92400E', label: 'Pending' },
+                  revision_requested: { bg: '#FFEDD5', color: '#9A3412', label: 'Revision' },
+                }
+                const badge = n.isDraft
+                  ? { bg: '#F3F4F6', color: '#6B7280', label: 'Draft' }
+                  : (STATUS[n.status] ?? STATUS.pending)
+                return (
+                  <div key={n.id}
+                    onClick={() => router.push(`/narratives/${n.id}`)}
+                    style={{
+                      display: 'flex', alignItems: 'center', gap: 14,
+                      padding: '12px 0', cursor: 'pointer',
+                      borderBottom: i < recentNarratives.length - 1 ? '1px solid #F3F4F6' : 'none',
+                    }}
+                    onMouseEnter={e => { (e.currentTarget as HTMLElement).style.opacity = '0.75' }}
+                    onMouseLeave={e => { (e.currentTarget as HTMLElement).style.opacity = '1' }}
+                  >
+                    <div style={{ width: 40, height: 40, borderRadius: 10, flexShrink: 0,
+                      background: badge.bg, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                      <svg style={{ width: 18, height: 18, color: badge.color }} fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2}
+                          d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+                      </svg>
+                    </div>
+                    <div style={{ flex: 1, minWidth: 0 }}>
+                      <p style={{ fontWeight: 600, fontSize: 14, color: '#111827', margin: 0,
+                        overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                        {title}
+                      </p>
+                      <p style={{ fontSize: 12, color: '#9CA3AF', margin: '2px 0 0' }}>{dateStr}</p>
+                    </div>
+                    <span style={{ fontSize: 11, fontWeight: 700, padding: '3px 10px',
+                      borderRadius: 999, background: badge.bg, color: badge.color, whiteSpace: 'nowrap' }}>
+                      {badge.label}
+                    </span>
+                  </div>
+                )
+              })}
+            </div>
+          )}
         </div>
 
       </div>
