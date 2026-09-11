@@ -506,3 +506,112 @@ a { color: inherit; text-decoration: none; }
     transition-duration: 0.01ms !important;
   }
 }
+
+/* ─────────────────────────────────────────────────────────
+   RESPONSIVE GRID HELPERS
+   Use these classes on inline-style grid containers
+───────────────────────────────────────────────────────── */
+
+/* 2-col grid → 1-col on mobile */
+.grid-2 {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 14px;
+}
+@media (max-width: 560px) {
+  .grid-2 { grid-template-columns: 1fr; }
+}
+
+/* 3-col grid → 1-col on mobile */
+.grid-3 {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 12px;
+}
+@media (max-width: 640px) {
+  .grid-3 { grid-template-columns: 1fr; }
+}
+
+/* Stats grid: 2×2 on mobile, 4 on desktop */
+.stats-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 14px;
+}
+@media (min-width: 900px) {
+  .stats-grid { grid-template-columns: repeat(4, minmax(0, 1fr)); }
+}
+
+/* ─────────────────────────────────────────────────────────
+   RESPONSIVE TEXT
+───────────────────────────────────────────────────────── */
+@media (max-width: 480px) {
+  .page-title  { font-size: 1.4rem; }
+  .stat-card-value { font-size: 1.75rem; }
+}
+
+/* ─────────────────────────────────────────────────────────
+   MOBILE-SPECIFIC OVERRIDES
+   Prevent content from overflowing on narrow screens
+───────────────────────────────────────────────────────── */
+@media (max-width: 480px) {
+  /* Stack any flex row that has gap on very small screens */
+  .mobile-stack {
+    flex-direction: column !important;
+  }
+  /* Ensure full-width on mobile */
+  .mobile-full {
+    width: 100% !important;
+    min-width: 0 !important;
+  }
+  /* Hide long labels on mobile */
+  .mobile-hide { display: none !important; }
+}
+
+/* ─────────────────────────────────────────────────────────
+   HEADER RESPONSIVE
+───────────────────────────────────────────────────────── */
+.header-title    { display: none; }
+.header-username { display: none; }
+.header-nav      { display: flex; }
+.header-spacer   { display: flex; }
+.header-mobile-btn { display: none; }
+
+@media (min-width: 640px) {
+  .header-title    { display: block !important; }
+  .header-username { display: block !important; }
+}
+@media (max-width: 767px) {
+  .header-nav        { display: none !important; }
+  .header-mobile-btn { display: flex !important; }
+}
+@media (min-width: 768px) {
+  .header-mobile-btn { display: none !important; }
+}
+
+/* ─────────────────────────────────────────────────────────
+   DASHBOARD CONTAINER — proper padding on all screen sizes
+───────────────────────────────────────────────────────── */
+.dashboard-container {
+  max-width: 1280px;
+  margin-left: auto;
+  margin-right: auto;
+  padding: 24px 16px 32px;
+  box-sizing: border-box;
+  width: 100%;
+}
+@media (min-width: 640px) {
+  .dashboard-container { padding: 24px 24px 40px; }
+}
+@media (min-width: 1024px) {
+  .dashboard-container { padding: 32px 32px 48px; }
+}
+
+/* ─────────────────────────────────────────────────────────
+   LOGIN PAGE — two-column layout
+───────────────────────────────────────────────────────── */
+.login-left { display: none; }
+@media (min-width: 900px) {
+  .login-left { display: flex !important; }
+  .login-mobile-logo { display: none !important; }
+}

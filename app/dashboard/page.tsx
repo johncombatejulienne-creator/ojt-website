@@ -384,7 +384,7 @@ export default function StudentDashboard() {
         </div>
 
         {/* ── Stats Grid ───────────────────────────────────── */}
-        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2, minmax(0,1fr))', gap: 14 }}>
+        <div className="stats-grid">
           <StatCard label="Narratives" value={ns.total} sub="submitted"
             bg="linear-gradient(135deg,#F97316,#F97316)" icon={icons.narratives} />
           <StatCard label="This Week" value={ns.thisWeek} sub="narratives"
@@ -433,7 +433,7 @@ export default function StudentDashboard() {
           <h2 style={{ fontSize: 16, fontWeight: 800, color: '#111827', margin: '0 0 14px' }}>
             Quick Actions
           </h2>
-          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2, minmax(0,1fr))', gap: 12 }}>
+          <div className="grid-2">
             <QuickAction label="New Narrative" desc="Document today's activities"
               accent="#F97316" onClick={() => router.push('/narratives/create')} icon={icons.newNarr} />
             <QuickAction label="My Narratives" desc="View all submissions"

@@ -290,7 +290,7 @@ export default function CreateNarrativePage() {
           boxShadow: '0 1px 4px rgba(0,0,0,0.06)', padding: 24,
           display: 'flex', flexDirection: 'column', gap: 20 }}>
 
-          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 16 }}>
+          <div className="grid-2">
             <Input label="Date of Activity" type="date" name="date" value={form.date}
               onChange={handle} max={new Date().toISOString().split('T')[0]} required />
             <Input label="Activity / Task Title" type="text" name="activity" value={form.activity}
