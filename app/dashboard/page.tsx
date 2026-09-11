@@ -202,10 +202,6 @@ export default function StudentDashboard() {
           const { narratives } = await recentRes.json()
           if (narratives) setRecentNarratives(narratives.slice(0, 5))
         }
-        if (nRes.ok) {
-          const { stats } = await nRes.json()
-          if (stats) setNs(stats)
-        }
       } catch (e) { console.error(e) }
       finally { setLoading(false) }
     }

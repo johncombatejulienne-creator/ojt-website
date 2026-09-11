@@ -133,12 +133,16 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
     }
 
-    // Auto-create teacher if needed (they clicked "Teacher" tab and hit this endpoint)
-    const teacher = await ensureTeacher(
-      session.user.email,
-      session.user.name,
-      session.user.image ?? null,
-    )
+    // Only teachers can post announcements — check DB directly
+    const teacher = await prisma.teacher.findUnique({
+      where: { email: session.user.email },
+      select: { id: true, name: true },
+    })
+    if (!teacher) {
+      return NextResponse.json({
+        error: 'Only teachers can post announcements.',
+      }, { status: 403 })
+    }
 
     const body = await request.json()
     const { title, content, type = 'reminder', targetType = 'all', strandId, sectionId, expiresAt } = body

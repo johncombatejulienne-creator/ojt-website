@@ -7,7 +7,8 @@ export async function GET() {
   try {
     const session = await getServerSession(authOptions)
     
-    if (!session || !session.user || session.user.role !== 'student') {
+    // Accept student role or pending (new user whose finalize hasn't refreshed session yet)
+    if (!session || !session.user || !session.user.email) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
     }
 

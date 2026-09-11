@@ -220,12 +220,12 @@ export default function NarrativeDetailPage() {
               </button>
             )}
             {narrative.isDraft && (
-              <button onClick={() => router.push(`/narratives/${id}/edit`)} style={{
+              <button onClick={() => router.push('/narratives/create')} style={{
                 padding: '8px 18px', background: '#F97316', color: 'white',
                 border: 'none', borderRadius: 10, fontSize: 13, fontWeight: 600,
                 cursor: 'pointer', fontFamily: 'inherit',
               }}>
-                Continue Editing
+                New Narrative
               </button>
             )}
           </div>

@@ -48,7 +48,6 @@ model Teacher {
   sections         Section[]
   announcements    Announcement[]
   narrativeReviews NarrativeReview[]
-  notifications    Notification[]
   createdAt        DateTime          @default(now())
   updatedAt        DateTime          @updatedAt
 
@@ -114,7 +113,6 @@ model Notification {
   id         String   @id @default(cuid())
   userId     String
   userType   String   // student, teacher
-  teacher    Teacher? @relation(fields: [userId], references: [id], onDelete: Cascade)
   type       String   // narrative_approved, revision_requested, missing_submission, etc.
   title      String
   message    String   @db.Text
