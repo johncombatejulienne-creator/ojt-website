@@ -160,10 +160,35 @@ export default function CreateNarrativePage() {
           <h1 style={{ fontSize: 26, fontWeight: 900, color: '#111827', margin: '0 0 10px' }}>
             Narrative Submitted!
           </h1>
-          <p style={{ fontSize: 15, color: '#6B7280', margin: '0 0 32px', lineHeight: 1.6 }}>
+          <p style={{ fontSize: 15, color: '#6B7280', margin: '0 0 24px', lineHeight: 1.6 }}>
             Your narrative has been saved and the verification photo has been recorded.
             Your teacher can now review your submission.
           </p>
+
+          {/* ── Download reminder banner ── */}
+          <div style={{
+            background: 'linear-gradient(135deg,#FFF7ED,#FFEDD5)',
+            border: '2px solid #FED7AA', borderRadius: 16, padding: '18px 20px',
+            marginBottom: 24, textAlign: 'left',
+          }}>
+            <div style={{ display: 'flex', gap: 12, alignItems: 'flex-start' }}>
+              <div style={{ width: 40, height: 40, background: '#F97316', borderRadius: 10, flexShrink: 0,
+                display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                <svg style={{ width: 20, height: 20, color: 'white' }} fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2}
+                    d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+                </svg>
+              </div>
+              <div>
+                <p style={{ fontWeight: 800, fontSize: 14, color: '#92400E', margin: '0 0 4px' }}>
+                  📥 Important: Download Your Narrative!
+                </p>
+                <p style={{ fontSize: 13, color: '#B45309', lineHeight: 1.5, margin: 0 }}>
+                  You <strong>must download</strong> a copy of your narrative for your personal records and to submit a printed copy to your teacher. Click the button below to download it now.
+                </p>
+              </div>
+            </div>
+          </div>
 
           {/* Action buttons */}
           <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
@@ -179,7 +204,7 @@ export default function CreateNarrativePage() {
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2}
                     d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
                 </svg>
-                Download Narrative
+                Download Narrative Now
               </a>
             )}
             <button onClick={() => router.push('/narratives')} style={{

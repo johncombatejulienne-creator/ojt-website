@@ -212,6 +212,8 @@ export default function TeacherDashboard() {
   const [deletingAccount,      setDeletingAccount]      = useState(false)
   const [deleteStudentTarget,  setDeleteStudentTarget]  = useState<Student | null>(null)
   const [deletingStudent,      setDeletingStudent]      = useState(false)
+  const [deleteTeacherTarget,  setDeleteTeacherTarget]  = useState<Teacher | null>(null)
+  const [deletingTeacher,      setDeletingTeacher]      = useState(false)
 
   /* ── Load all data ──────────────────────────────────────── */
   const loadData = useCallback(async () => {
@@ -326,6 +328,22 @@ export default function TeacherDashboard() {
       alert('Failed to delete student.')
     } finally {
       setDeletingStudent(false)
+    }
+  }
+
+  /* ── Delete teacher ─────────────────────────────────────── */
+  const handleDeleteTeacher = async () => {
+    if (!deleteTeacherTarget) return
+    setDeletingTeacher(true)
+    try {
+      const res = await fetch(`/api/teacher/teachers/${deleteTeacherTarget.id}`, { method: 'DELETE' })
+      if (!res.ok) throw new Error('Failed')
+      setTeachers(prev => prev.filter(t => t.id !== deleteTeacherTarget.id))
+      setDeleteTeacherTarget(null)
+    } catch {
+      alert('Failed to delete teacher account.')
+    } finally {
+      setDeletingTeacher(false)
     }
   }
 
@@ -640,14 +658,36 @@ export default function TeacherDashboard() {
                         {t.sections.length > 0 && ` · ${t.sections.length} section${t.sections.length !== 1 ? 's' : ''}`}
                       </p>
                     </div>
-                    <p style={{ fontSize: 11, color: '#9CA3AF', flexShrink: 0 }}>
-                      {new Date(t.createdAt).toLocaleDateString()}
-                    </p>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: 10, flexShrink: 0 }}>
+                      <p style={{ fontSize: 11, color: '#9CA3AF' }}>
+                        {new Date(t.createdAt).toLocaleDateString()}
+                      </p>
+                      {t.email !== session?.user?.email && (
+                        <button onClick={() => setDeleteTeacherTarget(t)} style={{
+                          padding: '5px 12px', borderRadius: 8, fontSize: 12, fontWeight: 600,
+                          background: '#FEF2F2', color: '#DC2626', border: '1px solid #FECACA',
+                          cursor: 'pointer', fontFamily: 'inherit',
+                        }}>Delete</button>
+                      )}
+                    </div>
                   </div>
                 ))
               )}
             </div>
           </div>
+        )}
+
+        {/* Delete teacher confirm modal */}
+        {deleteTeacherTarget && (
+          <ConfirmModal
+            title="Delete Teacher Account?"
+            body={<>This will permanently delete <strong>{deleteTeacherTarget.name}</strong>&apos;s account. Their students will be unassigned.</>}
+            confirmLabel="Yes, Delete"
+            danger
+            loading={deletingTeacher}
+            onConfirm={handleDeleteTeacher}
+            onCancel={() => setDeleteTeacherTarget(null)}
+          />
         )}
 
         {/* ════════════════════════════════════════════════

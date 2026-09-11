@@ -188,14 +188,15 @@ export default function TeacherStudentDetailPage() {
                       </div>
                       <p style={{ fontSize: 12, color: '#9CA3AF', margin: 0 }}>📅 {dateStr}</p>
                     </div>
-                    {/* Approve/Request Revision buttons for pending narratives */}
-                    {n.status === 'pending' && !n.isDraft && (
+                    {/* Approve/Request Revision buttons — show for any non-approved submitted narrative */}
+                    {!n.isDraft && n.status !== 'approved' && (
                       <div style={{ display: 'flex', gap: 6, flexShrink: 0 }}>
                         <button onClick={async () => {
+                          const comment = window.prompt('Optional feedback for student (or leave blank):') ?? ''
                           await fetch(`/api/narratives/${n.id}/review`, {
                             method: 'POST',
                             headers: { 'Content-Type': 'application/json' },
-                            body: JSON.stringify({ action: 'approved' }),
+                            body: JSON.stringify({ action: 'approved', comment: comment || undefined }),
                           })
                           setStudent(prev => prev ? {
                             ...prev,
@@ -205,12 +206,14 @@ export default function TeacherStudentDetailPage() {
                           padding: '6px 12px', background: '#D1FAE5', color: '#065F46',
                           border: '1px solid #A7F3D0', borderRadius: 8, fontSize: 12,
                           fontWeight: 600, cursor: 'pointer', fontFamily: 'inherit',
-                        }}>Approve</button>
+                        }}>✓ Approve</button>
                         <button onClick={async () => {
+                          const comment = window.prompt('Reason for revision (required):')
+                          if (!comment?.trim()) return
                           await fetch(`/api/narratives/${n.id}/review`, {
                             method: 'POST',
                             headers: { 'Content-Type': 'application/json' },
-                            body: JSON.stringify({ action: 'revision_requested' }),
+                            body: JSON.stringify({ action: 'revision_requested', comment }),
                           })
                           setStudent(prev => prev ? {
                             ...prev,
@@ -220,8 +223,14 @@ export default function TeacherStudentDetailPage() {
                           padding: '6px 12px', background: '#FFEDD5', color: '#9A3412',
                           border: '1px solid #FED7AA', borderRadius: 8, fontSize: 12,
                           fontWeight: 600, cursor: 'pointer', fontFamily: 'inherit',
-                        }}>Revise</button>
+                        }}>↩ Revise</button>
                       </div>
+                    )}
+                    {!n.isDraft && n.status === 'approved' && (
+                      <span style={{ fontSize: 11, fontWeight: 700, background: '#D1FAE5',
+                        color: '#065F46', padding: '4px 10px', borderRadius: 999, whiteSpace: 'nowrap' }}>
+                        ✓ Approved
+                      </span>
                     )}
                   </div>
                 </div>
