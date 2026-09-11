@@ -243,10 +243,12 @@ export default function EditProfilePage() {
           </div>
 
           {/* Info form */}
-          <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-6">
-            <h2 className="font-semibold text-gray-900 mb-5">Personal Information</h2>
-            <form onSubmit={handleSave} className="space-y-5">
-              <div className="grid sm:grid-cols-2 gap-4">
+          <div style={{ background: 'white', borderRadius: 16, border: '1px solid #E5E7EB', padding: '24px', boxShadow: '0 1px 4px rgba(0,0,0,0.06)' }}>
+            <h2 style={{ fontSize: 16, fontWeight: 700, color: '#111827', marginBottom: 20 }}>Personal Information</h2>
+            <form onSubmit={handleSave} style={{ display: 'flex', flexDirection: 'column', gap: 18 }}>
+
+              {/* Name + ID */}
+              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 14 }}>
                 <Input label="Full Name" type="text" value={form.name} required placeholder="Juan Dela Cruz"
                   onChange={e=>setForm({...form,name:e.target.value})} />
                 <Input label="Student ID" type="text" value={form.studentId} required placeholder="2024-12345"
@@ -256,37 +258,28 @@ export default function EditProfilePage() {
 
               {/* Email read-only */}
               <div>
-                <label className="block text-xs font-semibold text-gray-500 uppercase tracking-wider mb-1.5">
+                <label style={{ display: 'block', fontSize: 11, fontWeight: 700, color: '#6B7280', textTransform: 'uppercase' as const, letterSpacing: '0.06em', marginBottom: 6 }}>
                   Email Address
                 </label>
                 <input type="email" value={session?.user?.email??''} disabled
-                  className="w-full px-4 py-2.5 border border-gray-200 rounded-xl bg-gray-50
-                    text-gray-400 text-sm cursor-not-allowed" />
-                <p className="text-xs text-gray-400 mt-1">Linked to your Google account.</p>
+                  style={{ width: '100%', padding: '10px 14px', border: '1.5px solid #E5E7EB', borderRadius: 10, fontSize: 14, background: '#F9FAFB', color: '#9CA3AF', cursor: 'not-allowed', boxSizing: 'border-box' as const }} />
+                <p style={{ fontSize: 11, color: '#9CA3AF', marginTop: 4 }}>Linked to your Google account.</p>
               </div>
 
-              <div className="grid sm:grid-cols-2 gap-4">
-                {/* Grade */}
+              {/* Grade + Strand */}
+              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 14 }}>
                 <div>
-                  <label className="block text-xs font-semibold text-gray-500 uppercase tracking-wider mb-1.5">
-                    Grade Level
-                  </label>
+                  <label style={{ display: 'block', fontSize: 11, fontWeight: 700, color: '#6B7280', textTransform: 'uppercase' as const, letterSpacing: '0.06em', marginBottom: 6 }}>Grade Level</label>
                   <select value={form.gradeLevel} onChange={e=>setForm({...form,gradeLevel:Number(e.target.value)})}
-                    className="w-full px-4 py-2.5 border border-gray-200 rounded-xl text-sm bg-white
-                      focus:outline-none focus:ring-2 focus:ring-indigo-300 focus:border-indigo-400">
+                    style={{ width: '100%', padding: '10px 14px', border: '1.5px solid #E5E7EB', borderRadius: 10, fontSize: 14, background: 'white', boxSizing: 'border-box' as const, fontFamily: 'inherit' }}>
                     <option value={11}>Grade 11</option>
                     <option value={12}>Grade 12</option>
                   </select>
                 </div>
-                {/* Strand */}
                 <div>
-                  <label className="block text-xs font-semibold text-gray-500 uppercase tracking-wider mb-1.5">
-                    Strand
-                  </label>
-                  <select value={form.strandId}
-                    onChange={e=>setForm({...form,strandId:e.target.value,sectionId:''})}
-                    className="w-full px-4 py-2.5 border border-gray-200 rounded-xl text-sm bg-white
-                      focus:outline-none focus:ring-2 focus:ring-indigo-300 focus:border-indigo-400">
+                  <label style={{ display: 'block', fontSize: 11, fontWeight: 700, color: '#6B7280', textTransform: 'uppercase' as const, letterSpacing: '0.06em', marginBottom: 6 }}>Strand</label>
+                  <select value={form.strandId} onChange={e=>setForm({...form,strandId:e.target.value,sectionId:''})}
+                    style={{ width: '100%', padding: '10px 14px', border: '1.5px solid #E5E7EB', borderRadius: 10, fontSize: 14, background: 'white', boxSizing: 'border-box' as const, fontFamily: 'inherit' }}>
                     <option value="">Select strand</option>
                     {strands.map(s=><option key={s.id} value={s.id}>{s.name}</option>)}
                   </select>
@@ -295,69 +288,55 @@ export default function EditProfilePage() {
 
               {/* Section */}
               <div>
-                <label className="block text-xs font-semibold text-gray-500 uppercase tracking-wider mb-1.5">
-                  Section
-                </label>
+                <label style={{ display: 'block', fontSize: 11, fontWeight: 700, color: '#6B7280', textTransform: 'uppercase' as const, letterSpacing: '0.06em', marginBottom: 8 }}>Section</label>
                 {/* Toggle */}
-                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 8, marginBottom: 8 }}>
-                  {(['list','custom'] as const).map(mode => (
-                    <button key={mode} type="button"
-                      onClick={() => setUseCustomSection(mode === 'custom')}
-                      style={{
-                        padding: '7px', borderRadius: 8, fontSize: 12, fontWeight: 600,
-                        border: 'none', cursor: 'pointer', fontFamily: 'inherit',
-                        background: (mode === 'custom') === useCustomSection ? '#F97316' : '#F3F4F6',
-                        color: (mode === 'custom') === useCustomSection ? 'white' : '#6B7280',
-                      }}>
-                      {mode === 'list' ? 'Select from List' : 'Type My Section'}
-                    </button>
-                  ))}
+                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 8, marginBottom: 10 }}>
+                  <button type="button" onClick={() => setUseCustomSection(false)}
+                    style={{ padding: '9px', borderRadius: 8, fontSize: 13, fontWeight: 600, border: 'none', cursor: 'pointer', fontFamily: 'inherit',
+                      background: !useCustomSection ? '#F97316' : '#F3F4F6',
+                      color: !useCustomSection ? 'white' : '#6B7280' }}>
+                    Select from List
+                  </button>
+                  <button type="button" onClick={() => setUseCustomSection(true)}
+                    style={{ padding: '9px', borderRadius: 8, fontSize: 13, fontWeight: 600, border: 'none', cursor: 'pointer', fontFamily: 'inherit',
+                      background: useCustomSection ? '#F97316' : '#F3F4F6',
+                      color: useCustomSection ? 'white' : '#6B7280' }}>
+                    Type My Section
+                  </button>
                 </div>
                 {!useCustomSection ? (
                   <select value={form.sectionId} onChange={e=>setForm({...form,sectionId:e.target.value})}
                     disabled={!form.strandId}
-                    className="w-full px-4 py-2.5 border border-gray-200 rounded-xl text-sm bg-white
-                      focus:outline-none focus:ring-2 focus:ring-indigo-300 focus:border-indigo-400
-                      disabled:bg-gray-50 disabled:text-gray-400">
-                    <option value="">{!form.strandId?'Select a strand first':'Select your section'}</option>
+                    style={{ width: '100%', padding: '10px 14px', border: '1.5px solid #E5E7EB', borderRadius: 10, fontSize: 14, background: form.strandId ? 'white' : '#F9FAFB', color: form.sectionId ? '#111827' : '#9CA3AF', boxSizing: 'border-box' as const, fontFamily: 'inherit', cursor: form.strandId ? 'pointer' : 'not-allowed' }}>
+                    <option value="">{!form.strandId ? 'Select a strand first' : 'Select your section'}</option>
                     {sections.map(s=><option key={s.id} value={s.id}>{s.name}</option>)}
                   </select>
                 ) : (
-                  <>
-                    <input type="text" value={customSection}
-                      onChange={e => setCustomSection(e.target.value)}
+                  <div>
+                    <input type="text" value={customSection} onChange={e=>setCustomSection(e.target.value)}
                       placeholder="e.g. Einstein, 12-STEM-1, Section A"
                       disabled={!form.strandId}
-                      className="w-full px-4 py-2.5 border border-gray-200 rounded-xl text-sm bg-white
-                        focus:outline-none focus:ring-2 focus:ring-orange-300 focus:border-orange-400
-                        disabled:bg-gray-50 disabled:text-gray-400" />
-                    <p className="text-xs text-gray-400 mt-1">Students with the same section name will be grouped together in the teacher dashboard.</p>
-                  </>
+                      style={{ width: '100%', padding: '10px 14px', border: '1.5px solid #E5E7EB', borderRadius: 10, fontSize: 14, background: form.strandId ? 'white' : '#F9FAFB', boxSizing: 'border-box' as const, fontFamily: 'inherit', outline: 'none' }} />
+                    <p style={{ fontSize: 11, color: '#9CA3AF', marginTop: 4 }}>Students with the same section name are grouped together in the teacher dashboard.</p>
+                  </div>
                 )}
               </div>
 
-              <div className="border-t border-gray-100 pt-4">
-                <p className="text-xs font-semibold text-gray-400 uppercase tracking-wider mb-4">
-                  Work Immersion Details
-                </p>
-                <div className="grid sm:grid-cols-2 gap-4">
+              {/* Work Immersion Details */}
+              <div style={{ borderTop: '1px solid #F3F4F6', paddingTop: 16 }}>
+                <p style={{ fontSize: 11, fontWeight: 700, color: '#9CA3AF', textTransform: 'uppercase' as const, letterSpacing: '0.06em', marginBottom: 14 }}>Work Immersion Details</p>
+                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 14 }}>
                   <Input label="Company / Establishment" type="text" value={form.company}
-                    onChange={e=>setForm({...form,company:e.target.value})}
-                    placeholder="ABC Company" />
+                    onChange={e=>setForm({...form,company:e.target.value})} placeholder="ABC Company" />
                   <Input label="Course / Program" type="text" value={form.course}
-                    onChange={e=>setForm({...form,course:e.target.value})}
-                    placeholder="e.g. Computer Science" />
+                    onChange={e=>setForm({...form,course:e.target.value})} placeholder="e.g. Computer Science" />
                 </div>
               </div>
 
-              <div className="flex gap-3 pt-2">
-                <Button type="submit" isLoading={saving} size="lg" className="flex-1">
-                  Save Changes
-                </Button>
-                <Button type="button" variant="outline" size="lg"
-                  onClick={()=>router.push('/dashboard')} disabled={saving}>
-                  Cancel
-                </Button>
+              {/* Buttons */}
+              <div style={{ display: 'flex', gap: 12, paddingTop: 4 }}>
+                <Button type="submit" isLoading={saving} size="lg" className="flex-1">Save Changes</Button>
+                <Button type="button" variant="outline" size="lg" onClick={()=>router.push('/dashboard')} disabled={saving}>Cancel</Button>
               </div>
             </form>
           </div>

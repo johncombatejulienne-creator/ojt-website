@@ -153,7 +153,6 @@ export default function StudentDashboard() {
   const [cl, setCl] = useState<ChecklistStats>({ totalItems: 0, completedItems: 0, progressPercentage: 0 })
   const [ns, setNs] = useState<NarrativeStats>({ total: 0, thisWeek: 0, pending: 0 })
   const [loading,   setLoading]   = useState(true)
-  const [needsReg,  setNeedsReg]  = useState(false)
 
   useEffect(() => {
     if (status === 'unauthenticated') router.push('/login')
@@ -171,7 +170,7 @@ export default function StudentDashboard() {
         if (pRes.ok) {
           const { student: s } = await pRes.json()
           setStudent(s)
-          if (!s.strandId || !s.sectionId) setNeedsReg(true)
+          // Never block dashboard — students can use all features without a complete profile
         }
         if (cRes.ok) {
           const { checklists } = await cRes.json()
@@ -203,34 +202,7 @@ export default function StudentDashboard() {
     </div>
   )
 
-  /* Needs registration */
-  if (needsReg) return (
-    <AppShell>
-      <div style={{ minHeight: '70vh', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-        <div style={{ maxWidth: 380, width: '100%', background: 'white', borderRadius: 24,
-          boxShadow: '0 20px 60px rgba(0,0,0,0.1)', padding: 40, textAlign: 'center' }}>
-          <div style={{ width: 64, height: 64, background: '#FFF7ED', borderRadius: 18,
-            display: 'flex', alignItems: 'center', justifyContent: 'center', margin: '0 auto 20px' }}>
-            <svg style={{ width: 32, height: 32, color: '#F97316' }} fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2}
-                d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"/>
-            </svg>
-          </div>
-          <h2 style={{ fontSize: 22, fontWeight: 800, color: '#111827', margin: '0 0 10px' }}>Complete Your Profile</h2>
-          <p style={{ fontSize: 14, color: '#6B7280', margin: '0 0 28px', lineHeight: 1.6 }}>
-            Fill in your student details to unlock the full Work Immersion dashboard.
-          </p>
-          <button onClick={() => router.push('/profile/complete')} style={{
-            width: '100%', padding: '14px', background: '#F97316', color: 'white',
-            border: 'none', borderRadius: 12, fontSize: 15, fontWeight: 700,
-            cursor: 'pointer', fontFamily: 'inherit',
-          }}>
-            Complete Profile
-          </button>
-        </div>
-      </div>
-    </AppShell>
-  )
+  /* Needs registration — removed gate, show dashboard directly */
 
   const strandKey = student?.strand?.name?.toUpperCase().split(' ')
     .find(w => ['STEM', 'ABM', 'HUMSS', 'TVL'].includes(w)) ?? 'DEFAULT'

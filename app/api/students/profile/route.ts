@@ -98,8 +98,10 @@ export async function PUT(request: NextRequest) {
 
     const updateData: Record<string, unknown> = {}
     if (name           !== undefined) updateData.name           = name
-    if (studentId !== undefined && studentId.trim() && !studentId.startsWith('STU-')) {
-      updateData.studentId = studentId
+    // Always update studentId if provided and non-empty
+    // (allow STU- prefixed IDs — they are valid auto-generated IDs)
+    if (studentId !== undefined && studentId.trim()) {
+      updateData.studentId = studentId.trim()
     }
     if (strandId       !== undefined) updateData.strandId       = strandId
     if (finalSectionId !== undefined) updateData.sectionId      = finalSectionId
