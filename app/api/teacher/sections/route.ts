@@ -46,9 +46,9 @@ export async function GET() {
       orderBy: { name: 'asc' },
     })
 
-    // Sections for filter tabs
+    // Sections for filter tabs — include NULL isActive (old rows before migration)
     const sections = await prisma.section.findMany({
-      where: { isActive: true },
+      where: { OR: [{ isActive: true }, { isActive: null }] },
       include: {
         strand:  { select: { id: true, name: true } },
         teacher: { select: { id: true, name: true, email: true } },

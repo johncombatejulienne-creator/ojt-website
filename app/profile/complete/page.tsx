@@ -3,23 +3,18 @@
 import { useState, useEffect, useRef } from 'react'
 import { useRouter } from 'next/navigation'
 import { useSession } from 'next-auth/react'
-import { Card, CardContent } from '@/components/ui/Card'
-import { Button } from '@/components/ui/Button'
-import { Input } from '@/components/ui/Input'
 
-/* â”€â”€â”€ Types â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */
-interface Strand  { id: string; name: string; code: string }
+interface Strand  { id: string; name: string }
 interface Section { id: string; name: string; gradeLevel: number; strandId: string }
 
-/* â”€â”€â”€ Page â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */
 export default function CompleteProfilePage() {
   const router = useRouter()
   const { data: session, status } = useSession()
 
-  const [submitting,  setSubmitting]  = useState(false)
-  const [error,       setError]       = useState('')
-  const [strands,     setStrands]     = useState<Strand[]>([])
-  const [sections,    setSections]    = useState<Section[]>([])
+  const [submitting,       setSubmitting]       = useState(false)
+  const [error,            setError]            = useState('')
+  const [strands,          setStrands]          = useState<Strand[]>([])
+  const [sections,         setSections]         = useState<Section[]>([])
   const [useCustomSection, setUseCustomSection] = useState(false)
   const errorRef = useRef<HTMLDivElement>(null)
 
@@ -33,69 +28,43 @@ export default function CompleteProfilePage() {
     course:        '',
   })
 
-  /* â”€â”€ Redirect unauthenticated â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */
   useEffect(() => {
     if (status === 'unauthenticated') router.push('/login')
   }, [status, router])
 
-  /* â”€â”€ Load strands â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */
   useEffect(() => {
-    let cancelled = false
-    fetch('/api/strands')
-      .then((r) => r.json())
-      .then((data) => { if (!cancelled) setStrands(data.strands ?? []) })
-      .catch(() => {})
-    return () => { cancelled = true }
+    fetch('/api/strands').then(r => r.json()).then(d => setStrands(d.strands ?? [])).catch(() => {})
   }, [])
 
-  /* â”€â”€ Load sections when strand changes â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */
   useEffect(() => {
-    if (!form.strandId) {
-      // eslint-disable-next-line react-hooks/set-state-in-effect
-      setSections([])
-      return
-    }
-    let cancelled = false
+    if (!form.strandId) { setSections([]); return }
     fetch(`/api/sections?strandId=${form.strandId}`)
-      .then((r) => r.json())
-      .then((d) => { if (!cancelled) setSections(d.sections ?? []) })
-      .catch(() => {})
-    return () => { cancelled = true }
+      .then(r => r.json()).then(d => setSections(d.sections ?? [])).catch(() => {})
   }, [form.strandId])
 
-  /* â”€â”€ Scroll to error â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */
   useEffect(() => {
     if (error && errorRef.current) {
       errorRef.current.scrollIntoView({ behavior: 'smooth', block: 'center' })
     }
   }, [error])
 
-  const handleChange = (
-    e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>
-  ) => {
+  const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement>) => {
     const { name, value } = e.target
-    setForm((prev) => ({
-      ...prev,
-      [name]: value,
-      ...(name === 'strandId' ? { sectionId: '' } : {}),
-    }))
+    setForm(prev => ({ ...prev, [name]: value, ...(name === 'strandId' ? { sectionId: '' } : {}) }))
     if (error) setError('')
   }
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
     setError('')
-
-    // Client-side validation
     if (!form.studentId.trim())  { setError('Student ID is required.'); return }
     if (!form.strandId)          { setError('Please select your strand.'); return }
     if (!useCustomSection && !form.sectionId) {
-      setError('Please select a section or type your section name.'); return
+      setError('Please select a section or click "Type My Section" to enter one.'); return
     }
     if (useCustomSection && !form.customSection.trim()) {
       setError('Please enter your section name.'); return
     }
-
     setSubmitting(true)
     try {
       const res = await fetch('/api/students/complete-registration', {
@@ -103,15 +72,13 @@ export default function CompleteProfilePage() {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           ...form,
-          sectionName: useCustomSection ? form.customSection : undefined,
+          sectionName: useCustomSection ? form.customSection.trim() : undefined,
         }),
       })
-
       if (!res.ok) {
         const data = await res.json()
         throw new Error(data.error ?? 'Registration failed. Please try again.')
       }
-
       router.push('/dashboard')
     } catch (err: unknown) {
       setError(err instanceof Error ? err.message : 'An error occurred.')
@@ -120,285 +87,219 @@ export default function CompleteProfilePage() {
     }
   }
 
-  /* â”€â”€ Loading â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */
-  if (status === 'loading') {
-    return (
-      <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-blue-50 via-purple-50 to-pink-50">
-        <div className="text-center">
-          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-purple-600 mx-auto mb-4" />
-          <p className="text-gray-500 text-sm">Loadingâ€¦</p>
-        </div>
-      </div>
-    )
+  if (status === 'loading') return (
+    <div style={{ minHeight: '100vh', display: 'flex', alignItems: 'center', justifyContent: 'center', background: '#F8FAFC' }}>
+      <div style={{ width: 44, height: 44, border: '4px solid #E5E7EB', borderTopColor: '#F97316', borderRadius: '50%', animation: 'spin 1s linear infinite' }} />
+      <style>{`@keyframes spin{to{transform:rotate(360deg)}}`}</style>
+    </div>
+  )
+
+  const inp: React.CSSProperties = {
+    width: '100%', padding: '11px 14px', border: '1.5px solid #E5E7EB',
+    borderRadius: 10, fontSize: 14, outline: 'none', background: 'white',
+    fontFamily: 'inherit', boxSizing: 'border-box', color: '#111827',
+  }
+  const label: React.CSSProperties = {
+    display: 'block', fontSize: 12, fontWeight: 700, color: '#374151',
+    marginBottom: 6, textTransform: 'uppercase', letterSpacing: '0.05em',
+  }
+  const card: React.CSSProperties = {
+    background: 'white', borderRadius: 16, border: '1px solid #E5E7EB',
+    padding: '20px 24px', marginBottom: 16, boxSizing: 'border-box',
+    boxShadow: '0 1px 4px rgba(0,0,0,0.06)',
+  }
+  const sectionTitle: React.CSSProperties = {
+    fontSize: 15, fontWeight: 800, color: '#111827', marginBottom: 16,
+    paddingBottom: 10, borderBottom: '1px solid #F3F4F6',
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-blue-50 via-purple-50 to-pink-50 py-8 px-4">
+    <div style={{ minHeight: '100vh', background: '#F8FAFC', padding: '32px 16px 64px', fontFamily: '-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif' }}>
+      <style>{`@keyframes spin{to{transform:rotate(360deg)}} input:focus,select:focus,textarea:focus{border-color:#F97316 !important; box-shadow:0 0 0 3px rgba(249,115,22,0.1);}`}</style>
 
-      {/* Back to login */}
-      <button
-        onClick={() => router.push('/login')}
-        className="fixed top-4 left-4 z-50 flex items-center gap-2 bg-white/80 hover:bg-white backdrop-blur-sm px-3 py-2 rounded-xl shadow-md transition-all text-sm font-medium text-gray-700 hover:text-gray-900"
-      >
-        <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+      {/* Back button */}
+      <button onClick={() => router.push('/login')} style={{
+        display: 'flex', alignItems: 'center', gap: 6, fontSize: 13, color: '#6B7280',
+        background: 'white', border: '1px solid #E5E7EB', borderRadius: 10,
+        padding: '7px 14px', cursor: 'pointer', marginBottom: 24, fontFamily: 'inherit',
+      }}>
+        <svg style={{ width: 14, height: 14 }} fill="none" stroke="currentColor" viewBox="0 0 24 24">
           <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
         </svg>
         Back to Login
       </button>
 
-      <div className="max-w-2xl mx-auto pt-8">
+      <div style={{ maxWidth: 560, margin: '0 auto' }}>
+
         {/* Header */}
-        <div className="text-center mb-8">
-          <div className="inline-flex items-center justify-center w-16 h-16 bg-gradient-to-br from-blue-600 to-purple-600 rounded-2xl mb-4 shadow-lg">
-            <svg className="w-8 h-8 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2}
-                d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
+        <div style={{ textAlign: 'center', marginBottom: 28 }}>
+          <div style={{
+            width: 64, height: 64, borderRadius: 18, margin: '0 auto 16px',
+            background: 'linear-gradient(135deg,#F97316,#FBBF24)',
+            display: 'flex', alignItems: 'center', justifyContent: 'center',
+            boxShadow: '0 8px 24px rgba(249,115,22,0.3)',
+          }}>
+            <svg style={{ width: 32, height: 32, color: 'white' }} fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
             </svg>
           </div>
-          <h1 className="text-2xl sm:text-3xl font-bold bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent">
-            Complete Your Profile
-          </h1>
-          <p className="text-gray-500 text-sm mt-2 max-w-xs mx-auto">
-            Fill in your details to access the Work Immersion Program.
-          </p>
+          <h1 style={{ fontSize: 26, fontWeight: 900, color: '#111827', margin: '0 0 6px' }}>Complete Your Profile</h1>
+          <p style={{ fontSize: 14, color: '#6B7280', margin: 0 }}>Fill in your details to access the Work Immersion Program.</p>
         </div>
 
-        {/* Error banner */}
+        {/* Error */}
         {error && (
-          <div
-            ref={errorRef}
-            role="alert"
-            className="mb-5 flex items-start gap-3 p-4 bg-red-50 border border-red-200 rounded-xl text-sm text-red-700 animate-slide-down"
-          >
-            <svg className="w-5 h-5 flex-shrink-0 mt-0.5 text-red-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2}
-                d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+          <div ref={errorRef} style={{
+            display: 'flex', gap: 10, padding: '12px 16px', marginBottom: 16,
+            background: '#FEF2F2', border: '1px solid #FECACA', borderRadius: 12,
+            fontSize: 13, color: '#DC2626',
+          }}>
+            <svg style={{ width: 16, height: 16, flexShrink: 0, marginTop: 1 }} fill="currentColor" viewBox="0 0 20 20">
+              <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z" clipRule="evenodd" />
             </svg>
-            <p>{error}</p>
+            {error}
           </div>
         )}
 
-        <form onSubmit={handleSubmit} noValidate>
-          <div className="space-y-5">
+        <form onSubmit={handleSubmit}>
 
-            {/* â”€â”€ Student Info â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */}
-            <Card>
-              <CardContent padding="lg">
-                <SectionHeading
-                  icon="ðŸ‘¤"
-                  title="Student Information"
-                />
-                <div className="space-y-4 mt-4">
+          {/* Student Info */}
+          <div style={card}>
+            <p style={sectionTitle}>Student Information</p>
+            <div style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
 
-                  <Input
-                    label="Student ID Number"
-                    name="studentId"
-                    value={form.studentId}
-                    onChange={handleChange}
-                    placeholder="e.g. 2024-12345"
-                    required
-                    helperText="Your school-assigned student ID"
-                  />
+              <div>
+                <label style={label}>Student ID Number <span style={{ color: '#EF4444' }}>*</span></label>
+                <input name="studentId" value={form.studentId} onChange={handleChange}
+                  placeholder="e.g. 2024-12345" style={inp} />
+                <p style={{ fontSize: 11, color: '#9CA3AF', marginTop: 4 }}>Your school-assigned student ID</p>
+              </div>
 
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-1.5">
-                      Email Address
-                    </label>
-                    <input
-                      type="email"
-                      value={session?.user?.email ?? ''}
-                      disabled
-                      className="w-full px-4 py-2 border border-gray-200 rounded-xl bg-gray-50 text-gray-500 text-sm cursor-not-allowed"
-                    />
-                    <p className="text-xs text-gray-400 mt-1.5">
-                      ðŸ“§ From your Google account â€” cannot be changed.
-                    </p>
-                  </div>
+              <div>
+                <label style={label}>Email Address</label>
+                <input type="email" value={session?.user?.email ?? ''} disabled
+                  style={{ ...inp, background: '#F9FAFB', color: '#9CA3AF', cursor: 'not-allowed' }} />
+                <p style={{ fontSize: 11, color: '#9CA3AF', marginTop: 4 }}>From your Google account — cannot be changed.</p>
+              </div>
 
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-1.5">
-                      Full Name
-                    </label>
-                    <input
-                      type="text"
-                      value={session?.user?.name ?? ''}
-                      disabled
-                      className="w-full px-4 py-2 border border-gray-200 rounded-xl bg-gray-50 text-gray-500 text-sm cursor-not-allowed"
-                    />
-                    <p className="text-xs text-gray-400 mt-1.5">
-                      ðŸ‘¤ Can be updated later in your profile settings.
-                    </p>
-                  </div>
-                </div>
-              </CardContent>
-            </Card>
-
-            {/* â”€â”€ Academic Info â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */}
-            <Card>
-              <CardContent padding="lg">
-                <SectionHeading icon="ðŸ“š" title="Academic Information" />
-                <div className="space-y-4 mt-4">
-
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-1.5">
-                      Grade Level <span className="text-red-500">*</span>
-                    </label>
-                    <select
-                      name="gradeLevel"
-                      value={form.gradeLevel}
-                      onChange={handleChange}
-                      required
-                      className="w-full px-4 py-2 border border-gray-300 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-purple-500/20 focus:border-purple-500 bg-white appearance-none"
-                    >
-                      <option value={11}>Grade 11</option>
-                      <option value={12}>Grade 12</option>
-                    </select>
-                  </div>
-
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-1.5">
-                      Strand <span className="text-red-500">*</span>
-                    </label>
-                    <select
-                      name="strandId"
-                      value={form.strandId}
-                      onChange={handleChange}
-                      required
-                      className="w-full px-4 py-2 border border-gray-300 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-purple-500/20 focus:border-purple-500 bg-white appearance-none"
-                    >
-                      <option value="">Select your strand</option>
-                      {strands.map((s) => (
-                        <option key={s.id} value={s.id}>{s.name}</option>
-                      ))}
-                    </select>
-                  </div>
-
-                  {/* Section toggle */}
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-2">
-                      Section <span className="text-red-500">*</span>
-                    </label>
-
-                    <div className="grid grid-cols-2 gap-2 mb-3">
-                      {(['list', 'custom'] as const).map((mode) => (
-                        <button
-                          key={mode}
-                          type="button"
-                          onClick={() => setUseCustomSection(mode === 'custom')}
-                          className={`py-2 px-3 rounded-xl text-sm font-medium transition-all duration-200 ${
-                            (mode === 'custom') === useCustomSection
-                              ? 'bg-gradient-to-r from-blue-600 to-purple-600 text-white shadow-sm'
-                              : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
-                          }`}
-                        >
-                          {mode === 'list' ? 'Select from List' : 'Type My Section'}
-                        </button>
-                      ))}
-                    </div>
-
-                    {!useCustomSection ? (
-                      <>
-                        <select
-                          name="sectionId"
-                          value={form.sectionId}
-                          onChange={handleChange}
-                          disabled={!form.strandId}
-                          className="w-full px-4 py-2 border border-gray-300 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-purple-500/20 focus:border-purple-500 bg-white appearance-none disabled:bg-gray-50 disabled:text-gray-400"
-                        >
-                          <option value="">
-                            {form.strandId ? 'Select your section' : 'Select a strand first'}
-                          </option>
-                          {sections.map((s) => (
-                            <option key={s.id} value={s.id}>{s.name}</option>
-                          ))}
-                        </select>
-                        {form.strandId && sections.length === 0 && (
-                          <p className="text-xs text-yellow-600 mt-1.5">
-                            âš ï¸ No sections available yet â€” try &ldquo;Type My Section&rdquo; above.
-                          </p>
-                        )}
-                      </>
-                    ) : (
-                      <Input
-                        name="customSection"
-                        value={form.customSection}
-                        onChange={handleChange}
-                        placeholder="e.g. Section A, Einstein, 12-STEM-1"
-                        disabled={!form.strandId}
-                        helperText="Your section name as it appears on your schedule."
-                      />
-                    )}
-                  </div>
-                </div>
-              </CardContent>
-            </Card>
-
-            {/* â”€â”€ Work Immersion Details â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */}
-            <Card>
-              <CardContent padding="lg">
-                <SectionHeading icon="ðŸ¢" title="Work Immersion Details" subtitle="Optional â€” you can add these later" />
-                <div className="space-y-4 mt-4">
-                  <Input
-                    label="Company / Establishment"
-                    name="company"
-                    value={form.company}
-                    onChange={handleChange}
-                    placeholder="e.g. ABC Company"
-                  />
-                  <Input
-                    label="Course / Program"
-                    name="course"
-                    value={form.course}
-                    onChange={handleChange}
-                    placeholder="e.g. Computer Science"
-                  />
-                </div>
-              </CardContent>
-            </Card>
-
-            {/* â”€â”€ Submit â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */}
-            <Button
-              type="submit"
-              isLoading={submitting}
-              disabled={submitting}
-              fullWidth
-              size="lg"
-              className="rounded-2xl"
-            >
-              {submitting ? 'Completing registrationâ€¦' : 'Complete Registration'}
-            </Button>
-
+              <div>
+                <label style={label}>Full Name</label>
+                <input type="text" value={session?.user?.name ?? ''} disabled
+                  style={{ ...inp, background: '#F9FAFB', color: '#9CA3AF', cursor: 'not-allowed' }} />
+                <p style={{ fontSize: 11, color: '#9CA3AF', marginTop: 4 }}>Can be updated later in your profile settings.</p>
+              </div>
+            </div>
           </div>
+
+          {/* Academic Info */}
+          <div style={card}>
+            <p style={sectionTitle}>Academic Information</p>
+            <div style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
+
+              <div>
+                <label style={label}>Grade Level <span style={{ color: '#EF4444' }}>*</span></label>
+                <select name="gradeLevel" value={form.gradeLevel} onChange={handleChange} style={inp}>
+                  <option value={11}>Grade 11</option>
+                  <option value={12}>Grade 12</option>
+                </select>
+              </div>
+
+              <div>
+                <label style={label}>Strand <span style={{ color: '#EF4444' }}>*</span></label>
+                <select name="strandId" value={form.strandId} onChange={handleChange} style={inp}>
+                  <option value="">Select your strand</option>
+                  {strands.map(s => <option key={s.id} value={s.id}>{s.name}</option>)}
+                </select>
+              </div>
+
+              {/* Section — toggle between pick list and free-type */}
+              <div>
+                <label style={label}>Section <span style={{ color: '#EF4444' }}>*</span></label>
+
+                {/* Toggle buttons */}
+                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 8, marginBottom: 10 }}>
+                  {(['list', 'custom'] as const).map(mode => (
+                    <button key={mode} type="button"
+                      onClick={() => setUseCustomSection(mode === 'custom')}
+                      style={{
+                        padding: '8px', borderRadius: 8, fontSize: 13, fontWeight: 600,
+                        border: 'none', cursor: 'pointer', fontFamily: 'inherit',
+                        background: (mode === 'custom') === useCustomSection
+                          ? 'linear-gradient(135deg,#F97316,#FBBF24)'
+                          : '#F3F4F6',
+                        color: (mode === 'custom') === useCustomSection ? 'white' : '#6B7280',
+                      }}>
+                      {mode === 'list' ? 'Select from List' : 'Type My Section'}
+                    </button>
+                  ))}
+                </div>
+
+                {!useCustomSection ? (
+                  <>
+                    <select name="sectionId" value={form.sectionId} onChange={handleChange}
+                      disabled={!form.strandId} style={{ ...inp, color: form.sectionId ? '#111827' : '#9CA3AF' }}>
+                      <option value="">{form.strandId ? 'Select your section' : 'Select a strand first'}</option>
+                      {sections.map(s => <option key={s.id} value={s.id}>{s.name}</option>)}
+                    </select>
+                    {form.strandId && sections.length === 0 && (
+                      <p style={{ fontSize: 12, color: '#D97706', marginTop: 6 }}>
+                        No sections available yet — click &quot;Type My Section&quot; above to enter yours.
+                      </p>
+                    )}
+                  </>
+                ) : (
+                  <>
+                    <input name="customSection" value={form.customSection} onChange={handleChange}
+                      placeholder="e.g. Einstein, 12-STEM-1, Section A"
+                      disabled={!form.strandId}
+                      style={{ ...inp, color: form.customSection ? '#111827' : '#9CA3AF' }} />
+                    <p style={{ fontSize: 11, color: '#9CA3AF', marginTop: 4 }}>
+                      Type your section name exactly as it appears on your schedule. If another student types the same name, you will be grouped together.
+                    </p>
+                  </>
+                )}
+              </div>
+            </div>
+          </div>
+
+          {/* Work Immersion Details */}
+          <div style={card}>
+            <p style={sectionTitle}>Work Immersion Details <span style={{ fontSize: 12, fontWeight: 400, color: '#9CA3AF' }}>(optional)</span></p>
+            <div style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
+              <div>
+                <label style={label}>Company / Establishment</label>
+                <input name="company" value={form.company} onChange={handleChange}
+                  placeholder="e.g. ABC Company" style={inp} />
+              </div>
+              <div>
+                <label style={label}>Course / Program</label>
+                <input name="course" value={form.course} onChange={handleChange}
+                  placeholder="e.g. Computer Science" style={inp} />
+              </div>
+            </div>
+          </div>
+
+          {/* Submit */}
+          <button type="submit" disabled={submitting} style={{
+            width: '100%', padding: '14px', borderRadius: 12, fontSize: 15, fontWeight: 700,
+            background: submitting ? '#FED7AA' : 'linear-gradient(135deg,#F97316,#EA580C)',
+            color: 'white', border: 'none', cursor: submitting ? 'not-allowed' : 'pointer',
+            fontFamily: 'inherit', boxShadow: submitting ? 'none' : '0 4px 14px rgba(249,115,22,0.4)',
+            display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8,
+          }}>
+            {submitting ? (
+              <>
+                <div style={{ width: 18, height: 18, border: '3px solid rgba(255,255,255,0.4)', borderTopColor: 'white', borderRadius: '50%', animation: 'spin 1s linear infinite' }} />
+                Completing registration...
+              </>
+            ) : 'Complete Registration'}
+          </button>
+
+          <p style={{ textAlign: 'center', fontSize: 12, color: '#9CA3AF', marginTop: 16 }}>
+            By continuing, you agree to the terms of the Work Immersion Program.
+          </p>
         </form>
-
-        <p className="text-center text-xs text-gray-400 mt-6 pb-8">
-          By continuing, you agree to the terms of the Work Immersion Program.
-        </p>
       </div>
     </div>
   )
 }
-
-/* â”€â”€â”€ SectionHeading sub-component â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */
-function SectionHeading({
-  icon,
-  title,
-  subtitle,
-}: {
-  icon: string
-  title: string
-  subtitle?: string
-}) {
-  return (
-    <div className="flex items-center gap-3">
-      <div className="w-9 h-9 bg-gradient-to-br from-blue-100 to-purple-100 rounded-xl flex items-center justify-center text-xl flex-shrink-0">
-        {icon}
-      </div>
-      <div>
-        <h2 className="font-semibold text-gray-900 text-sm">{title}</h2>
-        {subtitle && <p className="text-xs text-gray-400 mt-0.5">{subtitle}</p>}
-      </div>
-    </div>
-  )
-}
-

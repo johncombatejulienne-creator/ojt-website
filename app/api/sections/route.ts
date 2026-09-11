@@ -6,10 +6,12 @@ export async function GET(request: NextRequest) {
     const { searchParams } = new URL(request.url)
     const strandId = searchParams.get('strandId')
 
-    const where: Record<string, unknown> = { isActive: true }
+    const where: Record<string, unknown> = {}
     if (strandId) {
       where.strandId = strandId
     }
+    // isActive may be NULL for old rows — treat NULL as active too
+    where.OR = [{ isActive: true }, { isActive: null }]
 
     const sections = await prisma.section.findMany({
       where,

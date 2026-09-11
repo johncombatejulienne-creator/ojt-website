@@ -55,6 +55,8 @@ export default function EditProfilePage() {
   const [saving, setSaving]     = useState(false)
   const [strands, setStrands]   = useState<Strand[]>([])
   const [sections, setSections] = useState<Section[]>([])
+  const [useCustomSection, setUseCustomSection] = useState(false)
+  const [customSection, setCustomSection] = useState('')
   const [toasts, setToasts]     = useState<Toast[]>([])
   const counter = useRef(0)
 
@@ -147,8 +149,15 @@ export default function EditProfilePage() {
     if(!form.studentId.trim()){toast('Student ID required','error');return}
     setSaving(true)
     try {
+      const body = {
+        ...form,
+        // If using custom section, send sectionName and clear sectionId
+        ...(useCustomSection && customSection.trim()
+          ? { sectionId: '', sectionName: customSection.trim() }
+          : {}),
+      }
       const res=await fetch('/api/students/profile',{method:'PUT',
-        headers:{'Content-Type':'application/json'},body:JSON.stringify(form)})
+        headers:{'Content-Type':'application/json'},body:JSON.stringify(body)})
       const data=await res.json()
       if(!res.ok) throw new Error(data.error)
       toast('Profile saved!','success')
@@ -289,14 +298,42 @@ export default function EditProfilePage() {
                 <label className="block text-xs font-semibold text-gray-500 uppercase tracking-wider mb-1.5">
                   Section
                 </label>
-                <select value={form.sectionId} onChange={e=>setForm({...form,sectionId:e.target.value})}
-                  disabled={!form.strandId||sections.length===0}
-                  className="w-full px-4 py-2.5 border border-gray-200 rounded-xl text-sm bg-white
-                    focus:outline-none focus:ring-2 focus:ring-indigo-300 focus:border-indigo-400
-                    disabled:bg-gray-50 disabled:text-gray-400">
-                  <option value="">{!form.strandId?'Select a strand first':'Select your section'}</option>
-                  {sections.map(s=><option key={s.id} value={s.id}>{s.name}</option>)}
-                </select>
+                {/* Toggle */}
+                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 8, marginBottom: 8 }}>
+                  {(['list','custom'] as const).map(mode => (
+                    <button key={mode} type="button"
+                      onClick={() => setUseCustomSection(mode === 'custom')}
+                      style={{
+                        padding: '7px', borderRadius: 8, fontSize: 12, fontWeight: 600,
+                        border: 'none', cursor: 'pointer', fontFamily: 'inherit',
+                        background: (mode === 'custom') === useCustomSection ? '#F97316' : '#F3F4F6',
+                        color: (mode === 'custom') === useCustomSection ? 'white' : '#6B7280',
+                      }}>
+                      {mode === 'list' ? 'Select from List' : 'Type My Section'}
+                    </button>
+                  ))}
+                </div>
+                {!useCustomSection ? (
+                  <select value={form.sectionId} onChange={e=>setForm({...form,sectionId:e.target.value})}
+                    disabled={!form.strandId}
+                    className="w-full px-4 py-2.5 border border-gray-200 rounded-xl text-sm bg-white
+                      focus:outline-none focus:ring-2 focus:ring-indigo-300 focus:border-indigo-400
+                      disabled:bg-gray-50 disabled:text-gray-400">
+                    <option value="">{!form.strandId?'Select a strand first':'Select your section'}</option>
+                    {sections.map(s=><option key={s.id} value={s.id}>{s.name}</option>)}
+                  </select>
+                ) : (
+                  <>
+                    <input type="text" value={customSection}
+                      onChange={e => setCustomSection(e.target.value)}
+                      placeholder="e.g. Einstein, 12-STEM-1, Section A"
+                      disabled={!form.strandId}
+                      className="w-full px-4 py-2.5 border border-gray-200 rounded-xl text-sm bg-white
+                        focus:outline-none focus:ring-2 focus:ring-orange-300 focus:border-orange-400
+                        disabled:bg-gray-50 disabled:text-gray-400" />
+                    <p className="text-xs text-gray-400 mt-1">Students with the same section name will be grouped together in the teacher dashboard.</p>
+                  </>
+                )}
               </div>
 
               <div className="border-t border-gray-100 pt-4">
