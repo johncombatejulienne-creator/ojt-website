@@ -10,8 +10,6 @@ export async function GET(request: NextRequest) {
     if (strandId) {
       where.strandId = strandId
     }
-    // isActive may be NULL for old rows — treat NULL as active too
-    where.OR = [{ isActive: true }, { isActive: null }]
 
     const sections = await prisma.section.findMany({
       where,
