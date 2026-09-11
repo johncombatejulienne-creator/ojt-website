@@ -123,7 +123,7 @@ export async function POST(request: NextRequest) {
       },
     })
 
-    // Create audit log
+    // Create audit log — non-critical
     await prisma.auditLog.create({
       data: {
         userId: student.id,
@@ -138,7 +138,7 @@ export async function POST(request: NextRequest) {
           customSection: sectionName ? true : false,
         }),
       },
-    })
+    }).catch(() => {})
 
     const message = teacherId 
       ? `Successfully registered! You've been assigned to ${student.supervisor?.name}.`

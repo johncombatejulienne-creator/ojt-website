@@ -54,6 +54,7 @@ export default function ChecklistPage() {
 
   if (loading) return (
     <AppShell>
+      <style>{`@keyframes spin{to{transform:rotate(360deg)}}`}</style>
       <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '80px 0' }}>
         <div style={{ width: 40, height: 40, border: '4px solid #FFEDD5',
           borderTopColor: '#F97316', borderRadius: '50%', animation: 'spin 1s linear infinite' }} />

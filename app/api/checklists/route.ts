@@ -6,132 +6,127 @@ import { authOptions } from '@/lib/auth'
 export async function GET(request: NextRequest) {
   try {
     const session = await getServerSession(authOptions)
-    
-    if (!session || !session.user) {
+    if (!session?.user) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
     }
 
     const { searchParams } = new URL(request.url)
     const targetType = searchParams.get('targetType')
-    const strandId = searchParams.get('strandId')
-    const sectionId = searchParams.get('sectionId')
+    const strandId   = searchParams.get('strandId')
+    const sectionId  = searchParams.get('sectionId')
 
-    const where: Record<string, unknown> = { isActive: true }
-
-    if (targetType) where.targetType = targetType
-    if (strandId) where.strandId = strandId
-    if (sectionId) where.sectionId = sectionId
-
-    const checklists = await prisma.checklist.findMany({
-      where,
+    // Fetch all, then filter JS-side to handle isActive NULL on old rows
+    const all = await prisma.checklist.findMany({
       include: {
-        strand: true,
+        strand:  true,
         section: true,
-        items: {
-          orderBy: { order: 'asc' },
-        },
-        _count: {
-          select: { progress: true },
-        },
+        items:   { orderBy: { order: 'asc' } },
+        _count:  { select: { progress: true } },
       },
       orderBy: { createdAt: 'desc' },
+    }).catch(() => [])
+
+    const checklists = all.filter((c: { isActive?: boolean | null; targetType?: string | null; strandId?: string | null; sectionId?: string | null }) => {
+      if (c.isActive === false) return false
+      if (targetType && c.targetType !== targetType) return false
+      if (strandId  && c.strandId  !== strandId)  return false
+      if (sectionId && c.sectionId !== sectionId) return false
+      return true
     })
 
     return NextResponse.json({ checklists })
   } catch (error) {
     console.error('Error fetching checklists:', error)
-    return NextResponse.json(
-      { error: 'Failed to fetch checklists' },
-      { status: 500 }
-    )
+    return NextResponse.json({ checklists: [] })
   }
 }
 
 export async function POST(request: NextRequest) {
   try {
     const session = await getServerSession(authOptions)
-    
-    if (!session || !session.user || session.user.role !== 'teacher') {
+    if (!session?.user?.email) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
     }
 
-    const body = await request.json()
-    const { name, description, targetType, strandId, sectionId, items } = body
-
-    if (!name || !targetType) {
-      return NextResponse.json(
-        { error: 'Name and target type are required' },
-        { status: 400 }
-      )
+    // Check teacher by DB — never trust JWT role
+    const teacher = await prisma.teacher.findUnique({
+      where: { email: session.user.email }, select: { id: true },
+    }).catch(() => null)
+    if (!teacher) {
+      return NextResponse.json({ error: 'Teacher access required' }, { status: 403 })
     }
 
-    const validTargetTypes = ['strand', 'section', 'strand_section']
-    if (!validTargetTypes.includes(targetType)) {
-      return NextResponse.json(
-        { error: 'Invalid target type' },
-        { status: 400 }
-      )
+    const body = await request.json().catch(() => ({}))
+    const { name, description, targetType, strandId, sectionId, items } = body as {
+      name?: string; description?: string; targetType?: string
+      strandId?: string; sectionId?: string
+      items?: { title: string; description?: string; order?: number; requirementType?: string; isRequired?: boolean; targetCount?: number }[]
+    }
+
+    if (!name?.trim()) {
+      return NextResponse.json({ error: 'Name is required' }, { status: 400 })
+    }
+
+    // Allow 'all' as a valid targetType (global checklists)
+    const validTargetTypes = ['all', 'strand', 'section', 'strand_section']
+    const finalTargetType = targetType ?? 'all'
+    if (!validTargetTypes.includes(finalTargetType)) {
+      return NextResponse.json({ error: `Invalid target type. Use: ${validTargetTypes.join(', ')}` }, { status: 400 })
     }
 
     const checklist = await prisma.checklist.create({
       data: {
-        name,
-        description,
-        targetType,
-        strandId: strandId || null,
-        sectionId: sectionId || null,
-        items: items ? {
-          create: items.map((item: { title: string; description?: string; order?: number; requirementType: string; isRequired?: boolean; targetCount?: number }, index: number) => ({
-            title: item.title,
-            description: item.description,
-            order: item.order || index,
-            requirementType: item.requirementType,
-            isRequired: item.isRequired !== false,
-            targetCount: item.targetCount || null,
+        name:       name.trim(),
+        description: description ?? null,
+        targetType:  finalTargetType,
+        strandId:    strandId  || null,
+        sectionId:   sectionId || null,
+        isActive:    true,
+        items: items?.length ? {
+          create: items.map((item, idx) => ({
+            title:           item.title,
+            description:     item.description ?? null,
+            order:           item.order ?? idx,
+            requirementType: item.requirementType ?? 'general',
+            isRequired:      item.isRequired !== false,
+            targetCount:     item.targetCount ?? null,
           })),
         } : undefined,
       },
-      include: {
-        items: true,
-        strand: true,
-        section: true,
-      },
+      include: { items: true, strand: true, section: true },
     })
 
-    // Auto-assign checklist to existing students in the target strand/section
+    // Auto-assign to matching existing students
+    const studentWhere: Record<string, string> = {}
+    if ((finalTargetType === 'strand' || finalTargetType === 'strand_section') && strandId) {
+      studentWhere.strandId = strandId
+    }
+    if ((finalTargetType === 'section' || finalTargetType === 'strand_section') && sectionId) {
+      studentWhere.sectionId = sectionId
+    }
+
     const students = await prisma.student.findMany({
-      where: {
-        ...(targetType === 'strand' && strandId && { strandId }),
-        ...(targetType === 'section' && sectionId && { sectionId }),
-        ...(targetType === 'strand_section' && strandId && sectionId && {
-          strandId,
-          sectionId,
-        }),
-      },
-    })
+      where: Object.keys(studentWhere).length ? studentWhere : {},
+      select: { id: true },
+    }).catch(() => [])
 
     if (students.length > 0 && checklist.items.length > 0) {
-      const progressRecords = students.flatMap((student: { id: string }) =>
-        checklist.items.map((item: { id: string }) => ({
-          studentId: student.id,
-          checklistId: checklist.id,
-          checklistItemId: item.id,
-          status: 'pending',
-        }))
-      )
-
       await prisma.studentChecklistProgress.createMany({
-        data: progressRecords,
+        data: students.flatMap(s =>
+          checklist.items.map(item => ({
+            studentId:      s.id,
+            checklistId:    checklist.id,
+            checklistItemId: item.id,
+            status:          'pending',
+          }))
+        ),
         skipDuplicates: true,
-      })
+      }).catch(() => {})
     }
 
     return NextResponse.json({ success: true, checklist })
   } catch (error) {
     console.error('Error creating checklist:', error)
-    return NextResponse.json(
-      { error: 'Failed to create checklist' },
-      { status: 500 }
-    )
+    return NextResponse.json({ error: 'Failed to create checklist' }, { status: 500 })
   }
 }
