@@ -77,7 +77,12 @@ export async function GET(request: NextRequest) {
         include: {
           student: { select: { name: true, studentId: true, email: true, company: true } },
           photos:  true,
-          reviews: { include: { teacher: { select: { name: true, email: true } } } },
+          reviews: {
+            select: {
+              id: true, action: true, comment: true,
+              teacher: { select: { name: true, email: true } },
+            },
+          },
         },
         orderBy: { date: 'desc' },
         skip,

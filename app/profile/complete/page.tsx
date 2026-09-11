@@ -171,8 +171,8 @@ export default function CompleteProfilePage() {
               <div>
                 <label style={label}>Student ID Number <span style={{ color: '#EF4444' }}>*</span></label>
                 <input name="studentId" value={form.studentId} onChange={handleChange}
-                  placeholder="e.g. 2024-12345" style={inp} />
-                <p style={{ fontSize: 11, color: '#9CA3AF', marginTop: 4 }}>Your school-assigned student ID</p>
+                  placeholder="e.g. 2024-12345 or any school ID" style={inp} />
+                <p style={{ fontSize: 11, color: '#9CA3AF', marginTop: 4 }}>Type any ID — no length limit</p>
               </div>
 
               <div>

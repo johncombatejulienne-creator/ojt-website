@@ -251,9 +251,26 @@ export default function EditProfilePage() {
               <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 14 }}>
                 <Input label="Full Name" type="text" value={form.name} required placeholder="Juan Dela Cruz"
                   onChange={e=>setForm({...form,name:e.target.value})} />
-                <Input label="Student ID" type="text" value={form.studentId} required placeholder="2024-12345"
-                  onChange={e=>setForm({...form,studentId:e.target.value})}
-                  helperText="Your school-assigned ID" />
+                <div>
+                  <label style={{ display: 'block', fontSize: 11, fontWeight: 700, color: '#6B7280', textTransform: 'uppercase' as const, letterSpacing: '0.06em', marginBottom: 6 }}>
+                    Student ID <span style={{ color: '#EF4444' }}>*</span>
+                  </label>
+                  <input
+                    type="text"
+                    value={form.studentId}
+                    onChange={e => setForm({...form, studentId: e.target.value})}
+                    placeholder="e.g. 2024-12345 or your school ID"
+                    required
+                    style={{
+                      width: '100%', padding: '10px 14px', border: '1.5px solid #E5E7EB',
+                      borderRadius: 10, fontSize: 14, background: 'white',
+                      fontFamily: 'inherit', boxSizing: 'border-box' as const, outline: 'none', color: '#111827',
+                    }}
+                    onFocus={e => { e.target.style.borderColor = '#F97316' }}
+                    onBlur={e => { e.target.style.borderColor = '#E5E7EB' }}
+                  />
+                  <p style={{ fontSize: 11, color: '#9CA3AF', marginTop: 4 }}>Type any ID number — no length limit</p>
+                </div>
               </div>
 
               {/* Email read-only */}
