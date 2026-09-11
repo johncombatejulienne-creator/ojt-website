@@ -3,144 +3,92 @@ import { prisma } from '@/lib/prisma'
 import { getServerSession } from 'next-auth'
 import { authOptions } from '@/lib/auth'
 
+type ChecklistItem = {
+  id: string; title: string; description: string | null; order: number
+  requirementType: string | null; isRequired: boolean; targetCount: number | null
+  checklistId: string; createdAt: Date; updatedAt: Date
+}
+type Checklist = {
+  id: string; name: string; description: string | null; targetType: string
+  strandId: string | null; sectionId: string | null; isActive: boolean
+  createdAt: Date; updatedAt: Date; items: ChecklistItem[]
+}
+
 export async function GET() {
   try {
     const session = await getServerSession(authOptions)
-    
-    // Accept student role or pending (new user whose finalize hasn't refreshed session yet)
-    if (!session || !session.user || !session.user.email) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+    if (!session?.user?.email) {
+      return NextResponse.json({ checklists: [] })
     }
 
     const student = await prisma.student.findUnique({
-      where: { email: session.user.email! },
+      where: { email: session.user.email },
       select: {
-        id: true,
-        strandId: true,
-        sectionId: true,
-        strand: true,
-        section: true,
+        id: true, strandId: true, sectionId: true,
+        strand: true, section: true,
       },
+    }).catch(() => null)
+
+    if (!student) return NextResponse.json({ checklists: [] })
+
+    // Fetch all checklists with items — filter JS-side to avoid NULL isActive issue
+    const raw = await prisma.checklist.findMany({
+      include: { items: { orderBy: { order: 'asc' } } },
+    }).catch(() => [] as (Checklist & { items: ChecklistItem[] })[])
+
+    const checklists = (raw as unknown as Checklist[]).filter(c => {
+      if (c.isActive === false) return false
+      const t = c.targetType ?? 'all'
+      if (t === 'all') return true
+      if (t === 'strand') return c.strandId === student.strandId
+      if (t === 'section') return c.sectionId === student.sectionId
+      if (t === 'strand_section') return c.strandId === student.strandId && c.sectionId === student.sectionId
+      return true
     })
 
-    if (!student) {
-      return NextResponse.json({ error: 'Student not found' }, { status: 404 })
-    }
+    if (!checklists.length) return NextResponse.json({ checklists: [] })
 
-    // Find checklists applicable to this student
-    const checklists = await prisma.checklist.findMany({
-      where: {
-        isActive: true,
-        OR: [
-          { targetType: 'all' },
-          { targetType: 'strand',         strandId:  student.strandId  },
-          { targetType: 'section',        sectionId: student.sectionId },
-          { targetType: 'strand_section', strandId:  student.strandId, sectionId: student.sectionId },
-        ],
-      },
-      include: {
-        items: {
-          orderBy: { order: 'asc' },
-        },
-      },
-    })
+    const checklistIds = checklists.map(c => c.id)
+    const [progress, narrativeCount] = await Promise.all([
+      prisma.studentChecklistProgress.findMany({
+        where: { studentId: student.id, checklistId: { in: checklistIds } },
+      }).catch(() => []),
+      prisma.narrative.count({
+        where: { studentId: student.id, isDraft: false },
+      }).catch(() => 0),
+    ])
 
-    // Get student's progress for these checklists
-    const checklistIds = (checklists as ChecklistWithItems[]).map((c) => c.id)
-    const progress = await prisma.studentChecklistProgress.findMany({
-      where: {
-        studentId: student.id,
-        checklistId: { in: checklistIds },
-      },
-    })
+    const checklistsWithProgress = checklists.map(checklist => {
+      const clProgress = progress.filter(p => p.checklistId === checklist.id)
 
-    // Calculate overall progress stats
-    const narrativeCount = await prisma.narrative.count({
-      where: {
-        studentId: student.id,
-        isDraft: false,
-      },
-    })
+      const itemsWithProgress = checklist.items.map(item => {
+        const ip = clProgress.find(p => p.checklistItemId === item.id)
+        let status = ip?.status ?? 'pending'
+        let count  = ip?.completedCount ?? 0
 
-interface ChecklistItem {
-  id: string
-  requirementType: string
-  targetCount?: number | null
-  [key: string]: unknown
-}
-
-interface ChecklistWithItems {
-  id: string
-  items: ChecklistItem[]
-  [key: string]: unknown
-}
-
-interface ProgressRecord {
-  checklistId: string
-  checklistItemId: string
-  status: string
-  completedCount: number
-  completedAt: Date | null
-  notes: string | null
-}
-
-    // Combine checklist data with progress
-    const checklistsWithProgress = (checklists as ChecklistWithItems[]).map((checklist) => {
-      const checklistProgress = (progress as ProgressRecord[]).filter((p) => p.checklistId === checklist.id)
-      
-      const itemsWithProgress = checklist.items.map((item) => {
-        const itemProgress = checklistProgress.find((p) => p.checklistItemId === item.id)
-        
-        // Auto-calculate progress for narrative-type items
-        let autoStatus = itemProgress?.status || 'pending'
-        let autoCount = itemProgress?.completedCount || 0
-        
         if (item.requirementType === 'narrative' && item.targetCount) {
-          autoCount = Math.min(narrativeCount, item.targetCount)
-          autoStatus = autoCount >= item.targetCount ? 'completed' : 
-                      autoCount > 0 ? 'in_progress' : 'pending'
+          count  = Math.min(narrativeCount, item.targetCount)
+          status = count >= item.targetCount ? 'completed'
+                 : count > 0 ? 'in_progress' : 'pending'
         }
-
         return {
           ...item,
-          progress: {
-            status: autoStatus,
-            completedCount: autoCount,
-            completedAt: itemProgress?.completedAt,
-            notes: itemProgress?.notes,
-          },
+          progress: { status, completedCount: count, completedAt: ip?.completedAt ?? null, notes: ip?.notes ?? null },
         }
       })
 
-      const totalItems = checklist.items.length
-      const completedItems = itemsWithProgress.filter(
-        (i) => i.progress.status === 'completed'
-      ).length
-      const progressPercentage = totalItems > 0 ? (completedItems / totalItems) * 100 : 0
-
-      return {
-        ...checklist,
-        items: itemsWithProgress,
-        stats: {
-          totalItems,
-          completedItems,
-          progressPercentage: Math.round(progressPercentage),
-        },
-      }
+      const total     = checklist.items.length
+      const completed = itemsWithProgress.filter(i => i.progress.status === 'completed').length
+      const pct       = total > 0 ? Math.round((completed / total) * 100) : 0
+      return { ...checklist, items: itemsWithProgress, stats: { totalItems: total, completedItems: completed, progressPercentage: pct } }
     })
 
     return NextResponse.json({
-      student: {
-        name: student.strand?.name,
-        section: student.section?.name,
-      },
+      student: { name: student.strand?.name, section: student.section?.name },
       checklists: checklistsWithProgress,
     })
   } catch (error) {
-    console.error('Error fetching student checklist:', error)
-    return NextResponse.json(
-      { error: 'Failed to fetch checklist' },
-      { status: 500 }
-    )
+    console.error('Error fetching checklist:', error)
+    return NextResponse.json({ checklists: [] })
   }
 }

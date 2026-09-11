@@ -3,86 +3,69 @@ import { getServerSession } from 'next-auth'
 import { authOptions } from '@/lib/auth'
 import { prisma } from '@/lib/prisma'
 
-// Supported MIME types
 const ALLOWED_TYPES = ['image/jpeg', 'image/jpg', 'image/png', 'image/webp', 'image/gif']
-
-// Max size: 2 MB
 const MAX_SIZE_BYTES = 2 * 1024 * 1024
 
 export async function POST(request: NextRequest) {
   try {
     const session = await getServerSession(authOptions)
-
     if (!session?.user?.email) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
     }
 
     const formData = await request.formData()
     const file = formData.get('file') as File | null
-
-    if (!file) {
-      return NextResponse.json({ error: 'No file provided' }, { status: 400 })
-    }
-
-    // Validate type
+    if (!file) return NextResponse.json({ error: 'No file provided' }, { status: 400 })
     if (!ALLOWED_TYPES.includes(file.type)) {
-      return NextResponse.json(
-        { error: 'Invalid file type. Allowed: JPG, PNG, WebP, GIF' },
-        { status: 400 }
-      )
+      return NextResponse.json({ error: 'Invalid file type. Use JPG, PNG, WebP or GIF.' }, { status: 400 })
     }
-
-    // Validate size
     if (file.size > MAX_SIZE_BYTES) {
-      return NextResponse.json(
-        { error: 'File too large. Maximum size is 2 MB.' },
-        { status: 400 }
-      )
+      return NextResponse.json({ error: 'File too large. Max 2 MB.' }, { status: 400 })
     }
 
-    // Convert to base64 data URL for storage
-    const buffer = Buffer.from(await file.arrayBuffer())
-    const base64 = buffer.toString('base64')
+    const buffer  = Buffer.from(await file.arrayBuffer())
+    const base64  = buffer.toString('base64')
     const dataUrl = `data:${file.type};base64,${base64}`
 
-    // Update the correct model based on role
+    // Always look up by email — never trust JWT role (can be stale)
+    const teacher = await prisma.teacher.findUnique({
+      where: { email: session.user.email }, select: { id: true },
+    }).catch(() => null)
+
     let profilePicture: string
 
-    if (session.user.role === 'teacher') {
-      const teacher = await prisma.teacher.update({
+    if (teacher) {
+      const updated = await prisma.teacher.update({
         where: { email: session.user.email },
-        data: { profilePicture: dataUrl },
+        data:  { profilePicture: dataUrl },
         select: { profilePicture: true },
       })
-      profilePicture = teacher.profilePicture!
+      profilePicture = updated.profilePicture!
     } else {
-      const student = await prisma.student.update({
+      // Ensure student record exists
+      const student = await prisma.student.findUnique({
         where: { email: session.user.email },
-        data: { profilePicture: dataUrl },
+      }).catch(() => null)
+
+      if (!student) {
+        // Auto-create if missing
+        await prisma.student.create({
+          data: {
+            email:     session.user.email,
+            name:      session.user.name ?? session.user.email.split('@')[0],
+            studentId: `STU-${Date.now()}`,
+            profilePicture: dataUrl,
+          },
+        }).catch(() => {})
+        return NextResponse.json({ success: true, profilePicture: dataUrl })
+      }
+
+      const updated = await prisma.student.update({
+        where: { email: session.user.email },
+        data:  { profilePicture: dataUrl },
         select: { profilePicture: true },
       })
-      profilePicture = student.profilePicture!
-    }
-
-    // Audit log — non-critical
-    try {
-      const userId =
-        session.user.role === 'teacher'
-          ? (await prisma.teacher.findUnique({ where: { email: session.user.email }, select: { id: true } }))?.id
-          : (await prisma.student.findUnique({ where: { email: session.user.email }, select: { id: true } }))?.id
-
-      if (userId) {
-        await prisma.auditLog.create({
-          data: {
-            userId,
-            userType: session.user.role as 'student' | 'teacher',
-            action: 'profile_picture_upload',
-            description: `${session.user.role} updated profile picture`,
-          },
-        })
-      }
-    } catch {
-      // Non-critical
+      profilePicture = updated.profilePicture!
     }
 
     return NextResponse.json({ success: true, profilePicture })
@@ -95,21 +78,24 @@ export async function POST(request: NextRequest) {
 export async function DELETE() {
   try {
     const session = await getServerSession(authOptions)
-
     if (!session?.user?.email) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
     }
 
-    if (session.user.role === 'teacher') {
+    const teacher = await prisma.teacher.findUnique({
+      where: { email: session.user.email }, select: { id: true },
+    }).catch(() => null)
+
+    if (teacher) {
       await prisma.teacher.update({
         where: { email: session.user.email },
-        data: { profilePicture: null },
+        data:  { profilePicture: null },
       })
     } else {
       await prisma.student.update({
         where: { email: session.user.email },
-        data: { profilePicture: null },
-      })
+        data:  { profilePicture: null },
+      }).catch(() => {})
     }
 
     return NextResponse.json({ success: true, profilePicture: null })

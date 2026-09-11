@@ -44,7 +44,7 @@ export async function GET() {
         },
       },
       orderBy: { name: 'asc' },
-    })
+    }).catch(() => [])
 
     // Sections for filter tabs — get all sections (isActive may be NULL for old rows)
     const sections = await prisma.section.findMany({
@@ -67,7 +67,7 @@ export async function GET() {
         },
       },
       orderBy: [{ strand: { name: 'asc' } }, { name: 'asc' }],
-    })
+    }).catch(() => [])
 
     // Virtual "Unassigned" section for students with no section
     const unassigned = allStudents.filter(s => !s.sectionId)
