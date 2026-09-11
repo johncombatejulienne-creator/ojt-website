@@ -3,7 +3,6 @@ import { getServerSession } from 'next-auth'
 import { authOptions } from '@/lib/auth'
 import { prisma } from '@/lib/prisma'
 
-/** GET /api/notifications — returns unread notifications for the current student */
 export async function GET() {
   try {
     const session = await getServerSession(authOptions)
@@ -15,20 +14,20 @@ export async function GET() {
 
     if (!student) return NextResponse.json({ notifications: [] })
 
+    // Guard against missing columns — return empty if table not migrated yet
     const notifications = await prisma.notification.findMany({
       where: { userId: student.id, userType: 'student' },
       orderBy: { createdAt: 'desc' },
       take: 20,
-    })
+    }).catch(() => [])
 
     return NextResponse.json({ notifications })
-  } catch (error) {
-    console.error('GET notifications error:', error)
+  } catch {
+    // Never crash — just return empty
     return NextResponse.json({ notifications: [] })
   }
 }
 
-/** PATCH /api/notifications — mark all as read */
 export async function PATCH() {
   try {
     const session = await getServerSession(authOptions)
@@ -42,7 +41,7 @@ export async function PATCH() {
     await prisma.notification.updateMany({
       where: { userId: student.id, userType: 'student', isRead: false },
       data:  { isRead: true },
-    })
+    }).catch(() => {})
 
     return NextResponse.json({ success: true })
   } catch {

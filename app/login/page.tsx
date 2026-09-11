@@ -92,24 +92,11 @@ export default function LoginPage() {
   const handleGoogleSignIn = async (asTeacher = false) => {
     setLoading(true); setError('')
     try {
-      // Always sign out first so Google shows the account picker.
-      // This prevents a student's cached session from auto-selecting
-      // when someone tries to sign in as a teacher.
-      await signOut({ redirect: false })
-      // Small delay to ensure session cookie is cleared before OAuth starts
-      await new Promise(r => setTimeout(r, 300))
-
-      // Intent is embedded in callbackUrl — no cookie needed, survives OAuth round-trip.
-      // After Google OAuth, /api/auth/finalize creates the Teacher or Student DB record.
       const finalDest   = asTeacher ? '/teacher/dashboard' : '/dashboard'
       const callbackUrl = `/api/auth/finalize?intent=${asTeacher ? 'teacher' : 'student'}&next=${encodeURIComponent(finalDest)}`
-
-      await signIn('google', {
-        callbackUrl,
-        redirect: true,
-        // Force Google account picker every time — prevents wrong account auto-select
-        prompt: 'select_account',
-      })
+      // Pass prompt=select_account so Google always shows the account picker
+      // Do NOT call signOut first — it clears the state cookie OAuth needs
+      await signIn('google', { callbackUrl, redirect: true, prompt: 'select_account' })
     } catch { setError('An error occurred. Please try again.'); setLoading(false) }
   }
 
