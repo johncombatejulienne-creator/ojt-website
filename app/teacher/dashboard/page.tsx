@@ -166,7 +166,14 @@ function ConfirmModal({ title, body, confirmLabel = 'Confirm', danger = false,
 }
 
 /* ─── Page ───────────────────────────────────────────────── */
-type ActiveTab = 'students' | 'teachers' | 'announcements'
+type ActiveTab = 'students' | 'teachers' | 'announcements' | 'narratives'
+
+interface PendingNarrative {
+  id: string; date: string; content: string; status: string
+  submissionDate?: string; submissionTime?: string
+  student: { id: string; name: string; studentId: string; email: string }
+  photos: { url: string; isVerified: boolean }[]
+}
 
 export default function TeacherDashboard() {
   const { data: session, status } = useSession()
@@ -184,6 +191,12 @@ export default function TeacherDashboard() {
   // Teachers state
   const [teachers,  setTeachers]  = useState<Teacher[]>([])
   const [teacherSearch, setTeacherSearch] = useState('')
+
+  // Narratives state
+  const [pendingNarratives, setPendingNarratives] = useState<PendingNarrative[]>([])
+  const [reviewingId,       setReviewingId]       = useState<string | null>(null)
+  const [reviewComment,     setReviewComment]     = useState('')
+  const [reviewSubmitting,  setReviewSubmitting]  = useState(false)
 
   // Announcements state
   const [announcements, setAnnouncements] = useState<Announcement[]>([])
@@ -205,10 +218,11 @@ export default function TeacherDashboard() {
     setLoading(true)
     try {
       // Fetch all three in parallel — each error is handled independently
-      const [secRes, teachRes, annoRes] = await Promise.all([
+      const [secRes, teachRes, annoRes, narrRes] = await Promise.all([
         fetch('/api/teacher/sections').catch(() => null),
         fetch('/api/teacher/list').catch(() => null),
         fetch('/api/announcements').catch(() => null),
+        fetch('/api/narratives?status=pending&limit=50').catch(() => null),
       ])
 
       if (secRes?.ok) {
@@ -238,6 +252,13 @@ export default function TeacherDashboard() {
         } catch (e) { console.error('announcements parse error', e) }
       } else {
         console.warn('announcements API status:', annoRes?.status)
+      }
+
+      if (narrRes?.ok) {
+        try {
+          const d = await narrRes.json()
+          setPendingNarratives(d.narratives ?? [])
+        } catch (e) { console.error('narratives parse error', e) }
       }
     } catch (e) {
       console.error('loadData error', e)
@@ -306,6 +327,25 @@ export default function TeacherDashboard() {
     } finally {
       setDeletingStudent(false)
     }
+  }
+
+  /* ── Review narrative ───────────────────────────────────── */
+  const handleReview = async (narrativeId: string, action: 'approved' | 'revision_requested') => {
+    setReviewSubmitting(true)
+    try {
+      const res = await fetch(`/api/narratives/${narrativeId}/review`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ action, comment: reviewComment.trim() || undefined }),
+      })
+      if (res.ok) {
+        // Remove from pending list or update status
+        setPendingNarratives(prev => prev.filter(n => n.id !== narrativeId))
+        setReviewingId(null)
+        setReviewComment('')
+      }
+    } catch { /* silent */ }
+    finally { setReviewSubmitting(false) }
   }
 
   /* ── Post announcement ──────────────────────────────────── */
@@ -433,6 +473,7 @@ export default function TeacherDashboard() {
         <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
           <Tab label="Students"      active={activeTab === 'students'}      count={students.length}      onClick={() => setActiveTab('students')} />
           <Tab label="Teachers"      active={activeTab === 'teachers'}      count={teachers.length}      onClick={() => setActiveTab('teachers')} />
+          <Tab label="Narratives"    active={activeTab === 'narratives'}    count={pendingNarratives.length} onClick={() => setActiveTab('narratives')} />
           <Tab label="Announcements" active={activeTab === 'announcements'} count={announcements.length} onClick={() => setActiveTab('announcements')} />
         </div>
 
@@ -604,6 +645,148 @@ export default function TeacherDashboard() {
                     </p>
                   </div>
                 ))
+              )}
+            </div>
+          </div>
+        )}
+
+        {/* ════════════════════════════════════════════════
+            NARRATIVES TAB — review pending submissions
+        ════════════════════════════════════════════════ */}
+        {activeTab === 'narratives' && (
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
+
+            {/* Review comment modal */}
+            {reviewingId && (
+              <div style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.5)',
+                display: 'flex', alignItems: 'center', justifyContent: 'center',
+                zIndex: 200, padding: 16 }}>
+                <div style={{ background: 'white', borderRadius: 20, padding: 28,
+                  maxWidth: 440, width: '100%', boxShadow: '0 25px 50px rgba(0,0,0,0.25)' }}>
+                  <h3 style={{ fontSize: 17, fontWeight: 800, color: '#111827', marginBottom: 6 }}>
+                    Add a Comment (Optional)
+                  </h3>
+                  <p style={{ fontSize: 13, color: '#6B7280', marginBottom: 14 }}>
+                    Leave feedback for the student — they will receive a notification.
+                  </p>
+                  <textarea
+                    value={reviewComment}
+                    onChange={e => setReviewComment(e.target.value)}
+                    placeholder="e.g. Great work! Keep it up. / Please add more detail about your tasks."
+                    rows={4}
+                    style={{ width: '100%', padding: '10px 14px', border: '1.5px solid #E5E7EB',
+                      borderRadius: 10, fontSize: 14, fontFamily: 'inherit', resize: 'vertical',
+                      outline: 'none', boxSizing: 'border-box' as const }}
+                  />
+                  <div style={{ display: 'flex', gap: 10, marginTop: 16 }}>
+                    <button onClick={() => { setReviewingId(null); setReviewComment('') }}
+                      disabled={reviewSubmitting}
+                      style={{ flex: 1, padding: '10px', background: '#F3F4F6', color: '#374151',
+                        border: 'none', borderRadius: 10, fontSize: 13, fontWeight: 600,
+                        cursor: 'pointer', fontFamily: 'inherit' }}>
+                      Cancel
+                    </button>
+                    <button
+                      onClick={() => handleReview(reviewingId, 'revision_requested')}
+                      disabled={reviewSubmitting}
+                      style={{ flex: 1, padding: '10px', background: '#FFEDD5', color: '#9A3412',
+                        border: '1px solid #FED7AA', borderRadius: 10, fontSize: 13, fontWeight: 700,
+                        cursor: reviewSubmitting ? 'not-allowed' : 'pointer', fontFamily: 'inherit' }}>
+                      {reviewSubmitting ? '...' : 'Request Revision'}
+                    </button>
+                    <button
+                      onClick={() => handleReview(reviewingId, 'approved')}
+                      disabled={reviewSubmitting}
+                      style={{ flex: 1, padding: '10px', background: '#D1FAE5', color: '#065F46',
+                        border: '1px solid #A7F3D0', borderRadius: 10, fontSize: 13, fontWeight: 700,
+                        cursor: reviewSubmitting ? 'not-allowed' : 'pointer', fontFamily: 'inherit' }}>
+                      {reviewSubmitting ? '...' : 'Approve'}
+                    </button>
+                  </div>
+                </div>
+              </div>
+            )}
+
+            <div style={{ background: 'white', border: '1px solid #E5E7EB', borderRadius: 16, overflow: 'hidden' }}>
+              <div style={{ padding: '14px 20px', borderBottom: '1px solid #F3F4F6',
+                display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+                <p style={{ fontWeight: 700, fontSize: 14, color: '#111827', margin: 0 }}>
+                  Pending Narratives
+                </p>
+                <span style={{ fontSize: 12, color: '#9CA3AF' }}>
+                  {pendingNarratives.length} awaiting review
+                </span>
+              </div>
+
+              {pendingNarratives.length === 0 ? (
+                <div style={{ padding: '48px 24px', textAlign: 'center' }}>
+                  <div style={{ width: 52, height: 52, background: '#D1FAE5', borderRadius: 14,
+                    display: 'flex', alignItems: 'center', justifyContent: 'center', margin: '0 auto 12px' }}>
+                    <svg style={{ width: 26, height: 26, color: '#059669' }} fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+                    </svg>
+                  </div>
+                  <p style={{ fontSize: 14, fontWeight: 600, color: '#374151' }}>All caught up!</p>
+                  <p style={{ fontSize: 13, color: '#9CA3AF', marginTop: 4 }}>No narratives pending review.</p>
+                </div>
+              ) : (
+                pendingNarratives.map((n, i) => {
+                  const title = n.content.match(/\*\*Activity:\*\*\s*(.+)/i)?.[1] ?? 'Daily Activity'
+                  const dateStr = new Date(n.date).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })
+                  const submitStr = n.submissionDate
+                    ? new Date(n.submissionDate).toLocaleDateString('en-US', { month: 'short', day: 'numeric' }) + (n.submissionTime ? ` ${n.submissionTime}` : '')
+                    : null
+                  const verPhoto = n.photos?.find(p => p.isVerified)
+                  return (
+                    <div key={n.id} style={{
+                      padding: '14px 20px',
+                      borderBottom: i < pendingNarratives.length - 1 ? '1px solid #F9FAFB' : 'none',
+                      boxSizing: 'border-box',
+                    }}>
+                      <div style={{ display: 'flex', gap: 14, alignItems: 'flex-start' }}>
+                        {/* Verification photo thumbnail */}
+                        {verPhoto && (
+                          // eslint-disable-next-line @next/next/no-img-element
+                          <img src={verPhoto.url} alt="Verification"
+                            style={{ width: 52, height: 52, borderRadius: 8, objectFit: 'cover',
+                              border: '2px solid #A7F3D0', flexShrink: 0 }} />
+                        )}
+                        <div style={{ flex: 1, minWidth: 0 }}>
+                          <div style={{ display: 'flex', flexWrap: 'wrap', alignItems: 'center', gap: 8, marginBottom: 4 }}>
+                            <p style={{ fontWeight: 700, fontSize: 14, color: '#111827', margin: 0 }}>{title}</p>
+                            {verPhoto && (
+                              <span style={{ fontSize: 10, fontWeight: 700, background: '#D1FAE5', color: '#065F46', padding: '2px 6px', borderRadius: 999 }}>
+                                Photo Verified
+                              </span>
+                            )}
+                          </div>
+                          <p style={{ fontSize: 13, fontWeight: 600, color: '#F97316', margin: '0 0 3px' }}>
+                            {n.student.name}
+                            <span style={{ color: '#9CA3AF', fontWeight: 400 }}> · {n.student.studentId}</span>
+                          </p>
+                          <p style={{ fontSize: 12, color: '#9CA3AF', margin: 0 }}>
+                            Activity: {dateStr}{submitStr ? ` · Submitted: ${submitStr}` : ''}
+                          </p>
+                        </div>
+                        {/* Action buttons */}
+                        <div style={{ display: 'flex', gap: 8, flexShrink: 0, flexWrap: 'wrap' }}>
+                          <button
+                            onClick={() => router.push(`/narratives/${n.id}`)}
+                            style={{ padding: '6px 12px', borderRadius: 8, fontSize: 12, fontWeight: 600,
+                              background: '#F3F4F6', color: '#374151', border: 'none', cursor: 'pointer', fontFamily: 'inherit' }}>
+                            View
+                          </button>
+                          <button
+                            onClick={() => { setReviewingId(n.id); setReviewComment('') }}
+                            style={{ padding: '6px 14px', borderRadius: 8, fontSize: 12, fontWeight: 700,
+                              background: '#F97316', color: 'white', border: 'none', cursor: 'pointer', fontFamily: 'inherit' }}>
+                            Review
+                          </button>
+                        </div>
+                      </div>
+                    </div>
+                  )
+                })
               )}
             </div>
           </div>

@@ -154,6 +154,16 @@ export default function StudentDashboard() {
   const [ns, setNs] = useState<NarrativeStats>({ total: 0, thisWeek: 0, pending: 0 })
   const [loading,   setLoading]   = useState(true)
 
+  // Notifications
+  const [notifications,    setNotifications]    = useState<{id:string;title:string;message:string;isRead:boolean;link?:string;type:string}[]>([])
+  const [showNotifDropdown, setShowNotifDropdown] = useState(false)
+  const unreadCount = notifications.filter(n => !n.isRead).length
+
+  const markAllRead = async () => {
+    setNotifications(prev => prev.map(n => ({ ...n, isRead: true })))
+    await fetch('/api/notifications', { method: 'PATCH' }).catch(() => {})
+  }
+
   useEffect(() => {
     if (status === 'unauthenticated') router.push('/login')
   }, [status, router])
@@ -162,10 +172,11 @@ export default function StudentDashboard() {
     if (!session?.user) return
     const load = async () => {
       try {
-        const [pRes, cRes, nRes] = await Promise.all([
+        const [pRes, cRes, nRes, notifRes] = await Promise.all([
           fetch('/api/students/profile'),
           fetch('/api/checklists/my-checklist'),
           fetch('/api/narratives?stats=true'),
+          fetch('/api/notifications'),
         ])
         if (pRes.ok) {
           const { student: s } = await pRes.json()
@@ -175,6 +186,14 @@ export default function StudentDashboard() {
         if (cRes.ok) {
           const { checklists } = await cRes.json()
           if (checklists?.length > 0) setCl(checklists[0].stats)
+        }
+        if (nRes.ok) {
+          const { stats } = await nRes.json()
+          if (stats) setNs(stats)
+        }
+        if (notifRes.ok) {
+          const { notifications: notifs } = await notifRes.json()
+          if (notifs) setNotifications(notifs)
         }
         if (nRes.ok) {
           const { stats } = await nRes.json()
@@ -280,6 +299,87 @@ export default function StudentDashboard() {
             >
               Edit Profile
             </button>
+
+            {/* Notification bell */}
+            <div style={{ position: 'relative' }}>
+              <button onClick={() => { setShowNotifDropdown(v => !v); if (unreadCount > 0) markAllRead() }}
+                style={{ position: 'relative', background: 'rgba(255,255,255,0.15)',
+                  border: '1px solid rgba(255,255,255,0.3)', borderRadius: 10,
+                  padding: '8px 10px', cursor: 'pointer', display: 'flex', alignItems: 'center' }}>
+                <svg style={{ width: 18, height: 18, color: 'white' }} fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2}
+                    d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9" />
+                </svg>
+                {unreadCount > 0 && (
+                  <span style={{ position: 'absolute', top: -4, right: -4,
+                    width: 18, height: 18, background: '#EF4444', borderRadius: '50%',
+                    fontSize: 10, fontWeight: 800, color: 'white',
+                    display: 'flex', alignItems: 'center', justifyContent: 'center',
+                    border: '2px solid transparent' }}>
+                    {unreadCount > 9 ? '9+' : unreadCount}
+                  </span>
+                )}
+              </button>
+
+              {/* Dropdown */}
+              {showNotifDropdown && (
+                <>
+                  <div style={{ position: 'fixed', inset: 0, zIndex: 10 }} onClick={() => setShowNotifDropdown(false)} />
+                  <div style={{ position: 'absolute', right: 0, top: '110%', width: 320,
+                    background: 'white', borderRadius: 16, boxShadow: '0 20px 60px rgba(0,0,0,0.15)',
+                    border: '1px solid #E5E7EB', zIndex: 20, overflow: 'hidden' }}>
+                    <div style={{ padding: '14px 16px', borderBottom: '1px solid #F3F4F6',
+                      display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                      <p style={{ fontWeight: 700, fontSize: 14, color: '#111827', margin: 0 }}>Notifications</p>
+                      {notifications.length > 0 && (
+                        <button onClick={markAllRead} style={{ fontSize: 11, color: '#F97316', background: 'none', border: 'none', cursor: 'pointer', fontFamily: 'inherit' }}>
+                          Mark all read
+                        </button>
+                      )}
+                    </div>
+                    {notifications.length === 0 ? (
+                      <div style={{ padding: '32px 16px', textAlign: 'center' }}>
+                        <p style={{ fontSize: 13, color: '#9CA3AF', margin: 0 }}>No notifications yet</p>
+                      </div>
+                    ) : (
+                      <div style={{ maxHeight: 320, overflowY: 'auto' }}>
+                        {notifications.map(n => (
+                          <div key={n.id}
+                            onClick={() => { setShowNotifDropdown(false); if (n.link) router.push(n.link) }}
+                            style={{ padding: '12px 16px', borderBottom: '1px solid #F9FAFB',
+                              background: n.isRead ? 'white' : '#FFF7ED',
+                              cursor: n.link ? 'pointer' : 'default' }}>
+                            <div style={{ display: 'flex', gap: 10, alignItems: 'flex-start' }}>
+                              <div style={{ width: 32, height: 32, borderRadius: 8, flexShrink: 0,
+                                background: n.type === 'narrative_approved' ? '#D1FAE5' : '#FFEDD5',
+                                display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                                {n.type === 'narrative_approved'
+                                  ? <svg style={{ width: 16, height: 16, color: '#059669' }} fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M5 13l4 4L19 7"/></svg>
+                                  : <svg style={{ width: 16, height: 16, color: '#D97706' }} fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
+                                }
+                              </div>
+                              <div style={{ flex: 1, minWidth: 0 }}>
+                                <p style={{ fontWeight: 700, fontSize: 13, color: '#111827', margin: '0 0 2px',
+                                  overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                                  {n.title}
+                                </p>
+                                <p style={{ fontSize: 12, color: '#6B7280', margin: 0, lineHeight: 1.4 }}>
+                                  {n.message}
+                                </p>
+                              </div>
+                              {!n.isRead && (
+                                <div style={{ width: 8, height: 8, background: '#F97316', borderRadius: '50%', flexShrink: 0, marginTop: 4 }} />
+                              )}
+                            </div>
+                          </div>
+                        ))}
+                      </div>
+                    )}
+                  </div>
+                </>
+              )}
+            </div>
+
           </div>
         </div>
 
