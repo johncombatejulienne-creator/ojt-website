@@ -357,9 +357,37 @@ export default function StudentDashboard() {
                 </>
               )}
             </div>
+            {/* end bell position:relative */}
+          </div>
+          {/* end action buttons column */}
+        </div>
+        {/* end top row */}
 
+          {/* Student badges */}
+          <div style={{ display: 'flex', flexWrap: 'wrap', gap: 8, marginTop: 12 }}>
+            {student?.studentId && (
+              <span style={{ background: 'rgba(255,255,255,0.18)', color: 'white',
+                fontSize: 11, fontWeight: 600, padding: '4px 10px', borderRadius: 999 }}>
+                ID: {student.studentId}
+              </span>
+            )}
+            {strandKey !== 'DEFAULT' && (
+              <span style={{ background: 'rgba(255,255,255,0.18)', color: 'white',
+                fontSize: 11, fontWeight: 600, padding: '4px 10px', borderRadius: 999 }}>
+                {strandKey}
+              </span>
+            )}
+            {student?.section?.name && (
+              <span style={{ background: 'rgba(255,255,255,0.18)', color: 'white',
+                fontSize: 11, fontWeight: 600, padding: '4px 10px', borderRadius: 999 }}>
+                {student.section.name}
+              </span>
+            )}
           </div>
         </div>
+        {/* end position:relative */}
+        </div>
+        {/* end welcome banner */}
 
         {/* ── Stats Grid ───────────────────────────────────── */}
         <div className="stats-grid">
