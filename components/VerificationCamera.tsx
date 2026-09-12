@@ -33,18 +33,33 @@ export default function VerificationCamera({
     return () => clearInterval(t)
   }, [])
 
-  /* ── Get GPS location on mount ──────────────────────────── */
-  useEffect(() => {
+  /* ── Get GPS location on mount + retry ─────────────────── */
+  const fetchLocation = useCallback(async () => {
+    setLocation('Locating...')
+    setLocDone(false)
+
     if (!navigator.geolocation) {
-      setLocation('Location unavailable')
+      setLocation('GPS not available on this device')
       setLocDone(true)
       return
     }
+
+    // Check permission state first (where supported)
+    if (navigator.permissions) {
+      try {
+        const perm = await navigator.permissions.query({ name: 'geolocation' })
+        if (perm.state === 'denied') {
+          setLocation('Location blocked — enable in browser settings')
+          setLocDone(true)
+          return
+        }
+      } catch { /* not supported — continue */ }
+    }
+
     navigator.geolocation.getCurrentPosition(
       async (pos) => {
         const { latitude: lat, longitude: lng } = pos.coords
         setCoords({ lat, lng })
-        // Reverse-geocode using OpenStreetMap Nominatim (free, no API key)
         try {
           const res = await fetch(
             `https://nominatim.openstreetmap.org/reverse?format=json&lat=${lat}&lon=${lng}&zoom=14`,
@@ -52,7 +67,6 @@ export default function VerificationCamera({
           )
           const data = await res.json()
           const a = data.address ?? {}
-          // Build a readable short address: district/suburb + city/town + country
           const parts = [
             a.village || a.suburb || a.neighbourhood || a.district || a.county || '',
             a.city || a.town || a.municipality || a.state || '',
@@ -65,15 +79,31 @@ export default function VerificationCamera({
         setLocDone(true)
       },
       (err) => {
-        console.warn('Geolocation error:', err)
-        setLocation('Location not shared')
+        console.warn('Geolocation error code:', err.code, err.message)
+        if (err.code === 1) {
+          // PERMISSION_DENIED
+          setLocation('tap to retry location')
+        } else if (err.code === 2) {
+          // POSITION_UNAVAILABLE
+          setLocation('GPS signal unavailable')
+        } else if (err.code === 3) {
+          // TIMEOUT
+          setLocation('Location timed out — tap to retry')
+        } else {
+          setLocation('Location not available')
+        }
         setLocDone(true)
       },
-      { enableHighAccuracy: true, timeout: 10000, maximumAge: 60000 }
+      {
+        enableHighAccuracy: true,
+        timeout: 15000,
+        maximumAge: 0,
+      }
     )
   }, [])
 
-  /* ── Camera ─────────────────────────────────────────────── */
+  // Trigger location fetch on mount
+  useEffect(() => { fetchLocation() }, [fetchLocation])
   useEffect(() => {
     startCamera()
     return () => stopCamera()
@@ -228,17 +258,19 @@ export default function VerificationCamera({
         <div style={{
           padding: '8px 16px', background: '#0F172A',
           display: 'flex', alignItems: 'center', gap: 8, borderBottom: '1px solid #1F2937',
+          minHeight: 38,
         }}>
-          <svg style={{ width: 14, height: 14, color: locDone ? '#10B981' : '#F59E0B', flexShrink: 0 }}
+          <svg style={{ width: 14, height: 14, color: locDone && coords ? '#10B981' : locDone ? '#EF4444' : '#F59E0B', flexShrink: 0 }}
             fill="none" stroke="currentColor" viewBox="0 0 24 24">
             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2}
               d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z" />
             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 11a3 3 0 11-6 0 3 3 0 016 0z" />
           </svg>
           <p style={{
-            color: locDone ? '#86EFAC' : '#FCD34D', fontSize: 12, margin: 0,
-            animation: locDone ? 'none' : 'pulse 1.5s ease-in-out infinite',
-            overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', flex: 1,
+            color: locDone && coords ? '#86EFAC' : locDone ? '#FCA5A5' : '#FCD34D',
+            fontSize: 12, margin: 0, flex: 1,
+            overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap',
+            animation: !locDone ? 'pulse 1.5s ease-in-out infinite' : 'none',
           }}>
             {location}
           </p>
@@ -246,6 +278,16 @@ export default function VerificationCamera({
             <span style={{ fontSize: 10, color: '#4B5563', flexShrink: 0 }}>
               {coords.lat.toFixed(4)}°, {coords.lng.toFixed(4)}°
             </span>
+          )}
+          {/* Show retry button if location failed */}
+          {locDone && !coords && (
+            <button onClick={() => fetchLocation()} style={{
+              padding: '3px 10px', background: '#F97316', color: 'white',
+              border: 'none', borderRadius: 6, fontSize: 11, fontWeight: 700,
+              cursor: 'pointer', flexShrink: 0, fontFamily: 'inherit',
+            }}>
+              Retry
+            </button>
           )}
         </div>
 
