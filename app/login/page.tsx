@@ -117,9 +117,9 @@ export default function LoginPage() {
 
   if (status === 'loading') return (
     <div style={{ minHeight: '100vh', display: 'flex', alignItems: 'center',
-      justifyContent: 'center', background: '#7C2D12' }}>
-      <div style={{ width: 44, height: 44, border: '4px solid rgba(249,115,22,0.3)',
-        borderTopColor: '#F97316', borderRadius: '50%', animation: 'spin 1s linear infinite' }} />
+      justifyContent: 'center' }} className="bg-animated-gradient">
+      <div style={{ width: 44, height: 44, border: '4px solid rgba(255,255,255,0.3)',
+        borderTopColor: 'white', borderRadius: '50%', animation: 'spin 1s linear infinite' }} />
     </div>
   )
 
@@ -224,9 +224,21 @@ export default function LoginPage() {
       {/* ── RIGHT SIDE: Login card ───────────────────────── */}
       <div style={{
         flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center',
-        background: '#F8FAFC', padding: '32px 24px', minHeight: '100vh',
+        background: 'linear-gradient(160deg, #FFF7ED 0%, #F8FAFC 40%, #EEF2FF 100%)',
+        padding: '32px 24px', minHeight: '100vh', position: 'relative', overflow: 'hidden',
       }}>
-        <div style={{ width: '100%', maxWidth: 440 }}>
+        {/* Colorful background blobs */}
+        <div style={{ position: 'absolute', top: -80, right: -80, width: 320, height: 320,
+          borderRadius: '50%', background: 'radial-gradient(circle, rgba(249,115,22,0.12) 0%, transparent 70%)',
+          pointerEvents: 'none' }} />
+        <div style={{ position: 'absolute', bottom: -60, left: -60, width: 260, height: 260,
+          borderRadius: '50%', background: 'radial-gradient(circle, rgba(99,102,241,0.1) 0%, transparent 70%)',
+          pointerEvents: 'none' }} />
+        <div style={{ position: 'absolute', top: '40%', left: '10%', width: 180, height: 180,
+          borderRadius: '50%', background: 'radial-gradient(circle, rgba(16,185,129,0.07) 0%, transparent 70%)',
+          pointerEvents: 'none' }} />
+        <div style={{ width: '100%', maxWidth: 440, position: 'relative', zIndex: 1 }}
+          className="reveal">
 
           {/* Mobile logo */}
           <div style={{ textAlign: 'center', marginBottom: 32 }} className="login-mobile-logo">
@@ -249,8 +261,11 @@ export default function LoginPage() {
 
           {/* Card */}
           <div style={{
-            background: 'white', borderRadius: 24,
-            boxShadow: '0 20px 60px rgba(0,0,0,0.08), 0 4px 16px rgba(0,0,0,0.04)',
+            background: 'rgba(255,255,255,0.92)',
+            backdropFilter: 'blur(12px)',
+            borderRadius: 24,
+            boxShadow: '0 20px 60px rgba(249,115,22,0.12), 0 4px 16px rgba(0,0,0,0.06)',
+            border: '1px solid rgba(249,115,22,0.15)',
             overflow: 'hidden',
           }}>
             {/* Role tabs */}

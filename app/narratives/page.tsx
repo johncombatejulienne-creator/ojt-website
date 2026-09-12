@@ -247,7 +247,7 @@ export default function NarrativesPage() {
             const badge = STATUS[n.status] ?? STATUS.pending
 
             return (
-              <div key={n.id} style={{ background: 'white', borderRadius: 16,
+              <div key={n.id} className="card-entrance card-hover" style={{ background: 'white', borderRadius: 16,
                 border: '1px solid #E5E7EB', padding: '18px 20px', boxSizing: 'border-box' }}>
 
                 <div style={{ display: 'flex', gap: 14, alignItems: 'flex-start' }}>

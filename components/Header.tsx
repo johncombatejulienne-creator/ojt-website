@@ -116,7 +116,8 @@ export default function Header({ strandCode, forceTeacher }: {
   return (
     <>
       <header style={{ background: grad, position: 'sticky', top: 0, zIndex: 50,
-        boxShadow: '0 2px 16px rgba(0,0,0,0.15)' }}>
+        boxShadow: '0 2px 16px rgba(0,0,0,0.15)' }}
+        className="header-glass">
         <div style={{ maxWidth: 1280, margin: '0 auto', padding: '0 20px' }}>
           <div style={{ display: 'flex', alignItems: 'center', height: 60, gap: 12 }}>
 

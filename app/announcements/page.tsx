@@ -72,7 +72,7 @@ export default function AnnouncementsPage() {
       </div>
 
       {announcements.length === 0 ? (
-        <div style={{ background: 'white', borderRadius: 16, border: '1px solid #E5E7EB',
+        <div className="reveal" style={{ background: 'white', borderRadius: 16, border: '1px solid #E5E7EB',
           display: 'flex', flexDirection: 'column', alignItems: 'center',
           justifyContent: 'center', padding: '64px 24px', gap: 12, textAlign: 'center' }}>
           <div style={{ width: 56, height: 56, background: '#F3F4F6', borderRadius: 14,
@@ -96,7 +96,7 @@ export default function AnnouncementsPage() {
               month: 'short', day: 'numeric', year: 'numeric',
             })
             return (
-              <div key={a.id} style={{
+              <div key={a.id} className="card-entrance card-hover" style={{
                 background: a.type === 'emergency' ? '#FFF5F5' : expiring ? '#FFFBEB' : 'white',
                 borderRadius: 16,
                 border: `1px solid ${a.type === 'emergency' ? '#FECACA' : expiring ? '#FDE68A' : '#E5E7EB'}`,

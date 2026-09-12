@@ -1,0 +1,152 @@
+'use client'
+
+import { useEffect } from 'react'
+import { usePathname } from 'next/navigation'
+import Image from 'next/image'
+
+/**
+ * PageEffects
+ * Mounts once in the root layout.
+ * Handles:
+ *   1. Page loader / opening animation
+ *   2. Scroll progress bar
+ *   3. IntersectionObserver scroll-reveal for .reveal* classes
+ *   4. Ripple effect on .ripple elements
+ *   5. Header glass scroll effect
+ *   6. Re-triggers scroll reveal on route change
+ */
+export default function PageEffects() {
+  const pathname = usePathname()
+
+  /* ── Page loader (first visit only) ──────────────────── */
+  useEffect(() => {
+    const loader = document.getElementById('page-loader')
+    if (!loader) return
+    // Already hidden → skip
+    if (loader.classList.contains('loader-hidden')) return
+
+    const hide = () => {
+      loader.classList.add('loader-hidden')
+      setTimeout(() => { loader.style.display = 'none' }, 600)
+    }
+
+    if (document.readyState === 'complete') {
+      setTimeout(hide, 700)
+    } else {
+      window.addEventListener('load', () => setTimeout(hide, 700), { once: true })
+    }
+  }, [])
+
+  /* ── Page-enter animation on route change ────────────── */
+  useEffect(() => {
+    const main = document.querySelector('main')
+    if (!main) return
+    main.classList.remove('page-enter')
+    // Trigger reflow
+    void main.offsetWidth
+    main.classList.add('page-enter')
+  }, [pathname])
+
+  /* ── Scroll progress bar ─────────────────────────────── */
+  useEffect(() => {
+    const bar = document.getElementById('scroll-progress')
+    if (!bar) return
+    const update = () => {
+      const scrolled = window.scrollY
+      const total    = document.documentElement.scrollHeight - window.innerHeight
+      const pct      = total > 0 ? (scrolled / total) * 100 : 0
+      bar.style.width = `${pct}%`
+    }
+    window.addEventListener('scroll', update, { passive: true })
+    return () => window.removeEventListener('scroll', update)
+  }, [])
+
+  /* ── IntersectionObserver scroll reveal ─────────────── */
+  useEffect(() => {
+    const revealEls = document.querySelectorAll(
+      '.reveal, .reveal-left, .reveal-right, .reveal-scale'
+    )
+    if (!revealEls.length) return
+
+    const obs = new IntersectionObserver(
+      (entries) => {
+        entries.forEach(entry => {
+          if (entry.isIntersecting) {
+            entry.target.classList.add('revealed')
+            obs.unobserve(entry.target)
+          }
+        })
+      },
+      { threshold: 0.12, rootMargin: '0px 0px -40px 0px' }
+    )
+
+    revealEls.forEach(el => obs.observe(el))
+    return () => obs.disconnect()
+  }, [pathname])
+
+  /* ── Ripple effect ───────────────────────────────────── */
+  useEffect(() => {
+    const handleClick = (e: MouseEvent) => {
+      const target = (e.target as HTMLElement).closest('.ripple') as HTMLElement | null
+      if (!target) return
+      const rect    = target.getBoundingClientRect()
+      const size    = Math.max(rect.width, rect.height)
+      const x       = e.clientX - rect.left - size / 2
+      const y       = e.clientY - rect.top  - size / 2
+      const ripple  = document.createElement('span')
+      ripple.className = 'ripple-effect'
+      ripple.style.cssText = `
+        width:${size}px; height:${size}px;
+        left:${x}px; top:${y}px;
+      `
+      target.appendChild(ripple)
+      ripple.addEventListener('animationend', () => ripple.remove(), { once: true })
+    }
+    document.addEventListener('click', handleClick)
+    return () => document.removeEventListener('click', handleClick)
+  }, [])
+
+  /* ── Header glass on scroll ──────────────────────────── */
+  useEffect(() => {
+    const header = document.querySelector('header')
+    if (!header) return
+    const onScroll = () => {
+      if (window.scrollY > 20) {
+        header.classList.add('header-scrolled')
+      } else {
+        header.classList.remove('header-scrolled')
+      }
+    }
+    window.addEventListener('scroll', onScroll, { passive: true })
+    return () => window.removeEventListener('scroll', onScroll)
+  }, [pathname])
+
+  return (
+    <>
+      {/* ── Scroll progress bar ───────── */}
+      <div id="scroll-progress" aria-hidden="true" />
+
+      {/* ── Page loader ───────────────── */}
+      <div id="page-loader" role="status" aria-label="Loading">
+        <div className="loader-logo-wrap">
+          <div style={{
+            width: 72, height: 72, borderRadius: 18, background: 'white',
+            display: 'flex', alignItems: 'center', justifyContent: 'center',
+            padding: 6, boxShadow: '0 8px 32px rgba(249,115,22,0.4)',
+          }}>
+            <Image
+              src="/psbc-logo.svg"
+              alt="PSBC"
+              width={60}
+              height={60}
+              style={{ width: '100%', height: '100%', objectFit: 'contain' }}
+              priority
+            />
+          </div>
+        </div>
+        <div className="loader-ring" />
+        <p className="loader-text">PSBC Work Immersion</p>
+      </div>
+    </>
+  )
+}

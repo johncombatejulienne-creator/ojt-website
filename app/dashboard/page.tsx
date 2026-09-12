@@ -390,9 +390,9 @@ export default function StudentDashboard() {
         {/* end welcome banner */}
 
         {/* ── Stats Grid ───────────────────────────────────── */}
-        <div className="stats-grid">
+        <div className="stats-grid reveal reveal-d1">
           <StatCard label="Narratives" value={ns.total} sub="submitted"
-            bg="linear-gradient(135deg,#F97316,#F97316)" icon={icons.narratives} />
+            bg="linear-gradient(135deg,#F97316,#FB923C)" icon={icons.narratives} />
           <StatCard label="This Week" value={ns.thisWeek} sub="narratives"
             bg="linear-gradient(135deg,#8B5CF6,#6D28D9)" icon={icons.week} />
           <StatCard label="Pending Review" value={ns.pending} sub="under review"

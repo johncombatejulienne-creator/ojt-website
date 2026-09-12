@@ -1,5 +1,6 @@
 import type { Metadata, Viewport } from "next"
 import { SessionProvider } from "@/components/SessionProvider"
+import PageEffects from "@/components/PageEffects"
 import "./globals.css"
 
 /* ── Metadata ─────────────────────────────────────────────────────────────── */
@@ -48,8 +49,13 @@ export default function RootLayout({
         <link rel="icon"             href="/favicon.ico" />
         <link rel="apple-touch-icon" href="/icon-192.png" />
       </head>
-      <body className="antialiased">
-        <SessionProvider>{children}</SessionProvider>
+      <body className="antialiased bg-mesh">
+        <PageEffects />
+        <SessionProvider>
+          <main className="page-enter">
+            {children}
+          </main>
+        </SessionProvider>
       </body>
     </html>
   )
