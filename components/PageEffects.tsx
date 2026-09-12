@@ -20,9 +20,11 @@ export default function PageEffects() {
 
   /* ── Page loader (first visit only) ──────────────────── */
   useEffect(() => {
+    // Mark JS as ready — enables scroll-reveal hiding
+    document.documentElement.classList.add('js-ready')
+
     const loader = document.getElementById('page-loader')
     if (!loader) return
-    // Already hidden → skip
     if (loader.classList.contains('loader-hidden')) return
 
     const hide = () => {
