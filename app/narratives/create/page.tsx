@@ -421,9 +421,9 @@ export default function CreateNarrativePage() {
               `Minimum ${MIN} characters required for the narrative section`,
               'A verification selfie is required — it records the time you submitted',
             ].map(tip => (
-              <li key={tip} style={{ display: 'flex', gap: 8, fontSize: 13, color: '#6B7280' }}>
-                <span style={{ color: '#F97316', flexShrink: 0 }}>&#8226;</span>
-                {tip}
+              <li key={tip} style={{ display: 'flex', gap: 8, fontSize: 13, color: '#6B7280', alignItems: 'flex-start' }}>
+                <span style={{ color: '#F97316', flexShrink: 0, lineHeight: 1.6 }}>•</span>
+                <span style={{ flex: 1 }}>{tip}</span>
               </li>
             ))}
           </ul>

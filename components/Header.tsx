@@ -210,8 +210,11 @@ export default function Header({ strandCode, forceTeacher }: {
                     <div style={{ position: 'fixed', inset: 0, zIndex: 10 }}
                       onClick={() => setMenuOpen(false)} />
                     <div style={{
-                      position: 'absolute', right: 0, top: '100%', marginTop: 8,
-                      width: 240, background: 'white', borderRadius: 16,
+                      position: 'fixed',
+                      top: 68,
+                      right: 8,
+                      width: 'min(240px, calc(100vw - 16px))',
+                      background: 'white', borderRadius: 16,
                       boxShadow: '0 20px 60px rgba(0,0,0,0.15), 0 4px 16px rgba(0,0,0,0.08)',
                       border: '1px solid #E5E7EB', zIndex: 20, overflow: 'hidden',
                       animation: 'fadeIn 0.15s ease',
@@ -241,7 +244,7 @@ export default function Header({ strandCode, forceTeacher }: {
                           </p>
                           <span style={{ display: 'inline-block', marginTop: 3, fontSize: 10, fontWeight: 700,
                             background: '#FFF7ED', color: '#F97316', padding: '1px 8px', borderRadius: 999,
-                            textTransform: 'capitalize' }}>{userRole}</span>
+                            textTransform: 'capitalize', whiteSpace: 'nowrap' }}>{userRole}</span>
                         </div>
                       </div>
 

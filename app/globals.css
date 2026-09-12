@@ -1664,3 +1664,122 @@ a,
     box-shadow: none !important;
   }
 }
+
+/* ─────────────────────────────────────────────────────────
+   MOBILE TOUCH ACTIVE STATES
+   :hover doesn't fire on touch — :active does
+───────────────────────────────────────────────────────── */
+
+/* All buttons press down on touch */
+@media (hover: none) and (pointer: coarse) {
+  button:active,
+  a:active,
+  [role="button"]:active {
+    transform: scale(0.93) !important;
+    opacity: 0.78 !important;
+    transition: transform 0.08s ease, opacity 0.08s ease !important;
+  }
+
+  /* Stat cards pulse on touch */
+  .stats-grid > *:active,
+  .grid-3 > *:active {
+    transform: scale(0.96) !important;
+    filter: brightness(1.08) !important;
+    transition: transform 0.1s ease !important;
+  }
+
+  /* Cards lift briefly on tap */
+  .card-hover:active,
+  .card-entrance:active {
+    transform: scale(0.98) translateY(-2px) !important;
+    box-shadow: 0 8px 20px rgba(0,0,0,0.12) !important;
+  }
+
+  /* Orange buttons deep press */
+  button[style*="background: #F97316"]:active,
+  button[style*="background:#F97316"]:active,
+  a[style*="background: #F97316"]:active {
+    transform: scale(0.95) !important;
+    box-shadow: 0 2px 8px rgba(249,115,22,0.3) !important;
+    filter: brightness(0.95) !important;
+  }
+
+  /* Delete buttons */
+  button[style*="background: #FEF2F2"]:active,
+  button[style*="color: #DC2626"]:active {
+    background: #FEE2E2 !important;
+    transform: scale(0.94) !important;
+  }
+
+  /* Input focus on touch */
+  input:focus,
+  select:focus,
+  textarea:focus {
+    border-color: #F97316 !important;
+    box-shadow: 0 0 0 3px rgba(249,115,22,0.2) !important;
+  }
+
+  /* Tab buttons */
+  button[style*="borderRadius: 10"]:active,
+  button[style*="borderRadius: 8"]:active {
+    transform: scale(0.93) !important;
+  }
+
+  /* Nav items */
+  header button:active {
+    background: rgba(255,255,255,0.25) !important;
+    transform: scale(0.95) !important;
+  }
+
+  /* Remove hover effects that don't apply on touch */
+  button:hover,
+  a:hover,
+  .card-hover:hover,
+  .stats-grid > *:hover,
+  .grid-3 > *:hover {
+    transform: none !important;
+    filter: none !important;
+    box-shadow: inherit !important;
+  }
+}
+
+/* ─────────────────────────────────────────────────────────
+   FIX: Dropdown menus — always stay on screen
+───────────────────────────────────────────────────────── */
+/* Prevent any fixed/absolute dropdown from going off-screen */
+[style*="position: absolute"][style*="right: 0"],
+[style*="position:absolute"][style*="right:0"] {
+  max-width: calc(100vw - 16px);
+  right: max(0px, env(safe-area-inset-right, 0px)) !important;
+}
+
+/* Notification / profile dropdowns on mobile */
+@media (max-width: 480px) {
+  [style*="position: fixed"][style*="width: 'min(300px"],
+  [style*="position: fixed"][style*="width: 'min(240px"] {
+    right: 8px !important;
+    max-width: calc(100vw - 16px) !important;
+  }
+}
+
+/* ─────────────────────────────────────────────────────────
+   FIX: Badge text — never break/wrap
+───────────────────────────────────────────────────────── */
+span[style*="borderRadius: 999"],
+span[style*="borderRadius:999"] {
+  white-space: nowrap !important;
+  display: inline-flex !important;
+  align-items: center;
+}
+
+/* ─────────────────────────────────────────────────────────
+   FIX: All list bullets aligned
+───────────────────────────────────────────────────────── */
+li {
+  align-items: flex-start;
+}
+li > span:first-child {
+  flex-shrink: 0;
+  line-height: 1.6;
+  padding-top: 0;
+}

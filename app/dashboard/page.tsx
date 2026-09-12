@@ -303,9 +303,15 @@ export default function StudentDashboard() {
                   {showNotifDropdown && (
                     <>
                       <div style={{ position: 'fixed', inset: 0, zIndex: 10 }} onClick={() => setShowNotifDropdown(false)} />
-                      <div style={{ position: 'absolute', right: 0, top: '110%', width: 300,
-                        background: 'white', borderRadius: 16, boxShadow: '0 20px 60px rgba(0,0,0,0.15)',
-                        border: '1px solid #E5E7EB', zIndex: 20, overflow: 'hidden' }}>
+                      <div style={{
+                        position: 'fixed',
+                        top: 68,
+                        right: 8,
+                        width: 'min(300px, calc(100vw - 16px))',
+                        background: 'white', borderRadius: 16,
+                        boxShadow: '0 20px 60px rgba(0,0,0,0.15)',
+                        border: '1px solid #E5E7EB', zIndex: 20, overflow: 'hidden',
+                      }}>
                         <div style={{ padding: '14px 16px', borderBottom: '1px solid #F3F4F6',
                           display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
                       <p style={{ fontWeight: 700, fontSize: 14, color: '#111827', margin: 0 }}>Notifications</p>
