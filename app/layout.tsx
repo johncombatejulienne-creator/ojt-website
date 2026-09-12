@@ -52,9 +52,7 @@ export default function RootLayout({
       <body className="antialiased bg-mesh">
         <PageEffects />
         <SessionProvider>
-          <main className="page-enter">
-            {children}
-          </main>
+          {children}
         </SessionProvider>
       </body>
     </html>

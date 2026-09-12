@@ -39,12 +39,12 @@ export default function PageEffects() {
 
   /* ── Page-enter animation on route change ────────────── */
   useEffect(() => {
-    const main = document.querySelector('main')
-    if (!main) return
-    main.classList.remove('page-enter')
-    // Trigger reflow
-    void main.offsetWidth
-    main.classList.add('page-enter')
+    // Apply entrance animation to the outermost content wrapper
+    const wrapper = document.getElementById('content-wrapper')
+    if (!wrapper) return
+    wrapper.style.animation = 'none'
+    void wrapper.offsetWidth
+    wrapper.style.animation = 'blurIn 0.4s cubic-bezier(0.16,1,0.3,1) both'
   }, [pathname])
 
   /* ── Scroll progress bar ─────────────────────────────── */
@@ -72,15 +72,26 @@ export default function PageEffects() {
       (entries) => {
         entries.forEach(entry => {
           if (entry.isIntersecting) {
-            entry.target.classList.add('revealed')
+            // Small delay to ensure layout is stable
+            setTimeout(() => {
+              entry.target.classList.add('revealed')
+            }, 50)
             obs.unobserve(entry.target)
           }
         })
       },
-      { threshold: 0.12, rootMargin: '0px 0px -40px 0px' }
+      { threshold: 0.05, rootMargin: '0px 0px -20px 0px' }
     )
 
-    revealEls.forEach(el => obs.observe(el))
+    revealEls.forEach(el => {
+      // Elements already in viewport get revealed immediately
+      const rect = el.getBoundingClientRect()
+      if (rect.top < window.innerHeight - 20) {
+        setTimeout(() => el.classList.add('revealed'), 100)
+      } else {
+        obs.observe(el)
+      }
+    })
     return () => obs.disconnect()
   }, [pathname])
 

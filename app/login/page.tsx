@@ -238,7 +238,7 @@ export default function LoginPage() {
           borderRadius: '50%', background: 'radial-gradient(circle, rgba(16,185,129,0.07) 0%, transparent 70%)',
           pointerEvents: 'none' }} />
         <div style={{ width: '100%', maxWidth: 440, position: 'relative', zIndex: 1 }}
-          className="reveal">
+          className="animate-slide-up">
 
           {/* Mobile logo */}
           <div style={{ textAlign: 'center', marginBottom: 32 }} className="login-mobile-logo">
