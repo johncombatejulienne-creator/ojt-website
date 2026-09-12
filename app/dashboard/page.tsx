@@ -449,9 +449,10 @@ export default function StudentDashboard() {
         </div>
 
         {/* ── Info Row ─────────────────────────────────────── */}
-        <div style={{ display: 'flex', flexWrap: 'wrap', gap: 12 }}>
-          <InfoPill label="Company" value={student?.company} />
-          <InfoPill label="Supervisor" value={student?.supervisor?.name} />
+        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, minmax(0, 1fr))', gap: 12 }}
+          className="grid-3">
+          <InfoPill label="Company"       value={student?.company} />
+          <InfoPill label="Supervisor"    value={student?.supervisor?.name} />
           <InfoPill label="Grade & Section"
             value={student?.gradeLevel && student?.section?.name
               ? `Grade ${student.gradeLevel} — ${student.section.name}` : undefined} />

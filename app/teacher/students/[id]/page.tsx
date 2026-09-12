@@ -6,10 +6,12 @@ import { useSession } from 'next-auth/react'
 import Image from 'next/image'
 import AppShell from '@/components/AppShell'
 
+interface Teacher { id: string; name: string; email: string }
 interface StudentDetail {
   id: string; studentId: string; name: string; email: string
   profilePicture?: string | null; company?: string; gradeLevel?: number
-  section?: { name: string }; strand?: { name: string }; supervisor?: { name: string }
+  section?: { name: string }; strand?: { name: string }
+  supervisor?: { id: string; name: string; email: string }
   narratives: {
     id: string; status: string; date: string
     submissionDate?: string; content: string; isDraft: boolean
@@ -33,6 +35,9 @@ export default function TeacherStudentDetailPage() {
   const [student, setStudent] = useState<StudentDetail | null>(null)
   const [loading, setLoading] = useState(true)
   const [err, setErr] = useState('')
+  const [teachers, setTeachers] = useState<Teacher[]>([])
+  const [assigningSuper, setAssigningSuper] = useState(false)
+  const [superSuccess, setSuperSuccess] = useState('')
 
   const studentId = params.id as string
 
@@ -41,13 +46,38 @@ export default function TeacherStudentDetailPage() {
   }, [status, router])
 
   useEffect(() => {
-    if (!session?.user || session.user.role !== 'teacher') return
-    fetch(`/api/teacher/student-detail/${studentId}`)
-      .then(r => r.json())
-      .then(d => { if (d.student) setStudent(d.student); else setErr(d.error ?? 'Not found') })
-      .catch(() => setErr('Failed to load student'))
+    if (!session?.user) return
+    // Load student detail and teacher list in parallel
+    Promise.all([
+      fetch(`/api/teacher/student-detail/${studentId}`).then(r => r.json()),
+      fetch('/api/teacher/list').then(r => r.json()),
+    ]).then(([studentData, teacherData]) => {
+      if (studentData.student) setStudent(studentData.student)
+      else setErr(studentData.error ?? 'Not found')
+      setTeachers(teacherData.teachers ?? [])
+    }).catch(() => setErr('Failed to load student'))
       .finally(() => setLoading(false))
   }, [session, studentId])
+
+  const handleAssignSupervisor = async (supervisorId: string | null) => {
+    setAssigningSuper(true); setSuperSuccess('')
+    try {
+      const res = await fetch(`/api/teacher/students/${studentId}/supervisor`, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ supervisorId }),
+      })
+      const d = await res.json()
+      if (!res.ok) throw new Error(d.error)
+      setStudent(prev => prev ? { ...prev, supervisor: d.supervisor ?? undefined } : null)
+      setSuperSuccess(supervisorId ? 'Supervisor assigned!' : 'Supervisor removed.')
+      setTimeout(() => setSuperSuccess(''), 3000)
+    } catch (e: unknown) {
+      alert(e instanceof Error ? e.message : 'Failed to assign supervisor')
+    } finally {
+      setAssigningSuper(false)
+    }
+  }
 
   if (loading) return (
     <AppShell>
@@ -146,6 +176,56 @@ export default function TeacherStudentDetailPage() {
               </p>
             </div>
           ))}
+        </div>
+
+        {/* Supervisor assignment card */}
+        <div style={{ background: 'white', border: '1px solid #E5E7EB', borderRadius: 16, padding: '20px 24px' }}>
+          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between',
+            gap: 12, marginBottom: 14, flexWrap: 'wrap' }}>
+            <div>
+              <p style={{ fontWeight: 700, fontSize: 15, color: '#111827', margin: 0 }}>Assign Supervisor</p>
+              <p style={{ fontSize: 12, color: '#9CA3AF', marginTop: 3 }}>
+                Current: <strong style={{ color: '#374151' }}>{student.supervisor?.name ?? 'None assigned'}</strong>
+              </p>
+            </div>
+            {superSuccess && (
+              <span style={{ fontSize: 12, fontWeight: 700, background: '#D1FAE5',
+                color: '#065F46', padding: '4px 12px', borderRadius: 999 }}>
+                ✓ {superSuccess}
+              </span>
+            )}
+          </div>
+          <div style={{ display: 'flex', gap: 10, flexWrap: 'wrap' }}>
+            <select
+              defaultValue={student.supervisor?.id ?? ''}
+              onChange={() => {}} // controlled below
+              id="supervisor-select"
+              style={{ flex: 1, minWidth: 200, padding: '10px 14px', border: '1.5px solid #E5E7EB',
+                borderRadius: 10, fontSize: 14, fontFamily: 'inherit', background: 'white',
+                outline: 'none', boxSizing: 'border-box' as const }}>
+              <option value="">— No Supervisor —</option>
+              {teachers.map(t => (
+                <option key={t.id} value={t.id}>{t.name} ({t.email})</option>
+              ))}
+            </select>
+            <button
+              disabled={assigningSuper}
+              onClick={() => {
+                const sel = document.getElementById('supervisor-select') as HTMLSelectElement
+                handleAssignSupervisor(sel.value || null)
+              }}
+              style={{
+                padding: '10px 20px', background: assigningSuper ? '#FED7AA' : '#F97316',
+                color: 'white', border: 'none', borderRadius: 10, fontSize: 13, fontWeight: 700,
+                cursor: assigningSuper ? 'not-allowed' : 'pointer', fontFamily: 'inherit',
+                whiteSpace: 'nowrap',
+              }}>
+              {assigningSuper ? 'Saving...' : 'Assign'}
+            </button>
+          </div>
+          <p style={{ fontSize: 11, color: '#9CA3AF', marginTop: 8 }}>
+            The supervisor will be notified when this student submits a narrative.
+          </p>
         </div>
 
         {/* Narratives */}

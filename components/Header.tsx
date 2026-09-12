@@ -107,6 +107,7 @@ export default function Header({ strandCode, forceTeacher }: {
     { label: 'Students',      path: '/teacher/dashboard?tab=students',      tab: 'students' },
     { label: 'Announcements', path: '/teacher/dashboard?tab=announcements', tab: 'announcements' },
     { label: 'Teachers',      path: '/teacher/dashboard?tab=teachers',      tab: 'teachers' },
+    { label: 'Profile',       path: '/teacher/profile',                     tab: '' },
   ]
   const navItems = isTeacher ? teacherNav : studentNav
 
@@ -141,7 +142,8 @@ export default function Header({ strandCode, forceTeacher }: {
             </button>
 
             {/* Desktop Nav */}
-            <nav style={{ display: 'flex', alignItems: 'center', gap: 4, flex: 1, overflow: 'hidden' }}
+            <nav style={{ display: 'flex', alignItems: 'center', gap: 4, flex: 1,
+              overflow: 'hidden', minWidth: 0 }}
               className="header-nav">
               {navItems.map(item => (
                 <NavLink

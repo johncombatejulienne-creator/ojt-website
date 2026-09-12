@@ -31,8 +31,7 @@ export async function GET(
         profilePicture: true, company: true, gradeLevel: true,
         section:    { select: { name: true } },
         strand:     { select: { name: true } },
-        supervisor: { select: { name: true, email: true } },
-        narratives: {
+        supervisor: { select: { id: true, name: true, email: true } },        narratives: {
           select: {
             id: true, status: true, date: true,
             submissionDate: true, content: true, isDraft: true,
