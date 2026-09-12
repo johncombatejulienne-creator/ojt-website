@@ -47,7 +47,19 @@ export async function GET(request: NextRequest) {
       } else if (!existing.profilePicture && image) {
         await prisma.teacher.update({ where: { id: existing.id }, data: { profilePicture: image } })
       }
-      // Note: keep any Student record — they may have been a student before
+
+      // CRITICAL: Remove Student record so this account doesn't appear in the Students tab
+      // Without this, a teacher who previously signed in as a student still shows up as a student
+      const studentRecord = await prisma.student.findUnique({ where: { email } })
+      if (studentRecord) {
+        // Clean up student-related records before deleting
+        await prisma.studentChecklistProgress.deleteMany({ where: { studentId: studentRecord.id } }).catch(() => {})
+        // Soft-delete/unlink narratives — we keep them for audit but unlink the student
+        // Actually delete them cascaded — schema has onDelete: Cascade
+        await prisma.narrative.deleteMany({ where: { studentId: studentRecord.id } }).catch(() => {})
+        await prisma.notification.deleteMany({ where: { userId: studentRecord.id, userType: 'student' } }).catch(() => {})
+        await prisma.student.delete({ where: { id: studentRecord.id } }).catch(() => {})
+      }
     } else {
       // ── STUDENT sign-in ───────────────────────────────────
       // Ensure Student record exists

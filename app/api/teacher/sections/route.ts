@@ -30,8 +30,13 @@ export async function GET() {
     // Auto-create Teacher record if missing (first-time teacher sign-in)
     await ensureTeacher(session.user.email, session.user.name, session.user.image ?? null)
 
-    // ALL students — flat list regardless of section
+    // ALL students — exclude anyone who is also a teacher (dual-role cleanup safety net)
+    const teacherEmails = await prisma.teacher.findMany({
+      select: { email: true },
+    }).then(ts => ts.map(t => t.email)).catch(() => [] as string[])
+
     const allStudents = await prisma.student.findMany({
+      where: teacherEmails.length > 0 ? { email: { notIn: teacherEmails } } : {},
       select: {
         id: true, studentId: true, name: true, email: true,
         profilePicture: true, gradeLevel: true, sectionId: true,
