@@ -195,6 +195,8 @@ export default function EditProfilePage() {
       })
       const data = await res.json()
       if (!res.ok) throw new Error(data.error)
+      // Refresh JWT so header name updates immediately
+      await updateSession({ name: form.name.trim() }).catch(() => {})
       toast('Profile saved!', 'success')
       setTimeout(() => router.push('/dashboard'), 1200)
     } catch (e: unknown) { toast(e instanceof Error ? e.message : 'Save failed', 'error') }

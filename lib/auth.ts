@@ -43,6 +43,7 @@ export const authOptions: NextAuthOptions = {
     async jwt({ token, user, trigger, session }) {
       if (trigger === "update" && session) {
         if (session.profilePicture !== undefined) token.profilePicture = session.profilePicture
+        if (session.name          !== undefined) token.name           = session.name
         return token
       }
 
@@ -94,6 +95,7 @@ export const authOptions: NextAuthOptions = {
         session.user.role      = (token.role   as string) ?? "student"
         session.user.studentId = token.studentId as string | undefined
         session.user.teacherId = token.teacherId as string | undefined
+        if (token.name) session.user.name = token.name as string
       }
       return session
     },

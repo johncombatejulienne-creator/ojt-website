@@ -143,6 +143,8 @@ export default function TeacherProfilePage() {
       })
       const data = await res.json()
       if (!res.ok) throw new Error(data.error)
+      // Refresh JWT so header shows updated name immediately
+      await updateSession({ name: name.trim() })
       toast('Profile saved!', 'success')
       setTimeout(() => router.push('/teacher/dashboard'), 1200)
     } catch (e: unknown) {
