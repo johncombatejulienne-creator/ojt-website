@@ -1231,3 +1231,50 @@ a { color: inherit; text-decoration: none; }
     transform: none !important;
   }
 }
+
+/* ─────────────────────────────────────────────────────────
+   GLOBAL TEXT OVERFLOW PREVENTION
+   Prevents text from breaking out of containers on all devices
+───────────────────────────────────────────────────────── */
+p, h1, h2, h3, h4, h5, h6, span, label, li, td, th, a {
+  overflow-wrap: break-word;
+  word-break: break-word;
+  max-width: 100%;
+}
+
+/* Badges and pills — allow them to wrap naturally */
+.badge, [style*="borderRadius: 999"] {
+  max-width: 100%;
+  word-break: break-word;
+}
+
+/* Prevent any element from overflowing its parent */
+* {
+  max-width: 100%;
+  box-sizing: border-box;
+}
+
+/* Input fields should never overflow */
+input, select, textarea {
+  max-width: 100%;
+  min-width: 0;
+}
+
+/* Table cells — prevent overflow */
+td, th {
+  word-break: break-word;
+  overflow-wrap: break-word;
+}
+
+/* Mobile — ensure nothing overflows horizontally */
+@media (max-width: 640px) {
+  .dashboard-container,
+  .content-area {
+    overflow-x: hidden;
+  }
+  
+  /* Stack flex rows that may overflow on mobile */
+  [style*="display: flex"][style*="gap"] {
+    flex-wrap: wrap;
+  }
+}

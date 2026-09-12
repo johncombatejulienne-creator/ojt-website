@@ -59,7 +59,7 @@ export async function DELETE(
       where: { teacherId: id }, data: { teacherId: null },
     }).catch(() => {})
 
-    // Soft-delete their announcements
+    // Soft-delete their announcements (avoid FK on delete)
     await prisma.announcement.updateMany({
       where: { teacherId: id }, data: { isActive: false },
     }).catch(() => {})

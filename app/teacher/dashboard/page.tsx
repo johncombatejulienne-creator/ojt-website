@@ -203,9 +203,11 @@ export default function TeacherDashboard() {
     name: '', description: '', targetType: 'all',
     items: [{ title: '', requirementType: 'general', isRequired: true }],
   })
-  const [reqSubmitting, setReqSubmitting] = useState(false)
-  const [reqSuccess,    setReqSuccess]    = useState('')
-  const [reqError,      setReqError]      = useState('')
+  const [reqSubmitting,  setReqSubmitting]  = useState(false)
+  const [reqSuccess,     setReqSuccess]     = useState('')
+  const [reqError,       setReqError]       = useState('')
+  const [existingReqs,   setExistingReqs]   = useState<{id:string;name:string;description?:string|null;targetType:string;_count:{progress:number};items:{id:string;title:string}[]}[]>([])
+  const [deletingReqId,  setDeletingReqId]  = useState<string|null>(null)
 
   // Announcements state
   const [announcements, setAnnouncements] = useState<Announcement[]>([])
@@ -235,7 +237,6 @@ export default function TeacherDashboard() {
         fetch('/api/announcements').catch(() => null),
         fetch('/api/narratives?status=pending&limit=50').catch(() => null),
       ])
-
       if (secRes?.ok) {
         try {
           const d = await secRes.json()
@@ -270,6 +271,15 @@ export default function TeacherDashboard() {
           const d = await narrRes.json()
           setPendingNarratives(d.narratives ?? [])
         } catch (e) { console.error('narratives parse error', e) }
+      }
+
+      // Load existing checklists
+      const reqRes = await fetch('/api/checklists').catch(() => null)
+      if (reqRes?.ok) {
+        try {
+          const d = await reqRes.json()
+          setExistingReqs(d.checklists ?? [])
+        } catch { /* silent */ }
       }
     } catch (e) {
       console.error('loadData error', e)
@@ -375,6 +385,20 @@ export default function TeacherDashboard() {
     finally { setReviewSubmitting(false) }
   }
 
+  /* ── Delete requirement checklist ──────────────────────── */
+  const handleDeleteReq = async (id: string) => {
+    setDeletingReqId(id)
+    try {
+      const res = await fetch(`/api/checklists/${id}`, { method: 'DELETE' })
+      if (!res.ok) throw new Error('Failed')
+      setExistingReqs(prev => prev.filter(r => r.id !== id))
+    } catch {
+      alert('Failed to delete checklist.')
+    } finally {
+      setDeletingReqId(null)
+    }
+  }
+
   /* ── Post requirement ──────────────────────────────────── */
   const handlePostRequirement = async (e: React.FormEvent) => {
     e.preventDefault()
@@ -396,6 +420,7 @@ export default function TeacherDashboard() {
       })
       const d = await res.json()
       if (!res.ok) throw new Error(d.error ?? 'Failed')
+      setExistingReqs(prev => [d.checklist, ...prev])
       setReqSuccess('Requirement checklist created! Students will be notified.')
       setReqForm({ name: '', description: '', targetType: 'all',
         items: [{ title: '', requirementType: 'general', isRequired: true }] })
@@ -877,6 +902,49 @@ export default function TeacherDashboard() {
         ════════════════════════════════════════════════ */}
         {activeTab === 'requirements' && (
           <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
+
+            {/* ── Existing checklists ── */}
+            {existingReqs.length > 0 && (
+              <div style={{ background: 'white', border: '1px solid #E5E7EB', borderRadius: 16, overflow: 'hidden' }}>
+                <div style={{ padding: '14px 20px', borderBottom: '1px solid #F3F4F6',
+                  display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+                  <p style={{ fontWeight: 700, fontSize: 14, color: '#111827', margin: 0 }}>
+                    Active Checklists ({existingReqs.length})
+                  </p>
+                </div>
+                {existingReqs.map((req, i) => (
+                  <div key={req.id} style={{
+                    display: 'flex', alignItems: 'center', justifyContent: 'space-between',
+                    gap: 12, padding: '12px 20px',
+                    borderBottom: i < existingReqs.length - 1 ? '1px solid #F9FAFB' : 'none',
+                    boxSizing: 'border-box',
+                  }}>
+                    <div style={{ flex: 1, minWidth: 0 }}>
+                      <p style={{ fontWeight: 600, fontSize: 14, color: '#111827', margin: 0,
+                        overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                        {req.name}
+                      </p>
+                      <p style={{ fontSize: 12, color: '#9CA3AF', margin: '2px 0 0' }}>
+                        {req.items.length} item{req.items.length !== 1 ? 's' : ''}
+                        {' · '}{req.targetType === 'all' ? 'All students' : req.targetType}
+                        {' · '}{req._count.progress} progress records
+                      </p>
+                    </div>
+                    <button
+                      onClick={() => handleDeleteReq(req.id)}
+                      disabled={deletingReqId === req.id}
+                      style={{ padding: '6px 14px', background: '#FEF2F2', color: '#DC2626',
+                        border: '1px solid #FECACA', borderRadius: 8, fontSize: 12, fontWeight: 600,
+                        cursor: deletingReqId === req.id ? 'not-allowed' : 'pointer',
+                        fontFamily: 'inherit', whiteSpace: 'nowrap', opacity: deletingReqId === req.id ? 0.6 : 1 }}>
+                      {deletingReqId === req.id ? 'Deleting...' : 'Delete'}
+                    </button>
+                  </div>
+                ))}
+              </div>
+            )}
+
+            {/* ── Create new checklist ── */}
             <div style={{ background: 'white', border: '1px solid #E5E7EB', borderRadius: 16, padding: '20px 24px' }}>
               <p style={{ fontWeight: 700, fontSize: 15, color: '#111827', marginBottom: 4 }}>
                 Create Requirement Checklist
