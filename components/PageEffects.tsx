@@ -99,24 +99,41 @@ export default function PageEffects() {
 
   /* ── Ripple effect ───────────────────────────────────── */
   useEffect(() => {
-    const handleClick = (e: MouseEvent) => {
-      const target = (e.target as HTMLElement).closest('.ripple') as HTMLElement | null
-      if (!target) return
+    const handleClick = (e: MouseEvent | TouchEvent) => {
+      const point = 'touches' in e ? e.touches[0] : e
+      const target = (point.target as HTMLElement)?.closest('.ripple, button, a, [role="button"]') as HTMLElement | null
+      if (!target || target.closest('#page-loader')) return
+
       const rect    = target.getBoundingClientRect()
-      const size    = Math.max(rect.width, rect.height)
-      const x       = e.clientX - rect.left - size / 2
-      const y       = e.clientY - rect.top  - size / 2
+      const size    = Math.max(rect.width, rect.height) * 1.8
+      const x       = ('clientX' in point ? point.clientX : (point as Touch).clientX) - rect.left - size / 2
+      const y       = ('clientY' in point ? point.clientY : (point as Touch).clientY) - rect.top  - size / 2
+
       const ripple  = document.createElement('span')
       ripple.className = 'ripple-effect'
+      // Adjust color based on button background
+      const bg = getComputedStyle(target).backgroundColor
+      const isLight = bg.includes('255') || bg.includes('white') || bg === 'rgba(0, 0, 0, 0)'
       ripple.style.cssText = `
         width:${size}px; height:${size}px;
         left:${x}px; top:${y}px;
+        background: ${isLight ? 'rgba(249,115,22,0.18)' : 'rgba(255,255,255,0.25)'};
       `
+      // Ensure target is positioned
+      if (getComputedStyle(target).position === 'static') {
+        target.style.position = 'relative'
+      }
+      target.style.overflow = 'hidden'
       target.appendChild(ripple)
       ripple.addEventListener('animationend', () => ripple.remove(), { once: true })
     }
+
     document.addEventListener('click', handleClick)
-    return () => document.removeEventListener('click', handleClick)
+    document.addEventListener('touchstart', handleClick, { passive: true })
+    return () => {
+      document.removeEventListener('click', handleClick)
+      document.removeEventListener('touchstart', handleClick)
+    }
   }, [])
 
   /* ── Header glass on scroll ──────────────────────────── */

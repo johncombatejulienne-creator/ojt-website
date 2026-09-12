@@ -1150,13 +1150,14 @@ a { color: inherit; text-decoration: none; }
 .ripple-effect {
   position: absolute;
   border-radius: 50%;
-  background: rgba(255,255,255,0.35);
+  background: rgba(255,255,255,0.25);
   transform: scale(0);
-  animation: rippleAnim 0.55s ease-out forwards;
+  animation: rippleAnim 0.5s cubic-bezier(0.4,0,0.2,1) forwards;
   pointer-events: none;
+  z-index: 0;
 }
 @keyframes rippleAnim {
-  to { transform: scale(3.5); opacity: 0; }
+  to { transform: scale(4); opacity: 0; }
 }
 
 /* ─────────────────────────────────────────────────────────
@@ -1276,5 +1277,390 @@ td, th {
   /* Stack flex rows that may overflow on mobile */
   [style*="display: flex"][style*="gap"] {
     flex-wrap: wrap;
+  }
+}
+
+/* ═══════════════════════════════════════════════════════════
+   UNIVERSAL TOUCH & INTERACTION SYSTEM
+   Every tap, click, hover gets instant visual feedback
+   Works on mobile, tablet, and desktop
+   ═══════════════════════════════════════════════════════════ */
+
+/* ─────────────────────────────────────────────────────────
+   1. REMOVE ALL TAP HIGHLIGHT (replace with custom feedback)
+───────────────────────────────────────────────────────── */
+* {
+  -webkit-tap-highlight-color: transparent;
+  -webkit-touch-callout: none;
+}
+
+/* Allow text selection on text content */
+p, h1, h2, h3, h4, h5, h6, span, li, td, th, label {
+  -webkit-user-select: text;
+  user-select: text;
+}
+
+/* ─────────────────────────────────────────────────────────
+   2. UNIVERSAL BUTTON / CLICKABLE PRESS EFFECT
+   Every button, link, and interactive element gets this
+───────────────────────────────────────────────────────── */
+button,
+a,
+[role="button"],
+[tabindex],
+label[for],
+select,
+.clickable {
+  transition:
+    transform 0.12s cubic-bezier(0.34,1.56,0.64,1),
+    opacity 0.12s ease,
+    box-shadow 0.15s ease,
+    background 0.18s ease,
+    border-color 0.18s ease !important;
+  cursor: pointer;
+  -webkit-tap-highlight-color: transparent;
+  touch-action: manipulation;
+}
+
+/* Press down effect on active */
+button:active,
+a:active,
+[role="button"]:active,
+.clickable:active {
+  transform: scale(0.96) !important;
+  opacity: 0.85;
+}
+
+/* Exceptions — don't scale these */
+button:disabled:active,
+[disabled]:active {
+  transform: none !important;
+  opacity: 0.5 !important;
+}
+
+/* ─────────────────────────────────────────────────────────
+   3. CARD INTERACTIVE LIFT
+   Every white card gets hover/focus lift
+───────────────────────────────────────────────────────── */
+.card,
+[style*="borderRadius"][style*="background: white"],
+[style*="borderRadius"][style*="background:white"] {
+  transition:
+    transform 0.25s cubic-bezier(0.34,1.2,0.64,1),
+    box-shadow 0.25s ease !important;
+}
+
+/* ─────────────────────────────────────────────────────────
+   4. INPUT / SELECT / TEXTAREA FOCUS GLOW
+───────────────────────────────────────────────────────── */
+input:not([disabled]):focus,
+select:not([disabled]):focus,
+textarea:not([disabled]):focus {
+  outline: none !important;
+  border-color: #F97316 !important;
+  box-shadow: 0 0 0 3px rgba(249,115,22,0.18), 0 1px 4px rgba(0,0,0,0.08) !important;
+  transform: translateY(-1px);
+  transition: all 0.2s cubic-bezier(0.16,1,0.3,1) !important;
+}
+
+/* Input hover */
+input:not([disabled]):hover,
+select:not([disabled]):hover,
+textarea:not([disabled]):hover {
+  border-color: #FDBA74 !important;
+}
+
+/* ─────────────────────────────────────────────────────────
+   5. ORANGE PRIMARY BUTTONS — premium press + glow
+───────────────────────────────────────────────────────── */
+button[style*="background: #F97316"],
+button[style*="background:#F97316"],
+button[style*="background: rgb(249"],
+a[style*="background: #F97316"] {
+  position: relative;
+  overflow: hidden;
+  transition:
+    transform 0.15s cubic-bezier(0.34,1.56,0.64,1),
+    box-shadow 0.2s ease,
+    filter 0.15s ease !important;
+}
+
+button[style*="background: #F97316"]:hover,
+button[style*="background:#F97316"]:hover,
+a[style*="background: #F97316"]:hover {
+  transform: translateY(-2px) scale(1.02) !important;
+  box-shadow: 0 8px 20px rgba(249,115,22,0.45) !important;
+  filter: brightness(1.05);
+}
+
+button[style*="background: #F97316"]:active,
+button[style*="background:#F97316"]:active,
+a[style*="background: #F97316"]:active {
+  transform: translateY(0) scale(0.97) !important;
+  box-shadow: 0 2px 8px rgba(249,115,22,0.3) !important;
+  filter: brightness(0.98);
+}
+
+/* ─────────────────────────────────────────────────────────
+   6. STAT CARDS — colorful glow on hover/touch
+───────────────────────────────────────────────────────── */
+.stats-grid > *,
+.grid-3 > * {
+  transition:
+    transform 0.3s cubic-bezier(0.34,1.3,0.64,1),
+    box-shadow 0.3s ease,
+    filter 0.2s ease !important;
+  cursor: default;
+}
+
+.stats-grid > *:hover,
+.grid-3 > *:hover {
+  transform: translateY(-5px) scale(1.02) !important;
+  filter: brightness(1.06) saturate(1.1);
+  box-shadow: 0 16px 36px rgba(0,0,0,0.18) !important;
+}
+
+.stats-grid > *:active,
+.grid-3 > *:active {
+  transform: translateY(-2px) scale(0.99) !important;
+}
+
+/* ─────────────────────────────────────────────────────────
+   7. NAV LINKS — underline slide + color shift
+───────────────────────────────────────────────────────── */
+header button,
+header nav button {
+  position: relative;
+  transition:
+    color 0.2s ease,
+    background 0.2s ease,
+    transform 0.15s ease !important;
+}
+
+header button:hover {
+  transform: translateY(-1px) !important;
+}
+
+header button:active {
+  transform: translateY(1px) scale(0.96) !important;
+}
+
+/* ─────────────────────────────────────────────────────────
+   8. LIST ROWS (student list, teacher list, narrative list)
+───────────────────────────────────────────────────────── */
+[style*="borderBottom"][style*="padding: '12px"] ,
+[style*="borderBottom"][style*="padding:'12px"],
+[style*="padding: 12px"][style*="borderBottom"],
+[style*="padding: '14px"][style*="borderBottom"] {
+  transition: background 0.15s ease, transform 0.2s ease !important;
+}
+
+/* ─────────────────────────────────────────────────────────
+   9. TAB BUTTONS — instant color swap
+───────────────────────────────────────────────────────── */
+/* Tab button press */
+[style*="borderRadius: 10"][style*="fontWeight: 600"]:active,
+[style*="borderRadius: 10"][style*="fontWeight:600"]:active {
+  transform: scale(0.95) !important;
+}
+
+/* ─────────────────────────────────────────────────────────
+   10. MODAL CLOSE / ACTION BUTTONS — micro bounce
+───────────────────────────────────────────────────────── */
+[style*="position: fixed"] button:active {
+  transform: scale(0.93) !important;
+}
+
+/* ─────────────────────────────────────────────────────────
+   11. ANNOUNCEMENT / NARRATIVE CARDS
+───────────────────────────────────────────────────────── */
+.card-entrance,
+.card-hover {
+  cursor: pointer;
+}
+
+.card-entrance:hover,
+.card-hover:hover {
+  transform: translateY(-4px) !important;
+  box-shadow: 0 12px 32px rgba(0,0,0,0.1) !important;
+}
+
+.card-entrance:active,
+.card-hover:active {
+  transform: translateY(-1px) scale(0.99) !important;
+}
+
+/* ─────────────────────────────────────────────────────────
+   12. PROFILE / AVATAR HOVER
+───────────────────────────────────────────────────────── */
+[style*="borderRadius: 50%"],
+[style*="borderRadius: '50%'"] {
+  transition: transform 0.2s cubic-bezier(0.34,1.56,0.64,1),
+              box-shadow 0.2s ease !important;
+}
+
+[style*="borderRadius: 50%"]:hover {
+  transform: scale(1.08) !important;
+}
+
+/* ─────────────────────────────────────────────────────────
+   13. DELETE / DANGER BUTTONS — red glow on hover
+───────────────────────────────────────────────────────── */
+button[style*="color: #DC2626"]:hover,
+button[style*="color: rgb(220"]:hover,
+button[style*="background: #FEF2F2"]:hover {
+  background: #FEE2E2 !important;
+  border-color: #FCA5A5 !important;
+  transform: scale(1.04) !important;
+}
+
+button[style*="color: #DC2626"]:active,
+button[style*="background: #FEF2F2"]:active {
+  transform: scale(0.95) !important;
+}
+
+/* ─────────────────────────────────────────────────────────
+   14. SUCCESS / GREEN BUTTONS — green glow
+───────────────────────────────────────────────────────── */
+button[style*="background: #D1FAE5"]:hover,
+button[style*="background: #10B981"]:hover {
+  filter: brightness(1.08) !important;
+  transform: scale(1.04) !important;
+}
+
+/* ─────────────────────────────────────────────────────────
+   15. TOGGLE / SWITCH BUTTONS (Section select/type)
+───────────────────────────────────────────────────────── */
+button[style*="borderRadius: 8"]:not([disabled]):hover {
+  filter: brightness(1.05);
+  transform: scale(1.03) !important;
+}
+
+/* ─────────────────────────────────────────────────────────
+   16. IMAGE HOVER ZOOM
+───────────────────────────────────────────────────────── */
+img:not([style*="width: '100%'"]) {
+  transition: transform 0.3s ease !important;
+}
+
+/* ─────────────────────────────────────────────────────────
+   17. CHECKBOX / RADIO INTERACTIONS
+───────────────────────────────────────────────────────── */
+input[type="checkbox"],
+input[type="radio"] {
+  transition: transform 0.15s cubic-bezier(0.34,1.56,0.64,1),
+              box-shadow 0.15s ease !important;
+  cursor: pointer;
+}
+
+input[type="checkbox"]:hover,
+input[type="radio"]:hover {
+  transform: scale(1.15) !important;
+}
+
+input[type="checkbox"]:checked,
+input[type="radio"]:checked {
+  transform: scale(1.1) !important;
+}
+
+/* ─────────────────────────────────────────────────────────
+   18. HEADER PROFILE DROPDOWN BUTTON
+───────────────────────────────────────────────────────── */
+header [style*="display: 'flex'"][style*="alignItems: 'center'"][style*="gap: 8"]:hover {
+  background: rgba(255,255,255,0.22) !important;
+}
+
+/* ─────────────────────────────────────────────────────────
+   19. SKELETON — pulse animation
+───────────────────────────────────────────────────────── */
+.skeleton,
+.skeleton-colorful {
+  animation: shimmer 1.4s ease-in-out infinite !important;
+}
+
+/* ─────────────────────────────────────────────────────────
+   20. SCROLL INDICATOR DOTS / PAGINATION
+───────────────────────────────────────────────────────── */
+[style*="borderRadius: 999"]:not(span):not(p):hover {
+  transform: scale(1.06) !important;
+}
+
+/* ─────────────────────────────────────────────────────────
+   21. FOCUS VISIBLE — keyboard accessibility ring
+───────────────────────────────────────────────────────── */
+button:focus-visible,
+a:focus-visible,
+input:focus-visible,
+select:focus-visible,
+textarea:focus-visible,
+[tabindex]:focus-visible {
+  outline: 2.5px solid #F97316 !important;
+  outline-offset: 3px !important;
+  border-radius: 6px;
+}
+
+/* ─────────────────────────────────────────────────────────
+   22. LOADING SPINNER — smooth
+───────────────────────────────────────────────────────── */
+[style*="animation: 'spin"] ,
+[style*="animation:spin"],
+.animate-spin {
+  animation: spin 0.8s linear infinite !important;
+}
+
+/* ─────────────────────────────────────────────────────────
+   23. MOBILE TOUCH — larger tap targets
+───────────────────────────────────────────────────────── */
+@media (max-width: 768px) {
+  button,
+  a,
+  [role="button"] {
+    min-height: 40px;
+    min-width: 40px;
+  }
+
+  /* Stronger press effect on mobile */
+  button:active,
+  a:active {
+    transform: scale(0.93) !important;
+    opacity: 0.8;
+  }
+
+  /* Bigger checkboxes on mobile */
+  input[type="checkbox"],
+  input[type="radio"] {
+    width: 20px !important;
+    height: 20px !important;
+  }
+}
+
+/* ─────────────────────────────────────────────────────────
+   24. PERFORMANCE — use GPU for all animated elements
+───────────────────────────────────────────────────────── */
+button,
+a,
+.card-hover,
+.card-entrance,
+.stat-card-glow,
+.reveal,
+.reveal-left,
+.reveal-right,
+.reveal-scale {
+  will-change: transform;
+  backface-visibility: hidden;
+  -webkit-backface-visibility: hidden;
+}
+
+/* ─────────────────────────────────────────────────────────
+   25. REDUCED MOTION OVERRIDE
+───────────────────────────────────────────────────────── */
+@media (prefers-reduced-motion: reduce) {
+  button:hover, button:active,
+  a:hover, a:active,
+  .card-hover:hover, .card-hover:active,
+  .stats-grid > *:hover, .grid-3 > *:hover {
+    transform: none !important;
+    filter: none !important;
+    box-shadow: none !important;
   }
 }
