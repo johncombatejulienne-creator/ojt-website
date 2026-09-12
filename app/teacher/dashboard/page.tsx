@@ -166,7 +166,7 @@ function ConfirmModal({ title, body, confirmLabel = 'Confirm', danger = false,
 }
 
 /* ─── Page ───────────────────────────────────────────────── */
-type ActiveTab = 'students' | 'teachers' | 'announcements' | 'narratives'
+type ActiveTab = 'students' | 'teachers' | 'announcements' | 'narratives' | 'requirements'
 
 interface PendingNarrative {
   id: string; date: string; content: string; status: string
@@ -197,6 +197,15 @@ export default function TeacherDashboard() {
   const [reviewingId,       setReviewingId]       = useState<string | null>(null)
   const [reviewComment,     setReviewComment]     = useState('')
   const [reviewSubmitting,  setReviewSubmitting]  = useState(false)
+
+  // Requirements state
+  const [reqForm, setReqForm] = useState({
+    name: '', description: '', targetType: 'all',
+    items: [{ title: '', requirementType: 'general', isRequired: true }],
+  })
+  const [reqSubmitting, setReqSubmitting] = useState(false)
+  const [reqSuccess,    setReqSuccess]    = useState('')
+  const [reqError,      setReqError]      = useState('')
 
   // Announcements state
   const [announcements, setAnnouncements] = useState<Announcement[]>([])
@@ -366,6 +375,36 @@ export default function TeacherDashboard() {
     finally { setReviewSubmitting(false) }
   }
 
+  /* ── Post requirement ──────────────────────────────────── */
+  const handlePostRequirement = async (e: React.FormEvent) => {
+    e.preventDefault()
+    setReqError(''); setReqSuccess('')
+    if (!reqForm.name.trim()) { setReqError('Checklist name is required.'); return }
+    const validItems = reqForm.items.filter(i => i.title.trim())
+    if (!validItems.length) { setReqError('At least one item is required.'); return }
+    setReqSubmitting(true)
+    try {
+      const res = await fetch('/api/checklists', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          name:       reqForm.name.trim(),
+          description: reqForm.description.trim() || undefined,
+          targetType: reqForm.targetType,
+          items:      validItems,
+        }),
+      })
+      const d = await res.json()
+      if (!res.ok) throw new Error(d.error ?? 'Failed')
+      setReqSuccess('Requirement checklist created! Students will be notified.')
+      setReqForm({ name: '', description: '', targetType: 'all',
+        items: [{ title: '', requirementType: 'general', isRequired: true }] })
+      setTimeout(() => setReqSuccess(''), 5000)
+    } catch (err: unknown) {
+      setReqError(err instanceof Error ? err.message : 'Failed to create requirement.')
+    } finally { setReqSubmitting(false) }
+  }
+
   /* ── Post announcement ──────────────────────────────────── */
   const handlePostAnnouncement = async (e: React.FormEvent) => {
     e.preventDefault()
@@ -492,6 +531,7 @@ export default function TeacherDashboard() {
           <Tab label="Students"      active={activeTab === 'students'}      count={students.length}      onClick={() => setActiveTab('students')} />
           <Tab label="Teachers"      active={activeTab === 'teachers'}      count={teachers.length}      onClick={() => setActiveTab('teachers')} />
           <Tab label="Narratives"    active={activeTab === 'narratives'}    count={pendingNarratives.length} onClick={() => setActiveTab('narratives')} />
+          <Tab label="Requirements"  active={activeTab === 'requirements'}                               onClick={() => setActiveTab('requirements')} />
           <Tab label="Announcements" active={activeTab === 'announcements'} count={announcements.length} onClick={() => setActiveTab('announcements')} />
         </div>
 
@@ -828,6 +868,119 @@ export default function TeacherDashboard() {
                   )
                 })
               )}
+            </div>
+          </div>
+        )}
+
+        {/* ════════════════════════════════════════════════
+            REQUIREMENTS TAB — create checklists for students
+        ════════════════════════════════════════════════ */}
+        {activeTab === 'requirements' && (
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
+            <div style={{ background: 'white', border: '1px solid #E5E7EB', borderRadius: 16, padding: '20px 24px' }}>
+              <p style={{ fontWeight: 700, fontSize: 15, color: '#111827', marginBottom: 4 }}>
+                Create Requirement Checklist
+              </p>
+              <p style={{ fontSize: 13, color: '#6B7280', marginBottom: 20 }}>
+                Students will be notified and can check off items as they complete them.
+              </p>
+
+              {reqSuccess && (
+                <div style={{ padding: '12px 16px', background: '#D1FAE5', border: '1px solid #A7F3D0',
+                  borderRadius: 10, marginBottom: 16, fontSize: 13, color: '#065F46', fontWeight: 600 }}>
+                  ✓ {reqSuccess}
+                </div>
+              )}
+              {reqError && (
+                <div style={{ padding: '12px 16px', background: '#FEF2F2', border: '1px solid #FECACA',
+                  borderRadius: 10, marginBottom: 16, fontSize: 13, color: '#DC2626' }}>
+                  {reqError}
+                </div>
+              )}
+
+              <form onSubmit={handlePostRequirement} style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
+                {/* Checklist name */}
+                <div>
+                  <label style={labelStyle}>Checklist Name *</label>
+                  <input type="text" value={reqForm.name}
+                    onChange={e => setReqForm(p => ({ ...p, name: e.target.value }))}
+                    placeholder="e.g. Work Immersion Requirements"
+                    style={inputStyle} />
+                </div>
+
+                {/* Description */}
+                <div>
+                  <label style={labelStyle}>Description (optional)</label>
+                  <input type="text" value={reqForm.description}
+                    onChange={e => setReqForm(p => ({ ...p, description: e.target.value }))}
+                    placeholder="Brief description of this checklist"
+                    style={inputStyle} />
+                </div>
+
+                {/* Target */}
+                <div>
+                  <label style={labelStyle}>Assign To</label>
+                  <select value={reqForm.targetType}
+                    onChange={e => setReqForm(p => ({ ...p, targetType: e.target.value }))}
+                    style={selectStyle}>
+                    <option value="all">All Students</option>
+                    <option value="strand">By Strand</option>
+                    <option value="section">By Section</option>
+                  </select>
+                </div>
+
+                {/* Items */}
+                <div>
+                  <label style={labelStyle}>Requirement Items *</label>
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
+                    {reqForm.items.map((item, idx) => (
+                      <div key={idx} style={{ display: 'flex', gap: 8, alignItems: 'center' }}>
+                        <input type="text" value={item.title}
+                          onChange={e => {
+                            const items = [...reqForm.items]
+                            items[idx] = { ...items[idx], title: e.target.value }
+                            setReqForm(p => ({ ...p, items }))
+                          }}
+                          placeholder={`Item ${idx + 1} — e.g. Submit medical certificate`}
+                          style={{ ...inputStyle, flex: 1 }} />
+                        <select value={item.requirementType}
+                          onChange={e => {
+                            const items = [...reqForm.items]
+                            items[idx] = { ...items[idx], requirementType: e.target.value }
+                            setReqForm(p => ({ ...p, items }))
+                          }}
+                          style={{ ...selectStyle, width: 130 }}>
+                          <option value="general">General</option>
+                          <option value="narrative">Narrative</option>
+                          <option value="document">Document</option>
+                        </select>
+                        {reqForm.items.length > 1 && (
+                          <button type="button"
+                            onClick={() => setReqForm(p => ({ ...p, items: p.items.filter((_, i) => i !== idx) }))}
+                            style={{ padding: '8px 10px', background: '#FEF2F2', color: '#DC2626',
+                              border: '1px solid #FECACA', borderRadius: 8, cursor: 'pointer',
+                              fontSize: 16, lineHeight: 1, fontFamily: 'inherit' }}>×</button>
+                        )}
+                      </div>
+                    ))}
+                  </div>
+                  <button type="button"
+                    onClick={() => setReqForm(p => ({ ...p, items: [...p.items, { title: '', requirementType: 'general', isRequired: true }] }))}
+                    style={{ marginTop: 8, padding: '7px 16px', background: '#F3F4F6', color: '#374151',
+                      border: 'none', borderRadius: 8, fontSize: 13, fontWeight: 600,
+                      cursor: 'pointer', fontFamily: 'inherit' }}>
+                    + Add Item
+                  </button>
+                </div>
+
+                <button type="submit" disabled={reqSubmitting} style={{
+                  padding: '12px', background: reqSubmitting ? '#FED7AA' : '#F97316',
+                  color: 'white', border: 'none', borderRadius: 12, fontSize: 14, fontWeight: 700,
+                  cursor: reqSubmitting ? 'not-allowed' : 'pointer', fontFamily: 'inherit',
+                }}>
+                  {reqSubmitting ? 'Creating...' : 'Create & Notify Students'}
+                </button>
+              </form>
             </div>
           </div>
         )}

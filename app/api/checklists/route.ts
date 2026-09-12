@@ -122,6 +122,20 @@ export async function POST(request: NextRequest) {
         ),
         skipDuplicates: true,
       }).catch(() => {})
+
+      // Notify all affected students
+      await prisma.notification.createMany({
+        data: students.map(s => ({
+          userId:   s.id,
+          userType: 'student',
+          type:     'new_requirement',
+          title:    'New Requirement Added',
+          message:  `Your teacher added a new checklist: "${checklist.name}". Check your requirements tab.`,
+          link:     '/checklist',
+          isRead:   false,
+        })),
+        skipDuplicates: true,
+      }).catch(() => {})
     }
 
     return NextResponse.json({ success: true, checklist })

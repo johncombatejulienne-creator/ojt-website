@@ -253,86 +253,61 @@ export default function StudentDashboard() {
             backgroundImage: 'radial-gradient(circle, white 1px, transparent 1px)',
             backgroundSize: '24px 24px' }} />
 
-          <div style={{ position: 'relative', display: 'flex', alignItems: 'flex-start',
-            justifyContent: 'space-between', gap: 20, flexWrap: 'wrap' }}>
-            <div style={{ display: 'flex', alignItems: 'flex-start', gap: 18, flex: 1, minWidth: 0 }}>
-              <Avatar src={student?.profilePicture ?? session?.user?.profilePicture} name={userName} size={60} />
-              <div style={{ minWidth: 0 }}>
-                <p style={{ fontSize: 13, color: 'rgba(255,255,255,0.7)', fontWeight: 500, margin: '0 0 4px' }}>
-                  {getGreeting()},
-                </p>
-                <h1 style={{ fontSize: 26, fontWeight: 900, color: 'white', lineHeight: 1.1,
-                  margin: '0 0 10px', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
-                  {firstName}!
-                </h1>
-                <p style={{ fontSize: 13, color: 'rgba(255,255,255,0.6)', margin: '0 0 12px' }}>
-                  {`Here's your Work Immersion progress.`}
-                </p>
-                <div style={{ display: 'flex', flexWrap: 'wrap', gap: 8 }}>
-                  {student?.studentId && (
-                    <span style={{ background: 'rgba(255,255,255,0.18)', color: 'white',
-                      fontSize: 11, fontWeight: 600, padding: '4px 10px', borderRadius: 999 }}>
-                      ID: {student.studentId}
-                    </span>
-                  )}
-                  {strandKey !== 'DEFAULT' && (
-                    <span style={{ background: 'rgba(255,255,255,0.18)', color: 'white',
-                      fontSize: 11, fontWeight: 600, padding: '4px 10px', borderRadius: 999 }}>
-                      {strandKey}
-                    </span>
-                  )}
-                  {student?.section?.name && (
-                    <span style={{ background: 'rgba(255,255,255,0.18)', color: 'white',
-                      fontSize: 11, fontWeight: 600, padding: '4px 10px', borderRadius: 999 }}>
-                      {student.section.name}
-                    </span>
-                  )}
+          <div style={{ position: 'relative' }}>
+            {/* Top row: avatar + name + action buttons */}
+            <div style={{ display: 'flex', alignItems: 'flex-start',
+              justifyContent: 'space-between', gap: 12, marginBottom: 12 }}>
+              {/* Avatar + name */}
+              <div style={{ display: 'flex', alignItems: 'flex-start', gap: 14, flex: 1, minWidth: 0 }}>
+                <Avatar src={student?.profilePicture ?? session?.user?.profilePicture} name={userName} size={56} />
+                <div style={{ minWidth: 0 }}>
+                  <p style={{ fontSize: 12, color: 'rgba(255,255,255,0.7)', fontWeight: 500, margin: '0 0 2px' }}>
+                    {getGreeting()},
+                  </p>
+                  <h1 style={{ fontSize: 22, fontWeight: 900, color: 'white', lineHeight: 1.15,
+                    margin: '0 0 4px', wordBreak: 'break-word' }}>
+                    {firstName}!
+                  </h1>
+                  <p style={{ fontSize: 12, color: 'rgba(255,255,255,0.6)', margin: 0 }}>
+                    {`Here's your Work Immersion progress.`}
+                  </p>
                 </div>
               </div>
-            </div>
-
-            <button onClick={() => router.push('/profile/edit')} style={{
-              padding: '8px 18px', background: 'rgba(255,255,255,0.15)',
-              border: '1px solid rgba(255,255,255,0.3)', borderRadius: 10,
-              color: 'white', fontSize: 13, fontWeight: 600, cursor: 'pointer',
-              fontFamily: 'inherit', flexShrink: 0, transition: 'background 0.2s',
-            }}
-              onMouseEnter={e => { (e.currentTarget as HTMLElement).style.background = 'rgba(255,255,255,0.25)' }}
-              onMouseLeave={e => { (e.currentTarget as HTMLElement).style.background = 'rgba(255,255,255,0.15)' }}
-            >
-              Edit Profile
-            </button>
-
-            {/* Notification bell */}
-            <div style={{ position: 'relative' }}>
-              <button onClick={() => { setShowNotifDropdown(v => !v); if (unreadCount > 0) markAllRead() }}
-                style={{ position: 'relative', background: 'rgba(255,255,255,0.15)',
+              {/* Action buttons stacked */}              <div style={{ display: 'flex', flexDirection: 'column', gap: 8, flexShrink: 0 }}>
+                <button onClick={() => router.push('/profile/edit')} style={{
+                  padding: '7px 14px', background: 'rgba(255,255,255,0.15)',
                   border: '1px solid rgba(255,255,255,0.3)', borderRadius: 10,
-                  padding: '8px 10px', cursor: 'pointer', display: 'flex', alignItems: 'center' }}>
-                <svg style={{ width: 18, height: 18, color: 'white' }} fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2}
-                    d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9" />
-                </svg>
-                {unreadCount > 0 && (
-                  <span style={{ position: 'absolute', top: -4, right: -4,
-                    width: 18, height: 18, background: '#EF4444', borderRadius: '50%',
-                    fontSize: 10, fontWeight: 800, color: 'white',
-                    display: 'flex', alignItems: 'center', justifyContent: 'center',
-                    border: '2px solid transparent' }}>
-                    {unreadCount > 9 ? '9+' : unreadCount}
-                  </span>
-                )}
-              </button>
-
-              {/* Dropdown */}
-              {showNotifDropdown && (
-                <>
-                  <div style={{ position: 'fixed', inset: 0, zIndex: 10 }} onClick={() => setShowNotifDropdown(false)} />
-                  <div style={{ position: 'absolute', right: 0, top: '110%', width: 320,
-                    background: 'white', borderRadius: 16, boxShadow: '0 20px 60px rgba(0,0,0,0.15)',
-                    border: '1px solid #E5E7EB', zIndex: 20, overflow: 'hidden' }}>
-                    <div style={{ padding: '14px 16px', borderBottom: '1px solid #F3F4F6',
-                      display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                  color: 'white', fontSize: 12, fontWeight: 600, cursor: 'pointer',
+                  fontFamily: 'inherit', whiteSpace: 'nowrap',
+                }}>Edit Profile</button>
+                {/* Notification bell */}
+                <div style={{ position: 'relative' }}>
+                  <button onClick={() => { setShowNotifDropdown(v => !v); if (unreadCount > 0) markAllRead() }}
+                    style={{ width: '100%', position: 'relative', background: 'rgba(255,255,255,0.15)',
+                      border: '1px solid rgba(255,255,255,0.3)', borderRadius: 10,
+                      padding: '7px 10px', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                    <svg style={{ width: 17, height: 17, color: 'white' }} fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2}
+                        d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9" />
+                    </svg>
+                    {unreadCount > 0 && (
+                      <span style={{ position: 'absolute', top: -4, right: -4,
+                        width: 16, height: 16, background: '#EF4444', borderRadius: '50%',
+                        fontSize: 9, fontWeight: 800, color: 'white',
+                        display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                        {unreadCount > 9 ? '9+' : unreadCount}
+                      </span>
+                    )}
+                  </button>
+                  {/* Dropdown */}
+                  {showNotifDropdown && (
+                    <>
+                      <div style={{ position: 'fixed', inset: 0, zIndex: 10 }} onClick={() => setShowNotifDropdown(false)} />
+                      <div style={{ position: 'absolute', right: 0, top: '110%', width: 300,
+                        background: 'white', borderRadius: 16, boxShadow: '0 20px 60px rgba(0,0,0,0.15)',
+                        border: '1px solid #E5E7EB', zIndex: 20, overflow: 'hidden' }}>
+                        <div style={{ padding: '14px 16px', borderBottom: '1px solid #F3F4F6',
+                          display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
                       <p style={{ fontWeight: 700, fontSize: 14, color: '#111827', margin: 0 }}>Notifications</p>
                       {notifications.length > 0 && (
                         <button onClick={markAllRead} style={{ fontSize: 11, color: '#F97316', background: 'none', border: 'none', cursor: 'pointer', fontFamily: 'inherit' }}>

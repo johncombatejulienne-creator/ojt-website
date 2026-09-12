@@ -19,6 +19,7 @@ export default function ChecklistPage() {
   const router = useRouter()
   const [checklists, setChecklists] = useState<Checklist[]>([])
   const [loading,    setLoading]    = useState(true)
+  const [updating,   setUpdating]   = useState<string | null>(null)
 
   useEffect(() => {
     let cancelled = false
@@ -28,6 +29,34 @@ export default function ChecklistPage() {
       .catch(() => { if (!cancelled) setLoading(false) })
     return () => { cancelled = true }
   }, [])
+
+  const handleToggle = async (checklistId: string, itemId: string, currentStatus: string) => {
+    const done = currentStatus !== 'completed'
+    setUpdating(itemId)
+    try {
+      const res = await fetch('/api/checklists/progress', {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ checklistItemId: itemId, checklistId, done }),
+      })
+      if (res.ok) {
+        setChecklists(prev => prev.map(cl => {
+          if (cl.id !== checklistId) return cl
+          const newItems = cl.items.map(item => {
+            if (item.id !== itemId) return item
+            return { ...item, progress: { ...item.progress, status: done ? 'completed' : 'pending' } }
+          })
+          const completed = newItems.filter(i => i.progress.status === 'completed').length
+          const total = newItems.length
+          return {
+            ...cl, items: newItems,
+            stats: { ...cl.stats, completedItems: completed, progressPercentage: total > 0 ? Math.round((completed / total) * 100) : 0 },
+          }
+        }))
+      }
+    } catch { /* silent */ }
+    finally { setUpdating(null) }
+  }
 
   const statusIcon = (status: string) => {
     if (status === 'completed') return (
@@ -128,7 +157,28 @@ export default function ChecklistPage() {
                     borderBottom: idx < cl.items.length - 1 ? '1px solid #F9FAFB' : 'none',
                     boxSizing: 'border-box',
                   }}>
-                    <div style={{ marginTop: 1 }}>{statusIcon(item.progress.status)}</div>
+                    {/* Checkbox — clickable for non-narrative items */}
+                    <button
+                      onClick={() => item.requirementType !== 'narrative' && handleToggle(cl.id, item.id, item.progress.status)}
+                      disabled={updating === item.id || item.requirementType === 'narrative'}
+                      style={{
+                        width: 24, height: 24, borderRadius: 6, flexShrink: 0, marginTop: 1,
+                        border: item.progress.status === 'completed' ? 'none' : '2px solid #D1D5DB',
+                        background: item.progress.status === 'completed' ? '#10B981' : 'white',
+                        cursor: item.requirementType === 'narrative' ? 'default' : 'pointer',
+                        display: 'flex', alignItems: 'center', justifyContent: 'center',
+                        padding: 0, transition: 'all 0.15s',
+                        opacity: updating === item.id ? 0.5 : 1,
+                      }}>
+                      {item.progress.status === 'completed' && (
+                        <svg style={{ width: 14, height: 14, color: 'white' }} fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={3} d="M5 13l4 4L19 7" />
+                        </svg>
+                      )}
+                      {item.progress.status === 'in_progress' && (
+                        <div style={{ width: 10, height: 10, borderRadius: '50%', background: '#F59E0B' }} />
+                      )}
+                    </button>
                     <div style={{ flex: 1, minWidth: 0 }}>
                       <div style={{ display: 'flex', flexWrap: 'wrap', alignItems: 'center', gap: 8, marginBottom: 2 }}>
                         <span style={{ fontWeight: 600, fontSize: 14, color: '#111827' }}>{item.title}</span>

@@ -142,8 +142,8 @@ export default function Header({ strandCode, forceTeacher }: {
             </button>
 
             {/* Desktop Nav */}
-            <nav style={{ display: 'flex', alignItems: 'center', gap: 4, flex: 1,
-              overflow: 'hidden', minWidth: 0 }}
+            <nav style={{ display: 'flex', alignItems: 'center', gap: 2, flex: 1,
+              overflowX: 'auto', minWidth: 0, scrollbarWidth: 'none' }}
               className="header-nav">
               {navItems.map(item => (
                 <NavLink
