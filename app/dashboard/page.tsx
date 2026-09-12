@@ -63,7 +63,10 @@ function StatCard({ label, value, sub, icon, bg }: {
   return (
     <div style={{ background: bg, borderRadius: 18, padding: '20px 22px', color: 'white',
       display: 'flex', flexDirection: 'column', gap: 12, overflow: 'hidden',
-      boxSizing: 'border-box', boxShadow: '0 4px 16px rgba(0,0,0,0.12)' }}>
+      boxSizing: 'border-box', boxShadow: '0 4px 16px rgba(0,0,0,0.12)',
+      cursor: 'pointer', userSelect: 'none',
+      transition: 'transform 0.25s cubic-bezier(0.34,1.2,0.64,1), box-shadow 0.25s ease',
+    }}>
       <div style={{ width: 40, height: 40, background: 'rgba(255,255,255,0.18)', borderRadius: 10,
         display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
         {icon}
@@ -116,7 +119,10 @@ function QuickAction({ label, desc, icon, onClick, accent }: {
 function InfoPill({ label, value }: { label: string; value?: string }) {
   return (
     <div style={{ background: 'white', border: '1px solid #E5E7EB', borderRadius: 14,
-      padding: '16px 20px', boxSizing: 'border-box', flex: 1, minWidth: 140 }}>
+      padding: '16px 20px', boxSizing: 'border-box', flex: 1, minWidth: 140,
+      cursor: 'pointer', userSelect: 'none',
+      transition: 'transform 0.2s cubic-bezier(0.34,1.2,0.64,1), box-shadow 0.2s ease',
+    }}>
       <p style={{ fontSize: 11, fontWeight: 700, color: '#9CA3AF', textTransform: 'uppercase',
         letterSpacing: '0.07em', margin: '0 0 6px' }}>{label}</p>
       <p style={{ fontSize: 14, fontWeight: 600, color: value ? '#111827' : '#D1D5DB',
@@ -314,7 +320,7 @@ export default function StudentDashboard() {
                       }}>
                         <div style={{ padding: '14px 16px', borderBottom: '1px solid #F3F4F6',
                           display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                      <p style={{ fontWeight: 700, fontSize: 14, color: '#111827', margin: 0 }}>Notifications</p>
+                      <p style={{ fontWeight: 700, fontSize: 14, color: '#111827', margin: 0, whiteSpace: 'nowrap' }}>Notifications</p>
                       {notifications.length > 0 && (
                         <button onClick={markAllRead} style={{ fontSize: 11, color: '#F97316', background: 'none', border: 'none', cursor: 'pointer', fontFamily: 'inherit' }}>
                           Mark all read
@@ -396,7 +402,7 @@ export default function StudentDashboard() {
         {/* end welcome banner */}
 
         {/* ── Stats Grid ───────────────────────────────────── */}
-        <div className="stats-grid">
+        <div className="stats-grid" style={{ cursor: 'default' }}>
           <StatCard label="Narratives" value={ns.total} sub="submitted"
             bg="linear-gradient(135deg,#F97316,#FB923C)" icon={icons.narratives} />
           <StatCard label="This Week" value={ns.thisWeek} sub="narratives"

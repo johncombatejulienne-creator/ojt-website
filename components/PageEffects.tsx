@@ -141,7 +141,72 @@ export default function PageEffects() {
     }
   }, [])
 
-  /* ── Header glass on scroll ──────────────────────────── */
+  /* ── Universal touch press feedback ────────────────────── */
+  useEffect(() => {
+    // Elements that should animate on press
+    const SELECTORS = [
+      'button',
+      'a',
+      '[role="button"]',
+      '.card-hover',
+      '.card-entrance',
+      '.stats-grid > div',
+      '.grid-3 > div',
+      '.grid-2 > div',
+      '[style*="cursor: pointer"]',
+      '[style*="cursor:pointer"]',
+    ].join(', ')
+
+    const pressed = new WeakSet<Element>()
+
+    const onStart = (e: TouchEvent) => {
+      const target = (e.target as HTMLElement).closest(SELECTORS) as HTMLElement | null
+      if (!target || pressed.has(target)) return
+      pressed.add(target)
+
+      // Store original transform
+      const orig = target.style.transform || ''
+      target.dataset.origTransform = orig
+      target.style.transition = 'transform 0.1s cubic-bezier(0.4,0,0.2,1), opacity 0.1s ease'
+      target.style.transform  = 'scale(0.94)'
+      target.style.opacity    = '0.82'
+    }
+
+    const onEnd = (e: TouchEvent | MouseEvent) => {
+      const src = 'changedTouches' in e
+        ? (e as TouchEvent).changedTouches[0]?.target
+        : (e as MouseEvent).target
+      const target = (src as HTMLElement)?.closest?.(SELECTORS) as HTMLElement | null
+      if (!target) return
+      pressed.delete(target)
+
+      const orig = target.dataset.origTransform ?? ''
+      target.style.transition = 'transform 0.25s cubic-bezier(0.34,1.56,0.64,1), opacity 0.2s ease'
+      target.style.transform  = orig
+      target.style.opacity    = '1'
+    }
+
+    document.addEventListener('touchstart', onStart, { passive: true })
+    document.addEventListener('touchend',   onEnd,   { passive: true })
+    document.addEventListener('touchcancel',onEnd,   { passive: true })
+    // Also handle mouse for desktop
+    document.addEventListener('mousedown', (e: MouseEvent) => {
+      const target = (e.target as HTMLElement).closest(SELECTORS) as HTMLElement | null
+      if (!target) return
+      target.dataset.origTransform = target.style.transform || ''
+      target.style.transition = 'transform 0.08s ease, opacity 0.08s ease'
+      target.style.transform  = 'scale(0.96)'
+      target.style.opacity    = '0.88'
+    })
+    document.addEventListener('mouseup', onEnd)
+    document.addEventListener('mouseleave', onEnd, true)
+
+    return () => {
+      document.removeEventListener('touchstart',  onStart)
+      document.removeEventListener('touchend',    onEnd)
+      document.removeEventListener('touchcancel', onEnd)
+    }
+  }, [])
   useEffect(() => {
     const header = document.querySelector('header')
     if (!header) return
