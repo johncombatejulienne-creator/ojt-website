@@ -69,50 +69,71 @@ export default function VerificationCamera({ studentName, onCapture, onCancel }:
       return
     }
 
-    navigator.geolocation.getCurrentPosition(
-      async (pos) => {
-        const lat = pos.coords.latitude
-        const lng = pos.coords.longitude
-        setCoords({ lat, lng })
+    // Try fast low-accuracy first (cell/WiFi — instant), then high-accuracy
+    const tryLowAccuracy = () => {
+      navigator.geolocation.getCurrentPosition(
+        handleSuccess,
+        () => {
+          setLocation('Could not get location')
+          setLocStatus('error')
+        },
+        { enableHighAccuracy: false, timeout: 8000, maximumAge: 600000 }
+      )
+    }
 
-        // Reverse geocode
-        try {
-          const res = await fetch(
-            `https://nominatim.openstreetmap.org/reverse?format=json&lat=${lat}&lon=${lng}&zoom=14`,
-            { headers: { 'Accept-Language': 'en' }, signal: AbortSignal.timeout(8000) }
-          )
-          if (res.ok) {
-            const data = await res.json()
-            const a = data.address ?? {}
-            const parts = [
-              a.village || a.suburb || a.neighbourhood || a.county || '',
-              a.city || a.town || a.municipality || a.state || '',
-              a.country_code?.toUpperCase() || '',
-            ].filter(Boolean)
-            setLocation(parts.join(', ') || `${lat.toFixed(5)}, ${lng.toFixed(5)}`)
-          } else {
-            setLocation(`${lat.toFixed(5)}, ${lng.toFixed(5)}`)
-          }
-        } catch {
+    const handleSuccess = async (pos: GeolocationPosition) => {
+      const lat = pos.coords.latitude
+      const lng = pos.coords.longitude
+      setCoords({ lat, lng })
+      // Reverse geocode
+      try {
+        const res = await fetch(
+          `https://nominatim.openstreetmap.org/reverse?format=json&lat=${lat}&lon=${lng}&zoom=14`,
+          { headers: { 'Accept-Language': 'en' }, signal: AbortSignal.timeout(8000) }
+        )
+        if (res.ok) {
+          const data = await res.json()
+          const a = data.address ?? {}
+          const parts = [
+            a.village || a.suburb || a.neighbourhood || a.county || '',
+            a.city || a.town || a.municipality || a.state || '',
+            a.country_code?.toUpperCase() || '',
+          ].filter(Boolean)
+          setLocation(parts.join(', ') || `${lat.toFixed(5)}, ${lng.toFixed(5)}`)
+        } else {
           setLocation(`${lat.toFixed(5)}, ${lng.toFixed(5)}`)
         }
-        setLocStatus('ok')
-      },
+      } catch {
+        setLocation(`${lat.toFixed(5)}, ${lng.toFixed(5)}`)
+      }
+      setLocStatus('ok')
+    }
+
+    // First attempt: use cached position if available (fastest)
+    navigator.geolocation.getCurrentPosition(
+      handleSuccess,
       (err) => {
-        setLocStatus('error')
         if (err.code === 1) {
+          // Permission denied — no point retrying
           setLocation('Permission denied')
-        } else if (err.code === 2) {
-          setLocation('GPS signal unavailable')
+          setLocStatus('error')
         } else {
-          setLocation('Timed out')
+          // Timed out or unavailable — try low accuracy fallback
+          tryLowAccuracy()
         }
       },
-      { enableHighAccuracy: true, timeout: 15000, maximumAge: 0 }
+      { enableHighAccuracy: true, timeout: 10000, maximumAge: 300000 }
     )
   }, [locStatus])
 
-  /* ── Format stamp ───────────────────────────────────────── */
+  /* ── Auto-request location after camera is ready ───────── */
+  useEffect(() => {
+    if (ready && locStatus === 'idle') {
+      // Small delay so camera loads first
+      const t = setTimeout(() => requestLocation(), 800)
+      return () => clearTimeout(t)
+    }
+  }, [ready, locStatus, requestLocation])
   const formatStamp = (d: Date) => ({
     date: d.toLocaleDateString('en-PH', { year: 'numeric', month: 'long', day: 'numeric' }),
     time: d.toLocaleTimeString('en-PH', { hour: '2-digit', minute: '2-digit', second: '2-digit', hour12: true }),
