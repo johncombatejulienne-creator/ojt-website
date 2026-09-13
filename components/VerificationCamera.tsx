@@ -20,7 +20,7 @@ export default function VerificationCamera({ studentName, onCapture, onCancel }:
 
   // Location — starts empty, user must tap "Add Location"
   const [location,   setLocation]   = useState<string>('')
-  const [locStatus,  setLocStatus]  = useState<'idle'|'loading'|'ok'|'error'>('idle')
+  const [locStatus,  setLocStatus]  = useState<'idle'|'loading'|'ok'|'error'|'blocked'>('idle')
   const [coords,     setCoords]     = useState<{ lat: number; lng: number } | null>(null)
 
   /* ── Live clock ─────────────────────────────────────────── */
@@ -64,20 +64,21 @@ export default function VerificationCamera({ studentName, onCapture, onCancel }:
     setLocation('Getting location...')
 
     if (!('geolocation' in navigator)) {
-      setLocation('GPS not supported on this device')
+      setLocation('GPS not available')
       setLocStatus('error')
       return
     }
 
-    // Try fast low-accuracy first (cell/WiFi — instant), then high-accuracy
-    const tryLowAccuracy = () => {
+    const doGeo = () => {
+      // Try fast (WiFi/cell) first — instant, works indoors
       navigator.geolocation.getCurrentPosition(
         handleSuccess,
         () => {
-          setLocation('Could not get location')
+          // Both failed
+          setLocation('Could not get location — try outdoors')
           setLocStatus('error')
         },
-        { enableHighAccuracy: false, timeout: 8000, maximumAge: 600000 }
+        { enableHighAccuracy: false, timeout: 12000, maximumAge: 600000 }
       )
     }
 
@@ -85,7 +86,6 @@ export default function VerificationCamera({ studentName, onCapture, onCancel }:
       const lat = pos.coords.latitude
       const lng = pos.coords.longitude
       setCoords({ lat, lng })
-      // Reverse geocode
       try {
         const res = await fetch(
           `https://nominatim.openstreetmap.org/reverse?format=json&lat=${lat}&lon=${lng}&zoom=14`,
@@ -109,21 +109,24 @@ export default function VerificationCamera({ studentName, onCapture, onCancel }:
       setLocStatus('ok')
     }
 
-    // First attempt: use cached position if available (fastest)
-    navigator.geolocation.getCurrentPosition(
-      handleSuccess,
-      (err) => {
-        if (err.code === 1) {
-          // Permission denied — no point retrying
-          setLocation('Permission denied')
-          setLocStatus('error')
-        } else {
-          // Timed out or unavailable — try low accuracy fallback
-          tryLowAccuracy()
+    // Check permission state first
+    if ('permissions' in navigator) {
+      navigator.permissions.query({ name: 'geolocation' }).then(result => {
+        if (result.state === 'denied') {
+          setLocation('Location is blocked for this site')
+          setLocStatus('blocked')
+          return
         }
-      },
-      { enableHighAccuracy: true, timeout: 10000, maximumAge: 300000 }
-    )
+        // 'granted' or 'prompt' — proceed
+        navigator.geolocation.getCurrentPosition(
+          handleSuccess,
+          () => doGeo(), // fallback to low-accuracy
+          { enableHighAccuracy: true, timeout: 8000, maximumAge: 300000 }
+        )
+      }).catch(() => doGeo())
+    } else {
+      doGeo()
+    }
   }, [locStatus])
 
   /* ── Auto-request location after camera is ready ───────── */
@@ -265,6 +268,15 @@ export default function VerificationCamera({ studentName, onCapture, onCancel }:
                 Getting location...
               </p>
             </>
+          ) : locStatus === 'blocked' ? (
+            <div style={{ flex: 1 }}>
+              <p style={{ color: '#FCA5A5', fontSize: 12, margin: '0 0 4px', fontWeight: 700 }}>
+                🔒 Location blocked for this site
+              </p>
+              <p style={{ color: '#9CA3AF', fontSize: 11, margin: 0, lineHeight: 1.5 }}>
+                In Chrome: tap the <strong style={{ color: 'white' }}>🔒 lock icon</strong> in the address bar → Site settings → Location → Allow
+              </p>
+            </div>
           ) : locStatus === 'error' ? (
             <>
               <p style={{ color: '#FCA5A5', fontSize: 12, margin: 0, flex: 1 }}>
@@ -277,7 +289,6 @@ export default function VerificationCamera({ studentName, onCapture, onCancel }:
               </button>
             </>
           ) : (
-            /* idle — user hasn't tapped yet */
             <>
               <svg style={{ width: 14, height: 14, color: '#4B5563', flexShrink: 0 }}
                 fill="none" stroke="currentColor" viewBox="0 0 24 24">
