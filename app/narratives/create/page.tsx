@@ -109,6 +109,17 @@ export default function CreateNarrativePage() {
     finally { setSubmitting(false) }
   }
 
+  /* ── Cancel camera → delete the pending narrative ──────── */
+  const handleCameraCancel = async () => {
+    // Delete the narrative that was already saved so user can re-edit and re-submit
+    if (savedNarrativeId.current) {
+      await fetch(`/api/narratives/${savedNarrativeId.current}`, { method: 'DELETE' }).catch(() => {})
+      savedNarrativeId.current = null
+    }
+    setStep('form')
+    setSubmitting(false)
+  }
+
   /* ── Camera captured → upload verification photo ────────── */
   const handlePhotoCapture = async (photoDataUrl: string) => {
     if (!savedNarrativeId.current) { setStep('done'); return }
@@ -260,15 +271,15 @@ export default function CreateNarrativePage() {
           <VerificationCamera
             studentName={studentName}
             onCapture={handlePhotoCapture}
-            onCancel={() => setStep('done')}
+            onCancel={handleCameraCancel}
           />
 
-          <button onClick={() => setStep('done')} style={{
+          <button onClick={handleCameraCancel} style={{
             display: 'block', width: '100%', marginTop: 12,
             padding: '10px', background: 'none', color: '#9CA3AF',
             border: 'none', fontSize: 13, cursor: 'pointer', fontFamily: 'inherit',
           }}>
-            Skip verification photo
+            ← Back to edit narrative
           </button>
         </div>
       </AppShell>
