@@ -179,32 +179,33 @@ export default function Header({ strandCode, forceTeacher }: {
                 </svg>
               </button>
 
-              {/* Share button */}
+              {/* Share button — always visible */}
               <button
                 onClick={async () => {
-                  const url  = window.location.href
+                  const url   = window.location.href
                   const title = 'PSBC Work Immersion Portal'
                   if (typeof navigator !== 'undefined' && navigator.share) {
                     await navigator.share({ title, url }).catch(() => {})
                   } else {
                     await navigator.clipboard.writeText(url).catch(() => {})
-                    alert('Link copied to clipboard!')
+                    alert('Link copied!')
                   }
                 }}
                 style={{
-                  background: 'rgba(255,255,255,0.12)', border: '1px solid rgba(255,255,255,0.2)',
-                  borderRadius: 10, padding: '7px 10px', cursor: 'pointer',
-                  display: 'flex', alignItems: 'center', gap: 5, color: 'white',
-                  fontSize: 12, fontWeight: 600, fontFamily: 'inherit',
-                  transition: 'background 0.15s',
+                  background: 'rgba(255,255,255,0.15)',
+                  border: '1.5px solid rgba(255,255,255,0.3)',
+                  borderRadius: 10, padding: '7px 12px', cursor: 'pointer',
+                  display: 'flex', alignItems: 'center', gap: 6, color: 'white',
+                  fontSize: 12, fontWeight: 700, fontFamily: 'inherit',
+                  whiteSpace: 'nowrap',
                 }}
                 title="Share this page"
               >
-                <svg style={{ width: 15, height: 15 }} fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <svg style={{ width: 15, height: 15, flexShrink: 0 }} fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2}
                     d="M8.684 13.342C8.886 12.938 9 12.482 9 12c0-.482-.114-.938-.316-1.342m0 2.684a3 3 0 110-2.684m0 2.684l6.632 3.316m-6.632-6l6.632-3.316m0 0a3 3 0 105.367-2.684 3 3 0 00-5.367 2.684zm0 9.316a3 3 0 105.368 2.684 3 3 0 00-5.368-2.684z" />
                 </svg>
-                <span className="header-username" style={{ display: 'none' }}>Share</span>
+                Share
               </button>
 
               {/* Profile button */}
@@ -341,6 +342,28 @@ export default function Header({ strandCode, forceTeacher }: {
                   {item.label}
                 </button>
               ))}
+              {/* Share in mobile nav */}
+              <button
+                onClick={async () => {
+                  setMobileNav(false)
+                  const url = window.location.href
+                  if (typeof navigator !== 'undefined' && navigator.share) {
+                    await navigator.share({ title: 'PSBC Work Immersion Portal', url }).catch(() => {})
+                  } else {
+                    await navigator.clipboard.writeText(url).catch(() => {})
+                    alert('Link copied!')
+                  }
+                }}
+                style={{ padding: '10px 14px', background: 'transparent', border: 'none',
+                  borderRadius: 8, color: 'rgba(255,255,255,0.8)', fontSize: 14, fontWeight: 600,
+                  cursor: 'pointer', fontFamily: 'inherit', textAlign: 'left',
+                  display: 'flex', alignItems: 'center', gap: 8 }}>
+                <svg style={{ width: 16, height: 16 }} fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2}
+                    d="M8.684 13.342C8.886 12.938 9 12.482 9 12c0-.482-.114-.938-.316-1.342m0 2.684a3 3 0 110-2.684m0 2.684l6.632 3.316m-6.632-6l6.632-3.316m0 0a3 3 0 105.367-2.684 3 3 0 00-5.367 2.684zm0 9.316a3 3 0 105.368 2.684 3 3 0 00-5.368-2.684z" />
+                </svg>
+                Share This Page
+              </button>
             </div>
           </div>
         )}
