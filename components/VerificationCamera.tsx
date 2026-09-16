@@ -69,23 +69,8 @@ export default function VerificationCamera({ studentName, onCapture, onCancel }:
       return
     }
 
-    const doGeo = () => {
-      // Try fast (WiFi/cell) first — instant, works indoors
-      navigator.geolocation.getCurrentPosition(
-        handleSuccess,
-        () => {
-          // Both failed
-          setLocation('Could not get location — try outdoors')
-          setLocStatus('error')
-        },
-        { enableHighAccuracy: false, timeout: 12000, maximumAge: 600000 }
-      )
-    }
-
-    const handleSuccess = async (pos: GeolocationPosition) => {
-      const lat = pos.coords.latitude
-      const lng = pos.coords.longitude
-      setCoords({ lat, lng })
+    // Reverse-geocode helper
+    const geocode = async (lat: number, lng: number) => {
       try {
         const res = await fetch(
           `https://nominatim.openstreetmap.org/reverse?format=json&lat=${lat}&lon=${lng}&zoom=14`,
@@ -99,33 +84,54 @@ export default function VerificationCamera({ studentName, onCapture, onCancel }:
             a.city || a.town || a.municipality || a.state || '',
             a.country_code?.toUpperCase() || '',
           ].filter(Boolean)
-          setLocation(parts.join(', ') || `${lat.toFixed(5)}, ${lng.toFixed(5)}`)
-        } else {
-          setLocation(`${lat.toFixed(5)}, ${lng.toFixed(5)}`)
+          return parts.join(', ') || `${lat.toFixed(5)}, ${lng.toFixed(5)}`
         }
-      } catch {
-        setLocation(`${lat.toFixed(5)}, ${lng.toFixed(5)}`)
-      }
+      } catch { /* silent */ }
+      return `${lat.toFixed(5)}, ${lng.toFixed(5)}`
+    }
+
+    // Success handler — declared BEFORE use
+    const onSuccess = async (pos: GeolocationPosition) => {
+      const lat = pos.coords.latitude
+      const lng = pos.coords.longitude
+      setCoords({ lat, lng })
+      const addr = await geocode(lat, lng)
+      setLocation(addr)
       setLocStatus('ok')
     }
 
-    // Check permission state first
+    // Low-accuracy fallback — works indoors via WiFi/cell
+    const tryLowAccuracy = () => {
+      navigator.geolocation.getCurrentPosition(
+        onSuccess,
+        () => { setLocation('Could not get location'); setLocStatus('error') },
+        { enableHighAccuracy: false, timeout: 12000, maximumAge: 600000 }
+      )
+    }
+
+    // Check permission first (Android Chrome / iOS 16+)
+    const runGeo = () => {
+      navigator.geolocation.getCurrentPosition(
+        onSuccess,
+        () => tryLowAccuracy(),  // high-accuracy failed → try low-accuracy
+        { enableHighAccuracy: true, timeout: 8000, maximumAge: 300000 }
+      )
+    }
+
     if ('permissions' in navigator) {
-      navigator.permissions.query({ name: 'geolocation' }).then(result => {
-        if (result.state === 'denied') {
-          setLocation('Location is blocked for this site')
-          setLocStatus('blocked')
-          return
-        }
-        // 'granted' or 'prompt' — proceed
-        navigator.geolocation.getCurrentPosition(
-          handleSuccess,
-          () => doGeo(), // fallback to low-accuracy
-          { enableHighAccuracy: true, timeout: 8000, maximumAge: 300000 }
-        )
-      }).catch(() => doGeo())
+      navigator.permissions
+        .query({ name: 'geolocation' })
+        .then(result => {
+          if (result.state === 'denied') {
+            setLocation('Location is blocked for this site')
+            setLocStatus('blocked')
+          } else {
+            runGeo()
+          }
+        })
+        .catch(() => runGeo())  // permissions API not supported — just try
     } else {
-      doGeo()
+      runGeo()
     }
   }, [locStatus])
 

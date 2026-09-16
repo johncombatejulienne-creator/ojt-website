@@ -92,7 +92,7 @@ export async function PUT(request: NextRequest) {
       supervisorId = sec?.teacherId ?? null
     }
 
-    // Build update payload
+    // Build update payload — only include what was explicitly sent
     const updateData: Record<string, unknown> = {}
     if (name           !== undefined) updateData.name           = String(name).trim()
     if (studentId      !== undefined && String(studentId).trim()) {
@@ -104,7 +104,8 @@ export async function PUT(request: NextRequest) {
     if (course         !== undefined) updateData.course         = course         || null
     if (gradeLevel     !== undefined) updateData.gradeLevel     = Number(gradeLevel)
     if (profilePicture !== undefined) updateData.profilePicture = profilePicture || null
-    if (supervisorId   !== undefined) updateData.supervisorId   = supervisorId   || null
+    // Only update supervisorId if a section was resolved in THIS request
+    if (supervisorId !== null) updateData.supervisorId = supervisorId
 
     // Single update query
     let student

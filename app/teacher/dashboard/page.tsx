@@ -180,7 +180,15 @@ export default function TeacherDashboard() {
   const router = useRouter()
 
   const [loading,   setLoading]   = useState(true)
-  const [activeTab, setActiveTab] = useState<ActiveTab>('students')
+  const [activeTab, setActiveTab] = useState<ActiveTab>(() => {
+    // Initialize from URL ?tab= param if available
+    if (typeof window !== 'undefined') {
+      const param = new URLSearchParams(window.location.search).get('tab')
+      const valid = ['students','teachers','announcements','narratives','requirements']
+      if (param && valid.includes(param)) return param as ActiveTab
+    }
+    return 'students'
+  })
 
   // Students state
   const [sections,  setSections]  = useState<Section[]>([])
