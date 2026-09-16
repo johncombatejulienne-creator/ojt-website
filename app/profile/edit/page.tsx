@@ -160,6 +160,8 @@ export default function EditProfilePage() {
       if (fileRef.current) fileRef.current.value = ''
       await updateSession({ profilePicture: data.profilePicture })
       toast('Photo updated!', 'success')
+      // Force Next.js router refresh so all pages reload fresh session
+      router.refresh()
     } catch (e: unknown) { toast(e instanceof Error ? e.message : 'Upload failed', 'error') }
     finally { setUploading(false) }
   }

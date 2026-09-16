@@ -91,11 +91,12 @@ export const authOptions: NextAuthOptions = {
 
     async session({ session, token }) {
       if (session.user) {
-        session.user.id        = (token.userId as string) ?? token.sub ?? ""
-        session.user.role      = (token.role   as string) ?? "student"
-        session.user.studentId = token.studentId as string | undefined
-        session.user.teacherId = token.teacherId as string | undefined
-        if (token.name) session.user.name = token.name as string
+        session.user.id             = (token.userId as string) ?? token.sub ?? ""
+        session.user.role           = (token.role   as string) ?? "student"
+        session.user.studentId      = token.studentId  as string | undefined
+        session.user.teacherId      = token.teacherId  as string | undefined
+        if (token.name)           session.user.name           = token.name           as string
+        if (token.profilePicture) session.user.profilePicture = token.profilePicture as string
       }
       return session
     },

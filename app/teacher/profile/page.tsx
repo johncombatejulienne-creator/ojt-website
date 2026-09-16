@@ -114,6 +114,7 @@ export default function TeacherProfilePage() {
       if (fileRef.current) fileRef.current.value = ''
       await updateSession({ profilePicture: data.profilePicture })
       toast('Photo updated!', 'success')
+      router.refresh()
     } catch (e: unknown) {
       toast(e instanceof Error ? e.message : 'Upload failed', 'error')
     } finally { setUploading(false) }
