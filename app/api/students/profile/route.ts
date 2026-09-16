@@ -3,11 +3,12 @@ import { getServerSession } from 'next-auth'
 import { authOptions } from '@/lib/auth'
 import { prisma } from '@/lib/prisma'
 
-async function ensureStudent(email: string, name?: string | null, image?: string | null) {
-  const existing = await prisma.student.findUnique({ where: { email } })
-  if (existing) return existing
-  return prisma.student.create({
-    data: {
+// Upsert student — single atomic query, no race condition
+async function upsertStudent(email: string, name?: string | null, image?: string | null) {
+  return prisma.student.upsert({
+    where:  { email },
+    update: {},  // Don't overwrite existing data on GET
+    create: {
       email,
       name:           name ?? email.split('@')[0],
       studentId:      `STU-${Date.now()}`,
@@ -23,7 +24,8 @@ export async function GET() {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
     }
 
-    await ensureStudent(session.user.email, session.user.name, session.user.image ?? null)
+    // Upsert then fetch full record
+    await upsertStudent(session.user.email, session.user.name, session.user.image ?? null)
 
     const student = await prisma.student.findUnique({
       where: { email: session.user.email },
@@ -53,47 +55,49 @@ export async function PUT(request: NextRequest) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
     }
 
-    await ensureStudent(session.user.email, session.user.name, session.user.image ?? null)
-
     const body = await request.json()
-    const { name, studentId, strandId, sectionId, sectionName, company, course, gradeLevel, profilePicture } = body
+    const {
+      name, studentId, strandId, sectionId, sectionName,
+      company, course, gradeLevel, profilePicture,
+    } = body
 
-    // Resolve final section — custom name takes priority
+    // Ensure student exists
+    await upsertStudent(session.user.email, session.user.name, session.user.image ?? null)
+
+    // Resolve section — all section logic in one block to avoid concurrent queries
     let finalSectionId: string | null = sectionId || null
+    let supervisorId:   string | null = null
 
     if (sectionName?.trim() && strandId) {
-      // Find or create section by name
-      const existing = await prisma.section.findFirst({
-        where: { name: sectionName.trim(), strandId },
+      // Find or create section by name (upsert pattern)
+      const section = await prisma.section.upsert({
+        where:  { strandId_name: { strandId, name: sectionName.trim() } },
+        update: {},
+        create: {
+          name:       sectionName.trim(),
+          gradeLevel: gradeLevel ? Number(gradeLevel) : 12,
+          strandId,
+          isActive:   true,
+        },
+        select: { id: true, teacherId: true },
       })
-      if (existing) {
-        finalSectionId = existing.id
-      } else {
-        const created = await prisma.section.create({
-          data: {
-            name:      sectionName.trim(),
-            gradeLevel: gradeLevel ? Number(gradeLevel) : 12,
-            strandId,
-            isActive:  true,
-          },
-        })
-        finalSectionId = created.id
-      }
-    }
-
-    // Resolve supervisor from section
-    let supervisorId: string | null = null
-    if (finalSectionId) {
+      finalSectionId = section.id
+      supervisorId   = section.teacherId ?? null
+    } else if (finalSectionId) {
+      // Look up supervisor from existing section
       const sec = await prisma.section.findUnique({
-        where: { id: finalSectionId },
+        where:  { id: finalSectionId },
         select: { teacherId: true },
       })
       supervisorId = sec?.teacherId ?? null
     }
 
+    // Build update payload
     const updateData: Record<string, unknown> = {}
-    if (name           !== undefined) updateData.name           = name
-    if (studentId      !== undefined && String(studentId).trim()) updateData.studentId = String(studentId).trim()
+    if (name           !== undefined) updateData.name           = String(name).trim()
+    if (studentId      !== undefined && String(studentId).trim()) {
+      updateData.studentId = String(studentId).trim()
+    }
     if (strandId       !== undefined) updateData.strandId       = strandId       || null
     if (finalSectionId !== undefined) updateData.sectionId      = finalSectionId || null
     if (company        !== undefined) updateData.company        = company        || null
@@ -102,6 +106,7 @@ export async function PUT(request: NextRequest) {
     if (profilePicture !== undefined) updateData.profilePicture = profilePicture || null
     if (supervisorId   !== undefined) updateData.supervisorId   = supervisorId   || null
 
+    // Single update query
     let student
     try {
       student = await prisma.student.update({
@@ -116,20 +121,13 @@ export async function PUT(request: NextRequest) {
           supervisor:{ select: { id: true, name: true, email: true } },
         },
       })
-    } catch (updateError: unknown) {
-      const msg = updateError instanceof Error ? updateError.message : ''
-      if (msg.includes('nique') || msg.includes('studentId') || msg.includes('P2002')) {
-        return NextResponse.json({ error: 'That Student ID is already taken. Please use a different one.' }, { status: 400 })
+    } catch (e: unknown) {
+      const msg = e instanceof Error ? e.message : ''
+      if (msg.includes('P2002') || msg.includes('nique') || msg.includes('studentId')) {
+        return NextResponse.json({ error: 'That Student ID is already taken.' }, { status: 400 })
       }
-      throw updateError
+      throw e
     }
-
-    await prisma.auditLog.create({
-      data: {
-        userId: student.id, userType: 'student', action: 'profile_update',
-        description: `Student updated profile: ${student.name}`,
-      },
-    }).catch(() => {})
 
     return NextResponse.json({ success: true, student })
   } catch (error) {

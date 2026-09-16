@@ -3,12 +3,11 @@ import { getServerSession } from 'next-auth'
 import { authOptions } from '@/lib/auth'
 import { prisma } from '@/lib/prisma'
 
-/** Find or auto-create Teacher record */
-async function ensureTeacher(email: string, name?: string | null, image?: string | null) {
-  const existing = await prisma.teacher.findUnique({ where: { email } })
-  if (existing) return existing
-  return prisma.teacher.create({
-    data: {
+async function upsertTeacher(email: string, name?: string | null, image?: string | null) {
+  return prisma.teacher.upsert({
+    where:  { email },
+    update: {},
+    create: {
       email,
       name:           name ?? email.split('@')[0],
       teacherId:      `TCH-${Date.now()}`,
@@ -26,10 +25,10 @@ export async function GET() {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
     }
 
-    const teacher = await ensureTeacher(session.user.email, session.user.name, session.user.image ?? null)
+    await upsertTeacher(session.user.email, session.user.name, session.user.image ?? null)
 
-    const full = await prisma.teacher.findUnique({
-      where: { id: teacher.id },
+    const teacher = await prisma.teacher.findUnique({
+      where: { email: session.user.email },
       select: {
         id: true, teacherId: true, name: true, email: true,
         profilePicture: true, role: true, accessLevel: true,
@@ -38,7 +37,7 @@ export async function GET() {
       },
     })
 
-    return NextResponse.json({ teacher: full })
+    return NextResponse.json({ teacher })
   } catch (error) {
     console.error('GET teacher profile error:', error)
     return NextResponse.json({ error: 'Failed to fetch profile' }, { status: 500 })
@@ -52,28 +51,26 @@ export async function PUT(request: NextRequest) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
     }
 
-    const teacher = await ensureTeacher(session.user.email, session.user.name, session.user.image ?? null)
-
     const body = await request.json()
     const { name } = body
     if (!name?.trim()) {
       return NextResponse.json({ error: 'Name is required' }, { status: 400 })
     }
 
+    // Single update — no separate ensureTeacher query first
     const updated = await prisma.teacher.update({
-      where: { id: teacher.id },
+      where: { email: session.user.email },
       data:  { name: name.trim() },
       select: { id: true, teacherId: true, name: true, email: true, profilePicture: true },
+    }).catch(async () => {
+      // Teacher doesn't exist — create then update
+      await upsertTeacher(session.user.email!, session.user.name, session.user.image ?? null)
+      return prisma.teacher.update({
+        where: { email: session.user.email! },
+        data:  { name: name.trim() },
+        select: { id: true, teacherId: true, name: true, email: true, profilePicture: true },
+      })
     })
-
-    await prisma.auditLog.create({
-      data: {
-        userId:      updated.id,
-        userType:    'teacher',
-        action:      'profile_update',
-        description: `Teacher updated profile: ${updated.name}`,
-      },
-    }).catch(() => {})
 
     return NextResponse.json({ success: true, teacher: updated })
   } catch (error) {
