@@ -104,16 +104,33 @@ export default function VerificationCamera({ studentName, onCapture, onCancel }:
     const tryLowAccuracy = () => {
       navigator.geolocation.getCurrentPosition(
         onSuccess,
-        () => { setLocation('Could not get location'); setLocStatus('error') },
+        (err2) => {
+          setLocation(`Error ${err2.code}: ${err2.message || 'Could not get location'}`)
+          setLocStatus('error')
+        },
         { enableHighAccuracy: false, timeout: 12000, maximumAge: 600000 }
       )
     }
 
-    // Check permission first (Android Chrome / iOS 16+)
+    // High-accuracy attempt first
     const runGeo = () => {
       navigator.geolocation.getCurrentPosition(
         onSuccess,
-        () => tryLowAccuracy(),  // high-accuracy failed → try low-accuracy
+        (err) => {
+          if (err.code === 1) {
+            // Permission denied — show browser-specific instructions
+            const ua = navigator.userAgent
+            const isIOS = /iP(hone|ad|od)/.test(ua)
+            if (isIOS) {
+              setLocation('Denied — go to iOS Settings → Safari → Location → Allow')
+            } else {
+              setLocation('Denied — tap 🔒 in address bar → Site settings → Location → Allow')
+            }
+            setLocStatus('blocked')
+          } else {
+            tryLowAccuracy()
+          }
+        },
         { enableHighAccuracy: true, timeout: 8000, maximumAge: 300000 }
       )
     }
@@ -123,13 +140,18 @@ export default function VerificationCamera({ studentName, onCapture, onCancel }:
         .query({ name: 'geolocation' })
         .then(result => {
           if (result.state === 'denied') {
-            setLocation('Location is blocked for this site')
+            const ua = navigator.userAgent
+            const isIOS = /iP(hone|ad|od)/.test(ua)
+            setLocation(isIOS
+              ? 'Blocked — Settings → Safari → Location → Allow'
+              : 'Blocked — tap 🔒 in Chrome → Site settings → Location → Allow'
+            )
             setLocStatus('blocked')
           } else {
             runGeo()
           }
         })
-        .catch(() => runGeo())  // permissions API not supported — just try
+        .catch(() => runGeo())
     } else {
       runGeo()
     }
