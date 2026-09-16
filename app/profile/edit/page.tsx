@@ -60,8 +60,9 @@ function AvatarPreview({ src, name, size = 88 }: { src?: string | null; name?: s
 /* ─── Shared styles ──────────────────────────────────────── */
 const inp: React.CSSProperties = {
   width: '100%', padding: '11px 14px', border: '1.5px solid #E5E7EB',
-  borderRadius: 10, fontSize: 14, background: 'white', fontFamily: 'inherit',
+  borderRadius: 10, fontSize: '16px', background: 'white', fontFamily: 'inherit',
   boxSizing: 'border-box', color: '#111827', outline: 'none',
+  WebkitAppearance: 'none', appearance: 'none',
 }
 const lbl: React.CSSProperties = {
   display: 'block', fontSize: 11, fontWeight: 700, color: '#6B7280',

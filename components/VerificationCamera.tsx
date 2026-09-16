@@ -38,14 +38,22 @@ export default function VerificationCamera({ studentName, onCapture, onCancel }:
   const startCamera = async () => {
     setCamError('')
     try {
-      const stream = await navigator.mediaDevices.getUserMedia({
-        video: { facingMode: 'user', width: { ideal: 640 }, height: { ideal: 480 } },
+      // iOS Safari requires simple constraints — no width/height ideals
+      const isIOS = /iP(hone|ad|od)/.test(navigator.userAgent)
+      const constraints: MediaStreamConstraints = {
+        video: isIOS
+          ? { facingMode: 'user' }  // iOS: keep it simple
+          : { facingMode: 'user', width: { ideal: 640 }, height: { ideal: 480 } },
         audio: false,
-      })
+      }
+      const stream = await navigator.mediaDevices.getUserMedia(constraints)
       streamRef.current = stream
       if (videoRef.current) {
         videoRef.current.srcObject = stream
-        videoRef.current.onloadedmetadata = () => setReady(true)
+        // iOS Safari needs explicit play() call
+        videoRef.current.onloadedmetadata = () => {
+          videoRef.current?.play().then(() => setReady(true)).catch(() => setReady(true))
+        }
       }
     } catch {
       setCamError('Could not access camera. Please allow camera permission.')
@@ -72,10 +80,14 @@ export default function VerificationCamera({ studentName, onCapture, onCancel }:
     // Reverse-geocode helper
     const geocode = async (lat: number, lng: number) => {
       try {
+        // Use manual AbortController — AbortSignal.timeout not on older iOS/Android
+        const controller = new AbortController()
+        const timer = setTimeout(() => controller.abort(), 8000)
         const res = await fetch(
           `https://nominatim.openstreetmap.org/reverse?format=json&lat=${lat}&lon=${lng}&zoom=14`,
-          { headers: { 'Accept-Language': 'en' }, signal: AbortSignal.timeout(8000) }
+          { headers: { 'Accept-Language': 'en' }, signal: controller.signal }
         )
+        clearTimeout(timer)
         if (res.ok) {
           const data = await res.json()
           const a = data.address ?? {}
