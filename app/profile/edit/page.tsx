@@ -4,6 +4,7 @@ import { useEffect, useRef, useState, useCallback } from 'react'
 import { useSession } from 'next-auth/react'
 import { useRouter } from 'next/navigation'
 import Image from 'next/image'
+import { useProfilePicture } from '@/components/ProfilePictureContext'
 
 interface Strand  { id: string; name: string }
 interface Section { id: string; name: string; gradeLevel: number }
@@ -78,6 +79,7 @@ const card: React.CSSProperties = {
 export default function EditProfilePage() {
   const { data: session, status, update: updateSession } = useSession()
   const router = useRouter()
+  const { setPicture: setGlobalPicture } = useProfilePicture()
 
   const [loading,          setLoading]          = useState(true)
   const [saving,           setSaving]           = useState(false)
@@ -159,9 +161,9 @@ export default function EditProfilePage() {
       if (!res.ok) throw new Error(data.error)
       setPic(data.profilePicture); setPreview(null); setFile(null)
       if (fileRef.current) fileRef.current.value = ''
+      setGlobalPicture(data.profilePicture)  // instant header update
       await updateSession({ profilePicture: data.profilePicture })
       toast('Photo updated!', 'success')
-      // Force Next.js router refresh so all pages reload fresh session
       router.refresh()
     } catch (e: unknown) { toast(e instanceof Error ? e.message : 'Upload failed', 'error') }
     finally { setUploading(false) }
@@ -174,6 +176,7 @@ export default function EditProfilePage() {
       if (!res.ok) throw new Error('Failed')
       setPic(null); setPreview(null); setFile(null)
       if (fileRef.current) fileRef.current.value = ''
+      setGlobalPicture(null)  // instant header update
       await updateSession({ profilePicture: null })
       toast('Photo removed', 'info')
     } catch { toast('Failed to remove', 'error') }

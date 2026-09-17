@@ -4,6 +4,7 @@ import { useEffect, useRef, useState } from 'react'
 import { useSession } from 'next-auth/react'
 import { useRouter } from 'next/navigation'
 import Image from 'next/image'
+import { useProfilePicture } from '@/components/ProfilePictureContext'
 import AppShell from '@/components/AppShell'
 
 type ToastKind = 'success' | 'error' | 'info'
@@ -35,6 +36,7 @@ function Toasts({ list, remove }: { list: Toast[]; remove: (id: number) => void 
 export default function TeacherProfilePage() {
   const { data: session, status, update: updateSession } = useSession()
   const router = useRouter()
+  const { setPicture: setGlobalPicture } = useProfilePicture()
 
   const [loading,    setLoading]    = useState(true)
   const [saving,     setSaving]     = useState(false)
@@ -112,6 +114,7 @@ export default function TeacherProfilePage() {
       setPic(data.profilePicture)
       setPreview(null); setFile(null)
       if (fileRef.current) fileRef.current.value = ''
+      setGlobalPicture(data.profilePicture)  // instant header update
       await updateSession({ profilePicture: data.profilePicture })
       toast('Photo updated!', 'success')
       router.refresh()
@@ -126,6 +129,7 @@ export default function TeacherProfilePage() {
       await fetch('/api/teacher/profile-picture', { method: 'DELETE' })
       setPic(null); setPreview(null); setFile(null)
       if (fileRef.current) fileRef.current.value = ''
+      setGlobalPicture(null)  // instant header update
       await updateSession({ profilePicture: null })
       toast('Photo removed', 'info')
     } catch { toast('Failed to remove', 'error') }

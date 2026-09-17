@@ -4,6 +4,7 @@ import { useState, useEffect } from 'react'
 import { signOut, useSession } from 'next-auth/react'
 import { useRouter, usePathname } from 'next/navigation'
 import Image from 'next/image'
+import { useProfilePicture } from './ProfilePictureContext'
 
 /* ─── Avatar ─────────────────────────────────────────────── */
 export function Avatar({ src, name, size = 34, round = true }: {
@@ -92,7 +93,9 @@ export default function Header({ strandCode, forceTeacher }: {
 
   const userName   = session.user?.name ?? session.user?.email?.split('@')[0] ?? 'User'
   const userEmail  = session.user?.email ?? ''
-  const profilePic = session.user?.profilePicture
+  const { picture: ctxPicture } = useProfilePicture()
+  // Use context picture (updated instantly) falling back to session
+  const profilePic = ctxPicture ?? session.user?.profilePicture ?? null
   const userRole   = isTeacher ? 'Teacher' : 'Student'
 
   const studentNav = [
