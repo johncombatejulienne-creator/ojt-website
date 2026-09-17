@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server'
 import { getServerSession } from 'next-auth'
 import { authOptions } from '@/lib/auth'
 import { prisma } from '@/lib/prisma'
+import { uploadToCloudinary, isCloudinaryConfigured } from '@/lib/cloudinary'
 
 /**
  * POST /api/narratives/[id]/verification-photo
@@ -41,11 +42,24 @@ export async function POST(
       return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
     }
 
+    // Upload to Cloudinary if configured, else store as base64
+    let photoUrl = photoDataUrl
+    if (isCloudinaryConfigured()) {
+      try {
+        photoUrl = await uploadToCloudinary(photoDataUrl, 'verification-photos', {
+          maxWidth: 800, maxHeight: 600, quality: 88,
+        })
+      } catch {
+        // Fallback to base64 if Cloudinary fails
+        photoUrl = photoDataUrl
+      }
+    }
+
     // Save as a Photo record (isVerified = true = it's a verification photo)
     const photo = await prisma.photo.create({
       data: {
         narrativeId: id,
-        url:         photoDataUrl,
+        url:         photoUrl,
         filename:    `verification-${Date.now()}.jpg`,
         isVerified:  true,
         captureDate: new Date(),

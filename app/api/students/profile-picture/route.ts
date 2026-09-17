@@ -2,9 +2,10 @@ import { NextRequest, NextResponse } from 'next/server'
 import { getServerSession } from 'next-auth'
 import { authOptions } from '@/lib/auth'
 import { prisma } from '@/lib/prisma'
+import { uploadToCloudinary, deleteFromCloudinary, isCloudinaryConfigured } from '@/lib/cloudinary'
 
 const ALLOWED_TYPES = ['image/jpeg', 'image/jpg', 'image/png', 'image/webp', 'image/gif']
-const MAX_SIZE_BYTES = 2 * 1024 * 1024
+const MAX_SIZE = 5 * 1024 * 1024  // 5MB (Cloudinary compresses it)
 
 export async function POST(request: NextRequest) {
   try {
@@ -19,50 +20,59 @@ export async function POST(request: NextRequest) {
     if (!ALLOWED_TYPES.includes(file.type)) {
       return NextResponse.json({ error: 'Invalid file type. Use JPG, PNG, WebP or GIF.' }, { status: 400 })
     }
-    if (file.size > MAX_SIZE_BYTES) {
-      return NextResponse.json({ error: 'File too large. Max 2 MB.' }, { status: 400 })
+    if (file.size > MAX_SIZE) {
+      return NextResponse.json({ error: 'File too large. Max 5 MB.' }, { status: 400 })
     }
 
-    const buffer  = Buffer.from(await file.arrayBuffer())
-    const base64  = buffer.toString('base64')
-    const dataUrl = `data:${file.type};base64,${base64}`
+    const buffer = Buffer.from(await file.arrayBuffer())
+    let imageUrl: string
 
-    // Always look up by email — never trust JWT role (can be stale)
+    if (isCloudinaryConfigured()) {
+      // Upload to Cloudinary — saves database storage
+      const base64 = `data:${file.type};base64,${buffer.toString('base64')}`
+      imageUrl = await uploadToCloudinary(base64, 'profile-pictures', {
+        maxWidth: 400, maxHeight: 400, quality: 85,
+      })
+    } else {
+      // Fallback: base64 in DB (works but uses storage)
+      imageUrl = `data:${file.type};base64,${buffer.toString('base64')}`
+    }
+
+    // Check if teacher or student
     const teacher = await prisma.teacher.findUnique({
-      where: { email: session.user.email }, select: { id: true },
+      where: { email: session.user.email }, select: { id: true, profilePicture: true },
     }).catch(() => null)
 
     let profilePicture: string
 
     if (teacher) {
+      // Delete old Cloudinary image if exists
+      if (teacher.profilePicture && isCloudinaryConfigured()) {
+        await deleteFromCloudinary(teacher.profilePicture)
+      }
       const updated = await prisma.teacher.update({
         where: { email: session.user.email },
-        data:  { profilePicture: dataUrl },
+        data:  { profilePicture: imageUrl },
         select: { profilePicture: true },
       })
       profilePicture = updated.profilePicture!
     } else {
-      // Ensure student record exists
       const student = await prisma.student.findUnique({
-        where: { email: session.user.email },
+        where: { email: session.user.email }, select: { profilePicture: true },
       }).catch(() => null)
-
-      if (!student) {
-        // Auto-create if missing
-        await prisma.student.create({
-          data: {
-            email:     session.user.email,
-            name:      session.user.name ?? session.user.email.split('@')[0],
-            studentId: `STU-${Date.now()}`,
-            profilePicture: dataUrl,
-          },
-        }).catch(() => {})
-        return NextResponse.json({ success: true, profilePicture: dataUrl })
+      // Delete old Cloudinary image if exists
+      if (student?.profilePicture && isCloudinaryConfigured()) {
+        await deleteFromCloudinary(student.profilePicture)
       }
-
-      const updated = await prisma.student.update({
-        where: { email: session.user.email },
-        data:  { profilePicture: dataUrl },
+      const updated = await prisma.student.upsert({
+        where:  { email: session.user.email },
+        update: { profilePicture: imageUrl },
+        create: {
+          email:          session.user.email,
+          name:           session.user.name ?? session.user.email.split('@')[0],
+          studentId:      `STU-${Date.now()}`,
+          profilePicture: imageUrl,
+        },
         select: { profilePicture: true },
       })
       profilePicture = updated.profilePicture!
@@ -83,18 +93,25 @@ export async function DELETE() {
     }
 
     const teacher = await prisma.teacher.findUnique({
-      where: { email: session.user.email }, select: { id: true },
+      where: { email: session.user.email }, select: { id: true, profilePicture: true },
     }).catch(() => null)
 
     if (teacher) {
+      if (teacher.profilePicture && isCloudinaryConfigured()) {
+        await deleteFromCloudinary(teacher.profilePicture)
+      }
       await prisma.teacher.update({
-        where: { email: session.user.email },
-        data:  { profilePicture: null },
+        where: { email: session.user.email }, data: { profilePicture: null },
       })
     } else {
+      const student = await prisma.student.findUnique({
+        where: { email: session.user.email }, select: { profilePicture: true },
+      }).catch(() => null)
+      if (student?.profilePicture && isCloudinaryConfigured()) {
+        await deleteFromCloudinary(student.profilePicture)
+      }
       await prisma.student.update({
-        where: { email: session.user.email },
-        data:  { profilePicture: null },
+        where: { email: session.user.email }, data: { profilePicture: null },
       }).catch(() => {})
     }
 
