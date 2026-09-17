@@ -72,21 +72,60 @@ export async function GET(
 
     const content = formatContent(narrative.content)
 
-    // Verification photo HTML
-    const verificationPhotoHtml = narrative.photos.length > 0
-      ? `
-        <div class="section">
-          <h2 class="section-title">Verification Photo</h2>
-          <div style="text-align:center; margin: 20px 0;">
-            <img src="${narrative.photos[0].url}" alt="Verification Photo"
-              style="max-width:400px; max-height:400px; border:2px solid #e5e7eb; border-radius:8px;" />
-            <p style="margin-top:8px; color:#6b7280; font-size:12px;">
-              Captured on ${new Date(narrative.photos[0].uploadedAt).toLocaleDateString('en-US', {
-                year: 'numeric', month: 'long', day: 'numeric', hour: '2-digit', minute: '2-digit',
-              })}
-            </p>
-          </div>
-        </div>`
+    // Verification photo HTML — iOS Safari compatible
+    // base64 data URLs in downloaded HTML are blocked on iOS; use blob URL via script
+    const photo = narrative.photos.length > 0 ? narrative.photos[0] : null
+    const verificationPhotoHtml = photo
+      ? (() => {
+          const captureDate = new Date(photo.uploadedAt).toLocaleDateString('en-US', {
+            year: 'numeric', month: 'long', day: 'numeric', hour: '2-digit', minute: '2-digit',
+          })
+          // If it's a data URL, embed via script for iOS compatibility
+          const isDataUrl = photo.url.startsWith('data:')
+          if (isDataUrl) {
+            // Extract MIME type and base64 data
+            const mimeMatch = photo.url.match(/^data:([^;]+);base64,/)
+            const mime = mimeMatch ? mimeMatch[1] : 'image/jpeg'
+            const b64 = photo.url.split(',')[1] ?? ''
+            return `
+              <div class="section">
+                <h2 class="section-title">Verification Photo</h2>
+                <div style="text-align:center; margin:20px 0;">
+                  <img id="verif-photo" alt="Verification Photo"
+                    style="max-width:100%;width:400px;max-height:400px;border:2px solid #e5e7eb;border-radius:8px;display:block;margin:0 auto;" />
+                  <p style="margin-top:8px;color:#6b7280;font-size:12px;">Captured on ${captureDate}</p>
+                </div>
+              </div>
+              <script>
+                (function(){
+                  try {
+                    var b64='${b64}';
+                    var mime='${mime}';
+                    var bin=atob(b64);
+                    var arr=new Uint8Array(bin.length);
+                    for(var i=0;i<bin.length;i++) arr[i]=bin.charCodeAt(i);
+                    var blob=new Blob([arr],{type:mime});
+                    var url=URL.createObjectURL(blob);
+                    var img=document.getElementById('verif-photo');
+                    if(img){img.src=url;}
+                  }catch(e){
+                    var img=document.getElementById('verif-photo');
+                    if(img){img.src='${photo.url}';}
+                  }
+                })();
+              </script>`
+          }
+          // Regular URL — just use it directly
+          return `
+            <div class="section">
+              <h2 class="section-title">Verification Photo</h2>
+              <div style="text-align:center; margin:20px 0;">
+                <img src="${photo.url}" alt="Verification Photo"
+                  style="max-width:100%;width:400px;max-height:400px;border:2px solid #e5e7eb;border-radius:8px;" />
+                <p style="margin-top:8px;color:#6b7280;font-size:12px;">Captured on ${captureDate}</p>
+              </div>
+            </div>`
+        })()
       : ''
 
     const html = `<!DOCTYPE html>
