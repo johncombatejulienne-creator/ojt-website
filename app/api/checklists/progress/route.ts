@@ -3,11 +3,6 @@ import { prisma } from '@/lib/prisma'
 import { getServerSession } from 'next-auth'
 import { authOptions } from '@/lib/auth'
 
-/**
- * PATCH /api/checklists/progress
- * Student marks a checklist item as done/undone.
- * Body: { checklistItemId: string, checklistId: string, done: boolean }
- */
 export async function PATCH(request: NextRequest) {
   try {
     const session = await getServerSession(authOptions)
@@ -30,27 +25,34 @@ export async function PATCH(request: NextRequest) {
 
     const newStatus = done ? 'completed' : 'pending'
 
-    const progress = await prisma.studentChecklistProgress.upsert({
-      where: {
-        studentId_checklistItemId: {
-          studentId:      student.id,
-          checklistItemId,
+    // Use findFirst + create/update instead of upsert
+    // Avoids "no unique constraint" DB error when constraint doesn't exist yet
+    const existing = await prisma.studentChecklistProgress.findFirst({
+      where: { studentId: student.id, checklistItemId },
+    }).catch(() => null)
+
+    let progress
+    if (existing) {
+      progress = await prisma.studentChecklistProgress.update({
+        where: { id: existing.id },
+        data: {
+          status:         newStatus,
+          completedAt:    done ? new Date() : null,
+          completedCount: done ? 1 : 0,
         },
-      },
-      update: {
-        status:      newStatus,
-        completedAt: done ? new Date() : null,
-        completedCount: done ? 1 : 0,
-      },
-      create: {
-        studentId:      student.id,
-        checklistId,
-        checklistItemId,
-        status:         newStatus,
-        completedCount: done ? 1 : 0,
-        completedAt:    done ? new Date() : null,
-      },
-    })
+      })
+    } else {
+      progress = await prisma.studentChecklistProgress.create({
+        data: {
+          studentId:       student.id,
+          checklistId,
+          checklistItemId,
+          status:          newStatus,
+          completedCount:  done ? 1 : 0,
+          completedAt:     done ? new Date() : null,
+        },
+      })
+    }
 
     return NextResponse.json({ success: true, progress })
   } catch (error) {

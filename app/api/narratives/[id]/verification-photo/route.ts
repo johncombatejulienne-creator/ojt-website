@@ -54,7 +54,6 @@ export async function POST(
         photoUrl = photoDataUrl
       }
     }
-
     // Save as a Photo record (isVerified = true = it's a verification photo)
     const photo = await prisma.photo.create({
       data: {

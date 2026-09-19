@@ -28,13 +28,16 @@ export async function POST(request: NextRequest) {
     let imageUrl: string
 
     if (isCloudinaryConfigured()) {
-      // Upload to Cloudinary — saves database storage
-      const base64 = `data:${file.type};base64,${buffer.toString('base64')}`
-      imageUrl = await uploadToCloudinary(base64, 'profile-pictures', {
-        maxWidth: 400, maxHeight: 400, quality: 85,
-      })
+      try {
+        const base64 = `data:${file.type};base64,${buffer.toString('base64')}`
+        imageUrl = await uploadToCloudinary(base64, 'profile-pictures', {
+          maxWidth: 400, maxHeight: 400, quality: 85,
+        })
+      } catch (cloudErr) {
+        console.warn('Cloudinary upload failed, using base64 fallback:', cloudErr)
+        imageUrl = `data:${file.type};base64,${buffer.toString('base64')}`
+      }
     } else {
-      // Fallback: base64 in DB (works but uses storage)
       imageUrl = `data:${file.type};base64,${buffer.toString('base64')}`
     }
     // Check if teacher or student

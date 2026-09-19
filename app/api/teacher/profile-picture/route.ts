@@ -33,12 +33,17 @@ export async function POST(request: NextRequest) {
     let imageUrl: string
 
     if (isCloudinaryConfigured()) {
-      // Delete old image first
-      if (teacher.profilePicture) await deleteFromCloudinary(teacher.profilePicture)
-      const base64 = `data:${file.type};base64,${buffer.toString('base64')}`
-      imageUrl = await uploadToCloudinary(base64, 'profile-pictures', {
-        maxWidth: 400, maxHeight: 400, quality: 85,
-      })
+      try {
+        // Delete old image first
+        if (teacher.profilePicture) await deleteFromCloudinary(teacher.profilePicture)
+        const base64 = `data:${file.type};base64,${buffer.toString('base64')}`
+        imageUrl = await uploadToCloudinary(base64, 'profile-pictures', {
+          maxWidth: 400, maxHeight: 400, quality: 85,
+        })
+      } catch (cloudErr) {
+        console.warn('Cloudinary failed, using base64 fallback:', cloudErr)
+        imageUrl = `data:${file.type};base64,${buffer.toString('base64')}`
+      }
     } else {
       imageUrl = `data:${file.type};base64,${buffer.toString('base64')}`
     }

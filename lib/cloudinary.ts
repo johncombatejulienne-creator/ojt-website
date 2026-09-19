@@ -7,40 +7,37 @@ cloudinary.config({
   secure:     true,
 })
 
+/**
+ * Upload image to Cloudinary.
+ * Uses simple upload without transformations to avoid signature issues.
+ * Cloudinary automatically optimizes on delivery via fetch_format=auto.
+ */
 export async function uploadToCloudinary(
-  data: string,
+  data: string,   // base64 data URL
   folder: string,
   options?: { maxWidth?: number; maxHeight?: number; quality?: number }
 ): Promise<string> {
-  const { maxWidth = 800, maxHeight = 800, quality = 85 } = options ?? {}
+  const { maxWidth = 800, maxHeight = 800 } = options ?? {}
 
-  // Use eager transformations instead of upload-time transformations
-  // This avoids signature issues with inline transformation strings
+  // Simple upload — no transformation string in signature
   const result = await cloudinary.uploader.upload(data, {
-    folder:       `ojt-portal/${folder}`,
+    folder:        `ojt-portal/${folder}`,
     resource_type: 'image',
-    eager: [
-      {
-        width: maxWidth,
-        height: maxHeight,
-        crop: 'limit',
-        quality,
-        fetch_format: 'auto',
-      },
-    ],
-    invalidate: true,
+    // Width/height limits via upload options (not transformation string)
+    width:         maxWidth,
+    height:        maxHeight,
+    crop:          'limit',
+    invalidate:    true,
   })
 
-  // Return the eager URL if available, otherwise the original
-  const url = result.eager?.[0]?.secure_url ?? result.secure_url
-  return url
+  return result.secure_url
 }
 
 export async function deleteFromCloudinary(url: string): Promise<void> {
   try {
-    if (!url.includes('cloudinary.com')) return
-    // Extract public_id from Cloudinary URL
-    const match = url.match(/\/upload\/(?:v\d+\/)?(.+)\.[a-z]+$/)
+    if (!url || !url.includes('cloudinary.com')) return
+    // Extract public_id: everything after /upload/[optional v123/] up to extension
+    const match = url.match(/\/upload\/(?:v\d+\/)?(.+?)(?:\.[a-zA-Z]+)?$/)
     if (!match) return
     await cloudinary.uploader.destroy(match[1])
   } catch { /* non-critical */ }
