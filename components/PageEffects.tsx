@@ -18,7 +18,13 @@ import Image from 'next/image'
 export default function PageEffects() {
   const pathname = usePathname()
 
-  /* ── Page loader (first visit only) ──────────────────── */
+  /* ── Register Service Worker (PWA) ─────────────────────── */
+  useEffect(() => {
+    if ('serviceWorker' in navigator) {
+      navigator.serviceWorker.register('/sw.js', { scope: '/' })
+        .catch(() => { /* SW not critical */ })
+    }
+  }, [])
   useEffect(() => {
     // Mark JS as ready — enables scroll-reveal hiding
     document.documentElement.classList.add('js-ready')
