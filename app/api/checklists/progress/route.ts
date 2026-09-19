@@ -25,25 +25,23 @@ export async function PATCH(request: NextRequest) {
 
     const newStatus = done ? 'completed' : 'pending'
 
-    // Use findFirst + create/update instead of upsert
-    // Avoids "no unique constraint" DB error when constraint doesn't exist yet
-    const existing = await prisma.studentChecklistProgress.findFirst({
-      where: { studentId: student.id, checklistItemId },
-    }).catch(() => null)
-
+    // Try upsert first (fast, uses unique constraint now added to DB)
+    // Fall back to findFirst+update if constraint still missing
     let progress
-    if (existing) {
-      progress = await prisma.studentChecklistProgress.update({
-        where: { id: existing.id },
-        data: {
+    try {
+      progress = await prisma.studentChecklistProgress.upsert({
+        where: {
+          studentId_checklistItemId: {
+            studentId:      student.id,
+            checklistItemId,
+          },
+        },
+        update: {
           status:         newStatus,
           completedAt:    done ? new Date() : null,
           completedCount: done ? 1 : 0,
         },
-      })
-    } else {
-      progress = await prisma.studentChecklistProgress.create({
-        data: {
+        create: {
           studentId:       student.id,
           checklistId,
           checklistItemId,
@@ -52,6 +50,32 @@ export async function PATCH(request: NextRequest) {
           completedAt:     done ? new Date() : null,
         },
       })
+    } catch {
+      // Fallback: findFirst + create/update (works without unique constraint)
+      const existing = await prisma.studentChecklistProgress.findFirst({
+        where: { studentId: student.id, checklistItemId },
+      })
+      if (existing) {
+        progress = await prisma.studentChecklistProgress.update({
+          where: { id: existing.id },
+          data: {
+            status:         newStatus,
+            completedAt:    done ? new Date() : null,
+            completedCount: done ? 1 : 0,
+          },
+        })
+      } else {
+        progress = await prisma.studentChecklistProgress.create({
+          data: {
+            studentId:       student.id,
+            checklistId,
+            checklistItemId,
+            status:          newStatus,
+            completedCount:  done ? 1 : 0,
+            completedAt:     done ? new Date() : null,
+          },
+        })
+      }
     }
 
     return NextResponse.json({ success: true, progress })

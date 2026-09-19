@@ -428,7 +428,12 @@ export default function TeacherDashboard() {
       })
       const d = await res.json()
       if (!res.ok) throw new Error(d.error ?? 'Failed')
-      setExistingReqs(prev => [d.checklist, ...prev])
+      // Refresh full list instead of adding partial object (avoids type mismatch crash)
+      const reqRes = await fetch('/api/checklists').catch(() => null)
+      if (reqRes?.ok) {
+        const rd = await reqRes.json().catch(() => ({}))
+        setExistingReqs(rd.checklists ?? [])
+      }
       setReqSuccess('Requirement checklist created! Students will be notified.')
       setReqForm({ name: '', description: '', targetType: 'all',
         items: [{ title: '', requirementType: 'general', isRequired: true }] })
