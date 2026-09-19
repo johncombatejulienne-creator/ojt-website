@@ -1,7 +1,7 @@
 ﻿'use client'
 
-import { useState, useRef } from 'react'
-import { useRouter } from 'next/navigation'
+import { useState, useRef, useEffect } from 'react'
+import { useRouter, useSearchParams } from 'next/navigation'
 import { useSession } from 'next-auth/react'
 import { Input } from '@/components/ui/Input'
 import AppShell from '@/components/AppShell'
@@ -44,7 +44,8 @@ function Field({ label, name, value, onChange, rows = 4, placeholder, required, 
 
 /* ─── Page ───────────────────────────────────────────────── */
 export default function CreateNarrativePage() {
-  const router  = useRouter()
+  const router       = useRouter()
+  const searchParams = useSearchParams()
   const { data: session } = useSession()
 
   const [step,         setStep]         = useState<Step>('form')
@@ -52,8 +53,8 @@ export default function CreateNarrativePage() {
   const [savingDraft,  setSavingDraft]  = useState(false)
   const [uploadingPic, setUploadingPic] = useState(false)
   const [error,        setError]        = useState('')
+  const [loadingDraft, setLoadingDraft] = useState(false)
 
-  // Saved narrative ID (after first save)
   const savedNarrativeId = useRef<string | null>(null)
 
   const [form, setForm] = useState({
@@ -66,6 +67,40 @@ export default function CreateNarrativePage() {
     setForm(p => ({ ...p, [e.target.name]: e.target.value }))
     setError('')
   }
+
+  /* ── Load draft content if ?draft=ID is in URL ──────────── */
+  useEffect(() => {
+    const draftId = searchParams.get('draft')
+    if (!draftId) return
+    savedNarrativeId.current = draftId
+    setLoadingDraft(true)
+    fetch(`/api/narratives/${draftId}`)
+      .then(r => r.json())
+      .then(d => {
+        if (!d.narrative) return
+        const n = d.narrative
+        // Parse date
+        const dateStr = n.date ? new Date(n.date).toISOString().split('T')[0] : form.date
+        // Parse content back into fields
+        const content: string = n.content ?? ''
+        const get = (label: string) => {
+          const match = content.match(new RegExp(`\\*\\*${label}:\\*\\*\\s*([\\s\\S]*?)(?=\\n\\*\\*|$)`))
+          return match ? match[1].trim().replace(/^Not specified$/i, '') : ''
+        }
+        setForm({
+          date:       dateStr,
+          activity:   get('Activity'),
+          narrative:  get('Narrative'),
+          learnings:  get('What I Learned'),
+          skills:     get('Skills Demonstrated'),
+          challenges: get('Challenges'),
+          solutions:  get('How I Handled It'),
+          reflection: get('Reflection'),
+        })
+      })
+      .catch(() => {})
+      .finally(() => setLoadingDraft(false))
+  }, []) // eslint-disable-line react-hooks/exhaustive-deps
 
   /* ── Save draft ─────────────────────────────────────────── */
   const handleDraft = async () => {
@@ -307,6 +342,16 @@ export default function CreateNarrativePage() {
   }
 
   /* ─── STEP: FORM ─────────────────────────────────────────── */
+  if (loadingDraft) return (
+    <AppShell>
+      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '80px 0', flexDirection: 'column', gap: 16 }}>
+        <div style={{ width: 40, height: 40, border: '4px solid #FFEDD5', borderTopColor: '#F97316', borderRadius: '50%', animation: 'spin 1s linear infinite' }} />
+        <p style={{ fontSize: 14, color: '#9CA3AF' }}>Loading draft...</p>
+        <style>{`@keyframes spin{to{transform:rotate(360deg)}}`}</style>
+      </div>
+    </AppShell>
+  )
+
   return (
     <AppShell>
       <style>{`@keyframes spin{to{transform:rotate(360deg)}}`}</style>

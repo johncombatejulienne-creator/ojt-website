@@ -114,7 +114,7 @@ export default function TeacherProfilePage() {
       setPic(data.profilePicture)
       setPreview(null); setFile(null)
       if (fileRef.current) fileRef.current.value = ''
-      setGlobalPicture(data.profilePicture)  // instant header update
+      setGlobalPicture(data.profilePicture, session?.user?.email ?? undefined)  // instant header update, scoped by email
       await updateSession({ profilePicture: data.profilePicture })
       toast('Photo updated!', 'success')
       router.refresh()
@@ -129,7 +129,7 @@ export default function TeacherProfilePage() {
       await fetch('/api/teacher/profile-picture', { method: 'DELETE' })
       setPic(null); setPreview(null); setFile(null)
       if (fileRef.current) fileRef.current.value = ''
-      setGlobalPicture(null)  // instant header update
+      setGlobalPicture(null, session?.user?.email ?? undefined)  // instant header update, scoped by email
       await updateSession({ profilePicture: null })
       toast('Photo removed', 'info')
     } catch { toast('Failed to remove', 'error') }
@@ -144,7 +144,7 @@ export default function TeacherProfilePage() {
       const res = await fetch('/api/teacher/profile', {
         method: 'PUT',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ name }),
+        body: JSON.stringify({ name, teacherId: teacherId.trim() || undefined }),
       })
       const data = await res.json()
       if (!res.ok) throw new Error(data.error)
@@ -298,20 +298,25 @@ export default function TeacherProfilePage() {
                 />
               </div>
 
-              {/* Teacher ID — read only */}
-              {teacherId && (
-                <div>
-                  <label style={{ display: 'block', fontSize: 11, fontWeight: 700, color: '#6B7280',
-                    textTransform: 'uppercase', letterSpacing: '0.07em', marginBottom: 6 }}>
-                    Teacher ID
-                  </label>
-                  <input type="text" value={teacherId} disabled
-                    style={{ width: '100%', padding: '10px 14px', border: '1.5px solid #E5E7EB',
-                      borderRadius: 12, fontSize: 14, background: '#F9FAFB', color: '#9CA3AF',
-                      cursor: 'not-allowed', fontFamily: 'inherit', boxSizing: 'border-box' }}
-                  />
-                </div>
-              )}
+              {/* Teacher ID — now editable */}
+              <div>
+                <label style={{ display: 'block', fontSize: 11, fontWeight: 700, color: '#6B7280',
+                  textTransform: 'uppercase', letterSpacing: '0.07em', marginBottom: 6 }}>
+                  Teacher ID
+                </label>
+                <input type="text" value={teacherId}
+                  onChange={e => setTeacherId(e.target.value)}
+                  placeholder="Your school-assigned teacher ID"
+                  style={{ width: '100%', padding: '10px 14px', border: '1.5px solid #E5E7EB',
+                    borderRadius: 12, fontSize: 14, outline: 'none', fontFamily: 'inherit',
+                    boxSizing: 'border-box', transition: 'border-color 0.15s' }}
+                  onFocus={e => { e.target.style.borderColor = '#F97316' }}
+                  onBlur={e => { e.target.style.borderColor = '#E5E7EB' }}
+                />
+                <p style={{ fontSize: 11, color: '#9CA3AF', margin: '4px 0 0' }}>
+                  You can update your teacher ID number here.
+                </p>
+              </div>
 
               {/* Email — read only */}
               <div>

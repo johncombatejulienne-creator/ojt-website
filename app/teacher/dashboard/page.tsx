@@ -221,7 +221,10 @@ export default function TeacherDashboard() {
   const [announcements, setAnnouncements] = useState<Announcement[]>([])
   const [annoForm, setAnnoForm] = useState({
     title: '', content: '', type: 'reminder', targetType: 'all',
+    strandId: '', sectionId: '',
   })
+  const [annoStrands, setAnnoStrands] = useState<{id:string;name:string}[]>([])
+  const [annoSections, setAnnoSections] = useState<{id:string;name:string;strandId:string}[]>([])
   const [annoSubmitting, setAnnoSubmitting] = useState(false)
   const [annoError,      setAnnoError]      = useState('')
   const [annoSuccess,    setAnnoSuccess]    = useState('')
@@ -288,6 +291,18 @@ export default function TeacherDashboard() {
           const d = await reqRes.json()
           setExistingReqs(d.checklists ?? [])
         } catch { /* silent */ }
+      }
+
+      // Load strands + sections for announcement targeting
+      const [strandRes, secAnnoRes] = await Promise.all([
+        fetch('/api/strands').catch(() => null),
+        fetch('/api/sections').catch(() => null),
+      ])
+      if (strandRes?.ok) {
+        try { const d = await strandRes.json(); setAnnoStrands(d.strands ?? []) } catch { /* silent */ }
+      }
+      if (secAnnoRes?.ok) {
+        try { const d = await secAnnoRes.json(); setAnnoSections(d.sections ?? []) } catch { /* silent */ }
       }
     } catch (e) {
       console.error('loadData error', e)
@@ -451,15 +466,20 @@ export default function TeacherDashboard() {
     if (!annoForm.content.trim()) { setAnnoError('Content is required.'); return }
     setAnnoSubmitting(true)
     try {
+      const payload = {
+        ...annoForm,
+        strandId: annoForm.strandId || undefined,
+        sectionId: annoForm.sectionId || undefined,
+      }
       const res = await fetch('/api/announcements', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(annoForm),
+        body: JSON.stringify(payload),
       })
       const d = await res.json()
       if (!res.ok) throw new Error(d.error ?? 'Failed')
       setAnnouncements(prev => [d.announcement, ...prev])
-      setAnnoForm({ title: '', content: '', type: 'reminder', targetType: 'all' })
+      setAnnoForm({ title: '', content: '', type: 'reminder', targetType: 'all', strandId: '', sectionId: '' })
       setAnnoSuccess('Announcement posted successfully!')
       setTimeout(() => setAnnoSuccess(''), 3000)
     } catch (err: unknown) {
@@ -1133,7 +1153,7 @@ export default function TeacherDashboard() {
                   <div>
                     <label style={labelStyle}>Target</label>
                     <select value={annoForm.targetType}
-                      onChange={e => setAnnoForm(p => ({ ...p, targetType: e.target.value }))}
+                      onChange={e => setAnnoForm(p => ({ ...p, targetType: e.target.value, strandId: '', sectionId: '' }))}
                       style={selectStyle}>
                       <option value="all">All Students</option>
                       <option value="strand">By Strand</option>
@@ -1141,6 +1161,38 @@ export default function TeacherDashboard() {
                     </select>
                   </div>
                 </div>
+
+                {/* Strand picker — shown when target is "strand" or "section" */}
+                {(annoForm.targetType === 'strand' || annoForm.targetType === 'section') && (
+                  <div>
+                    <label style={labelStyle}>Strand</label>
+                    <select value={annoForm.strandId}
+                      onChange={e => setAnnoForm(p => ({ ...p, strandId: e.target.value, sectionId: '' }))}
+                      style={selectStyle}>
+                      <option value="">— All Strands —</option>
+                      {annoStrands.map(s => (
+                        <option key={s.id} value={s.id}>{s.name}</option>
+                      ))}
+                    </select>
+                  </div>
+                )}
+
+                {/* Section picker — shown when target is "section" */}
+                {annoForm.targetType === 'section' && (
+                  <div>
+                    <label style={labelStyle}>Section</label>
+                    <select value={annoForm.sectionId}
+                      onChange={e => setAnnoForm(p => ({ ...p, sectionId: e.target.value }))}
+                      style={selectStyle}>
+                      <option value="">— All Sections —</option>
+                      {annoSections
+                        .filter(sec => !annoForm.strandId || sec.strandId === annoForm.strandId)
+                        .map(sec => (
+                          <option key={sec.id} value={sec.id}>{sec.name}</option>
+                        ))}
+                    </select>
+                  </div>
+                )}
 
                 <button type="submit" disabled={annoSubmitting} style={{
                   padding: '12px 0', background: annoSubmitting ? '#9CA3AF' : '#1E293B',

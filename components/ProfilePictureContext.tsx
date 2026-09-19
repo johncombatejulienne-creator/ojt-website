@@ -4,7 +4,7 @@ import { createContext, useContext, useState, useCallback, ReactNode } from 'rea
 
 interface ProfilePictureContextType {
   picture: string | null
-  setPicture: (url: string | null) => void
+  setPicture: (url: string | null, email?: string) => void
 }
 
 const ProfilePictureContext = createContext<ProfilePictureContextType>({
@@ -12,18 +12,24 @@ const ProfilePictureContext = createContext<ProfilePictureContextType>({
   setPicture: () => {},
 })
 
-export function ProfilePictureProvider({ children, initial }: {
+export function ProfilePictureProvider({ children, initial, email }: {
   children: ReactNode
   initial?: string | null
+  email?: string | null
 }) {
   const [picture, setPictureState] = useState<string | null>(initial ?? null)
 
-  const setPicture = useCallback((url: string | null) => {
+  const setPicture = useCallback((url: string | null, accountEmail?: string) => {
     setPictureState(url)
-    // Also persist in sessionStorage so it survives navigation
+    // Scope storage key by email to prevent cross-account bleed
+    const key = accountEmail ? `profilePicture_${accountEmail}` : 'profilePicture'
     try {
-      if (url) sessionStorage.setItem('profilePicture', url)
-      else sessionStorage.removeItem('profilePicture')
+      if (url) sessionStorage.setItem(key, url)
+      else {
+        sessionStorage.removeItem(key)
+        // Also clear unscoped key (legacy cleanup)
+        sessionStorage.removeItem('profilePicture')
+      }
     } catch { /* private browsing */ }
   }, [])
 

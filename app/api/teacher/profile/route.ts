@@ -52,22 +52,24 @@ export async function PUT(request: NextRequest) {
     }
 
     const body = await request.json()
-    const { name } = body
+    const { name, teacherId } = body
     if (!name?.trim()) {
       return NextResponse.json({ error: 'Name is required' }, { status: 400 })
     }
 
-    // Single update — no separate ensureTeacher query first
+    const updateData: Record<string, unknown> = { name: name.trim() }
+    if (teacherId?.trim()) updateData.teacherId = teacherId.trim()
+
+    // Single update query
     const updated = await prisma.teacher.update({
       where: { email: session.user.email },
-      data:  { name: name.trim() },
+      data:  updateData,
       select: { id: true, teacherId: true, name: true, email: true, profilePicture: true },
     }).catch(async () => {
-      // Teacher doesn't exist — create then update
       await upsertTeacher(session.user.email!, session.user.name, session.user.image ?? null)
       return prisma.teacher.update({
         where: { email: session.user.email! },
-        data:  { name: name.trim() },
+        data:  updateData,
         select: { id: true, teacherId: true, name: true, email: true, profilePicture: true },
       })
     })

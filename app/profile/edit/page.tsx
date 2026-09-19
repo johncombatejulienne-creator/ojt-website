@@ -161,7 +161,7 @@ export default function EditProfilePage() {
       if (!res.ok) throw new Error(data.error)
       setPic(data.profilePicture); setPreview(null); setFile(null)
       if (fileRef.current) fileRef.current.value = ''
-      setGlobalPicture(data.profilePicture)  // instant header update
+      setGlobalPicture(data.profilePicture, session?.user?.email ?? undefined)  // instant header update, scoped by email
       await updateSession({ profilePicture: data.profilePicture })
       toast('Photo updated!', 'success')
       router.refresh()
@@ -176,7 +176,7 @@ export default function EditProfilePage() {
       if (!res.ok) throw new Error('Failed')
       setPic(null); setPreview(null); setFile(null)
       if (fileRef.current) fileRef.current.value = ''
-      setGlobalPicture(null)  // instant header update
+      setGlobalPicture(null, session?.user?.email ?? undefined)
       await updateSession({ profilePicture: null })
       toast('Photo removed', 'info')
     } catch { toast('Failed to remove', 'error') }

@@ -313,7 +313,7 @@ export default function NarrativesPage() {
                     View
                   </button>
                   {n.isDraft && (
-                    <button onClick={() => router.push(`/narratives/create`)} style={{
+                    <button onClick={() => router.push(`/narratives/create?draft=${n.id}`)} style={{
                       padding: '7px 16px', borderRadius: 8, fontSize: 13, fontWeight: 600,
                       border: 'none', background: '#F97316', color: 'white',
                       cursor: 'pointer', fontFamily: 'inherit',
