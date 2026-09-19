@@ -111,3 +111,59 @@ export async function DELETE(
     return NextResponse.json({ error: 'Failed to delete narrative' }, { status: 500 })
   }
 }
+
+/** PATCH /api/narratives/[id] — update draft to submitted */
+export async function PATCH(
+  request: NextRequest,
+  { params }: { params: Promise<{ id: string }> }
+) {
+  try {
+    const session = await getServerSession(authOptions)
+    if (!session?.user?.email) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+
+    const { id } = await params
+    const body = await request.json().catch(() => ({}))
+    const { content, isDraft, date } = body as { content?: string; isDraft?: boolean; date?: string }
+
+    // Verify ownership
+    const narrative = await prisma.narrative.findUnique({
+      where: { id }, select: { studentId: true },
+    })
+    if (!narrative) return NextResponse.json({ error: 'Not found' }, { status: 404 })
+
+    const student = await prisma.student.findUnique({
+      where: { email: session.user.email }, select: { id: true },
+    }).catch(() => null)
+
+    const teacher = await prisma.teacher.findUnique({
+      where: { email: session.user.email }, select: { id: true },
+    }).catch(() => null)
+
+    if (!teacher && (!student || narrative.studentId !== student.id)) {
+      return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
+    }
+
+    const updateData: Record<string, unknown> = {}
+    if (content  !== undefined) updateData.content  = content
+    if (isDraft  !== undefined) updateData.isDraft   = isDraft
+    if (date     !== undefined) updateData.date       = new Date(date)
+    if (isDraft === false) {
+      updateData.status         = 'pending'
+      updateData.submissionDate = new Date()
+      const now = new Date()
+      const h = now.getHours(), m = now.getMinutes(), s = now.getSeconds()
+      const ap = h >= 12 ? 'PM' : 'AM'
+      const hh = ((h % 12) || 12).toString().padStart(2, '0')
+      updateData.submissionTime = `${hh}:${m.toString().padStart(2,'0')}:${s.toString().padStart(2,'0')} ${ap}`
+    }
+
+    const updated = await prisma.narrative.update({
+      where: { id }, data: updateData,
+    })
+
+    return NextResponse.json({ success: true, narrative: updated })
+  } catch (error) {
+    console.error('PATCH narrative error:', error)
+    return NextResponse.json({ error: 'Failed to update narrative' }, { status: 500 })
+  }
+}

@@ -96,14 +96,34 @@ export default function CreateNarrativePage() {
     setSubmitting(true)
     try {
       const content = buildContent()
-      const res = await fetch('/api/narratives', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ date: new Date(form.date).toISOString(), content, isDraft: false }),
-      })
-      const d = await res.json()
-      if (!res.ok) throw new Error(d.detail ?? d.error ?? 'Submission failed')
-      savedNarrativeId.current = d.narrative.id
+      const dateISO = new Date(form.date).toISOString()
+
+      // If there's already a saved draft ID, UPDATE it (don't create duplicate)
+      let narrativeId: string | null = savedNarrativeId.current
+      if (narrativeId) {
+        const res = await fetch(`/api/narratives/${narrativeId}`, {
+          method: 'PATCH',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ content, isDraft: false, date: dateISO }),
+        })
+        if (!res.ok) {
+          // Draft may have been deleted — create fresh
+          narrativeId = null
+        }
+      }
+
+      if (!narrativeId) {
+        const res = await fetch('/api/narratives', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ date: dateISO, content, isDraft: false }),
+        })
+        const d = await res.json()
+        if (!res.ok) throw new Error(d.detail ?? d.error ?? 'Submission failed')
+        narrativeId = d.narrative.id
+      }
+
+      savedNarrativeId.current = narrativeId
       setStep('camera')
     } catch (e: unknown) { setError(e instanceof Error ? e.message : 'Error') }
     finally { setSubmitting(false) }

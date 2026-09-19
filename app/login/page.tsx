@@ -165,7 +165,7 @@ export default function LoginPage() {
                 Paete Science and<br />Business College Inc.
               </p>
               <p style={{ color: 'rgba(255,255,255,0.7)', fontSize: 12, margin: '4px 0 0' }}>
-                Paete, Laguna · Est. 2009
+                Paete, Laguna · 
               </p>
             </div>
           </div>
@@ -435,3 +435,5 @@ export default function LoginPage() {
     </div>
   )
 }
+
+

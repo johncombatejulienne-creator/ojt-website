@@ -418,17 +418,28 @@ export default function VerificationCamera({ studentName, onCapture, onCancel }:
               <button onClick={onCancel} style={{ flex: 1, padding: '11px 0', borderRadius: 10,
                 fontSize: 14, fontWeight: 600, background: '#1F2937', color: '#9CA3AF',
                 border: 'none', cursor: 'pointer' }}>Cancel</button>
-              <button onClick={capturePhoto} disabled={!ready}
+              <button onClick={capturePhoto} disabled={!ready || locStatus === 'loading'}
                 style={{ flex: 2, padding: '11px 0', borderRadius: 10, fontSize: 14, fontWeight: 700,
-                  background: ready ? '#6366F1' : '#374151', color: ready ? 'white' : '#6B7280',
-                  border: 'none', cursor: ready ? 'pointer' : 'not-allowed',
+                  background: (ready && locStatus !== 'loading') ? '#6366F1' : '#374151',
+                  color: (ready && locStatus !== 'loading') ? 'white' : '#6B7280',
+                  border: 'none', cursor: (ready && locStatus !== 'loading') ? 'pointer' : 'not-allowed',
                   display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8 }}>
-                <svg style={{ width: 18, height: 18 }} fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2}
-                    d="M3 9a2 2 0 012-2h.93a2 2 0 001.664-.89l.812-1.22A2 2 0 0110.07 4h3.86a2 2 0 011.664.89l.812 1.22A2 2 0 0018.07 7H19a2 2 0 012 2v9a2 2 0 01-2 2H5a2 2 0 01-2-2V9z"/>
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 13a3 3 0 11-6 0 3 3 0 016 0z"/>
-                </svg>
-                Take Photo
+                {locStatus === 'loading' ? (
+                  <>
+                    <div style={{ width: 16, height: 16, border: '3px solid rgba(255,255,255,0.3)',
+                      borderTopColor: 'white', borderRadius: '50%', animation: 'spin 0.8s linear infinite' }} />
+                    Getting location...
+                  </>
+                ) : (
+                  <>
+                    <svg style={{ width: 18, height: 18 }} fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2}
+                        d="M3 9a2 2 0 012-2h.93a2 2 0 001.664-.89l.812-1.22A2 2 0 0110.07 4h3.86a2 2 0 011.664.89l.812 1.22A2 2 0 0018.07 7H19a2 2 0 012 2v9a2 2 0 01-2 2H5a2 2 0 01-2-2V9z"/>
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 13a3 3 0 11-6 0 3 3 0 016 0z"/>
+                    </svg>
+                    Take Photo
+                  </>
+                )}
               </button>
             </>
           ) : (

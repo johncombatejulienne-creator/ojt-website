@@ -307,10 +307,25 @@ export default function TeacherStudentDetailPage() {
                       </div>
                     )}
                     {!n.isDraft && n.status === 'approved' && (
-                      <span style={{ fontSize: 11, fontWeight: 700, background: '#D1FAE5',
-                        color: '#065F46', padding: '4px 10px', borderRadius: 999, whiteSpace: 'nowrap' }}>
-                        ✓ Approved
-                      </span>
+                      <div style={{ display: 'flex', gap: 6, flexShrink: 0, flexWrap: 'wrap', alignItems: 'center' }}>
+                        <span style={{ fontSize: 11, fontWeight: 700, background: '#D1FAE5',
+                          color: '#065F46', padding: '4px 10px', borderRadius: 999, whiteSpace: 'nowrap' }}>
+                          ✓ Approved
+                        </span>
+                        <button onClick={() => router.push(`/narratives/${n.id}`)} style={{
+                          padding: '6px 12px', background: '#F3F4F6', color: '#374151',
+                          border: 'none', borderRadius: 8, fontSize: 12, fontWeight: 600,
+                          cursor: 'pointer', fontFamily: 'inherit',
+                        }}>View</button>
+                        <a href={`/api/narratives/${n.id}/download`} download style={{
+                          padding: '6px 12px', background: '#FFF7ED', color: '#EA580C',
+                          border: '1px solid #FED7AA', borderRadius: 8, fontSize: 12, fontWeight: 600,
+                          textDecoration: 'none', display: 'inline-flex', alignItems: 'center', gap: 4,
+                          fontFamily: 'inherit',
+                        }}>
+                          ↓ Download
+                        </a>
+                      </div>
                     )}
                   </div>
                 </div>

@@ -37,7 +37,6 @@ export async function POST(request: NextRequest) {
       // Fallback: base64 in DB (works but uses storage)
       imageUrl = `data:${file.type};base64,${buffer.toString('base64')}`
     }
-
     // Check if teacher or student
     const teacher = await prisma.teacher.findUnique({
       where: { email: session.user.email }, select: { id: true, profilePicture: true },
