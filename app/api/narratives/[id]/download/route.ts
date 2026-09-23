@@ -227,7 +227,7 @@ export async function GET(
   <div class="page">
     <div class="school-header">
       <div class="school-name">Paete Science and Business College Inc.</div>
-      <div class="school-subtitle">Paete, Laguna · Est. 2009</div>
+      <div class="school-subtitle">Paete, Laguna</div>
       <div class="school-subtitle" style="margin-top:4px">Senior High School — Work Immersion Program</div>
     </div>
 
