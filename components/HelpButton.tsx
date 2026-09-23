@@ -1,12 +1,18 @@
 'use client'
 
 import { useState, useRef, useEffect } from 'react'
-import { useRouter } from 'next/navigation'
+import { useRouter, usePathname } from 'next/navigation'
+import { useSession } from 'next-auth/react'
 
 export default function HelpButton() {
   const [open, setOpen] = useState(false)
   const ref = useRef<HTMLDivElement>(null)
   const router = useRouter()
+  const pathname = usePathname()
+  const { data: session } = useSession()
+
+  // Detect teacher by role OR by current URL
+  const isTeacher = session?.user?.role === 'teacher' || pathname.startsWith('/teacher')
 
   useEffect(() => {
     const handler = (e: MouseEvent) => {
@@ -16,28 +22,41 @@ export default function HelpButton() {
     return () => document.removeEventListener('mousedown', handler)
   }, [])
 
-  const items = [
-    { icon: '📖', label: 'How to Use',     path: '/help' },
-    { icon: '❓', label: 'FAQs',            path: '/help#faq' },
-    { icon: '✍️', label: 'Writing Guide',   path: '/help#writing' },
-    { icon: '📊', label: 'Status Guide',    path: '/help#status' },
+  const studentItems = [
+    { icon: '📖', label: 'How to Use',    path: '/help' },
+    { icon: '❓', label: 'FAQs',           path: '/help#faq' },
+    { icon: '✍️', label: 'Writing Guide',  path: '/help#writing' },
+    { icon: '📊', label: 'Status Guide',   path: '/help#status' },
   ]
+
+  const teacherItems = [
+    { icon: '🏠', label: 'Dashboard',             path: '/teacher/dashboard' },
+    { icon: '👨‍🎓', label: 'View Students',         path: '/teacher/dashboard?tab=students' },
+    { icon: '📖', label: 'Review Narratives',     path: '/teacher/dashboard?tab=narratives' },
+    { icon: '📢', label: 'Announcements',         path: '/teacher/dashboard?tab=announcements' },
+    { icon: '⚙️', label: 'Teacher Profile',       path: '/teacher/profile' },
+  ]
+
+  const items = isTeacher ? teacherItems : studentItems
+  const menuTitle = isTeacher ? '🏫 Teacher Quick Nav' : '❓ Help & Guides'
 
   return (
     <div ref={ref} style={{ position: 'fixed', bottom: 24, right: 20, zIndex: 100 }}>
       <style>{`
         @keyframes helpMenuIn{from{opacity:0;transform:translateY(10px) scale(0.95)}to{opacity:1;transform:translateY(0) scale(1)}}
-        @keyframes spin{to{transform:rotate(360deg)}}
       `}</style>
 
       {open && (
         <div style={{ position: 'absolute', bottom: '100%', right: 0, marginBottom: 12,
           background: 'white', borderRadius: 16, boxShadow: '0 16px 48px rgba(0,0,0,0.18)',
-          border: '1px solid #E5E7EB', overflow: 'hidden', minWidth: 180,
+          border: '1px solid #E5E7EB', overflow: 'hidden', minWidth: 200,
           animation: 'helpMenuIn 0.2s cubic-bezier(0.34,1.3,0.64,1) both' }}>
-          <div style={{ padding: '12px 16px', background: 'linear-gradient(135deg,#FFF7ED,#FFEDD5)',
+          <div style={{ padding: '12px 16px',
+            background: isTeacher
+              ? 'linear-gradient(135deg,#FFF7ED,#FFEDD5)'
+              : 'linear-gradient(135deg,#FFF7ED,#FFEDD5)',
             borderBottom: '1px solid #FED7AA' }}>
-            <p style={{ fontSize: 12, fontWeight: 800, color: '#92400E', margin: 0 }}>❓ Help & Guides</p>
+            <p style={{ fontSize: 12, fontWeight: 800, color: '#92400E', margin: 0 }}>{menuTitle}</p>
           </div>
           {items.map(item => (
             <button key={item.label}
@@ -64,8 +83,8 @@ export default function HelpButton() {
           transition: 'all 0.25s cubic-bezier(0.34,1.3,0.64,1)',
           transform: open ? 'scale(1.1)' : 'scale(1)',
           fontSize: 20 }}
-        aria-label="Help">
-        {open ? '×' : '?'}
+        aria-label={isTeacher ? 'Quick Navigation' : 'Help'}>
+        {open ? '×' : isTeacher ? '☰' : '?'}
       </button>
     </div>
   )
