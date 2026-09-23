@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from 'react'
 import { useRouter } from 'next/navigation'
+import { useSession } from 'next-auth/react'
 import AppShell from '@/components/AppShell'
 
 interface Photo { id: string; url: string; isVerified: boolean; uploadedAt: string }
@@ -26,6 +27,7 @@ const STATUS: Record<string, { bg: string; color: string; label: string }> = {
 
 export default function NarrativesPage() {
   const router = useRouter()
+  const { data: session, status } = useSession()
   const [narratives,  setNarratives]  = useState<Narrative[]>([])
   const [loading,     setLoading]     = useState(true)
   const [filter,      setFilter]      = useState<Filter>('all')
@@ -33,6 +35,13 @@ export default function NarrativesPage() {
   const [deleting,    setDeleting]    = useState(false)
   const [deleteError, setDeleteError] = useState('')
   const [apiError,    setApiError]    = useState('')
+
+  // Teachers don't write narratives — send them back to their dashboard
+  useEffect(() => {
+    if (status === 'authenticated' && session?.user?.role === 'teacher') {
+      router.replace('/teacher/dashboard')
+    }
+  }, [status, session?.user?.role, router])
 
   const load = () => {
     setLoading(true)
@@ -56,7 +65,7 @@ export default function NarrativesPage() {
       })
   }
 
-  useEffect(() => { load() }, [])
+  useEffect(() => { load() }, [])  // eslint-disable-line react-hooks/exhaustive-deps
 
   const handleDelete = async () => {
     if (!deleteId) return

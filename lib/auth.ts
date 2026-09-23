@@ -54,29 +54,31 @@ export const authOptions: NextAuthOptions = {
         // Teacher takes priority — if a Teacher record exists, they are a teacher
         const teacher = await prisma.teacher.findUnique({
           where:  { email },
-          select: { id: true, teacherId: true, name: true },
+          select: { id: true, teacherId: true, name: true, profilePicture: true },
         })
         if (teacher) {
-          token.role      = "teacher"
-          token.userId    = teacher.id
-          token.teacherId = teacher.teacherId
-          token.studentId = undefined
-          token.sub       = teacher.id
-          token.name      = teacher.name
+          token.role           = "teacher"
+          token.userId         = teacher.id
+          token.teacherId      = teacher.teacherId
+          token.studentId      = undefined
+          token.sub            = teacher.id
+          token.name           = teacher.name
+          token.profilePicture = teacher.profilePicture ?? token.profilePicture ?? undefined
           return token
         }
 
         const student = await prisma.student.findUnique({
           where:  { email },
-          select: { id: true, studentId: true, name: true },
+          select: { id: true, studentId: true, name: true, profilePicture: true },
         })
         if (student) {
-          token.role      = "student"
-          token.userId    = student.id
-          token.studentId = student.studentId
-          token.teacherId = undefined
-          token.sub       = student.id
-          token.name      = student.name
+          token.role           = "student"
+          token.userId         = student.id
+          token.studentId      = student.studentId
+          token.teacherId      = undefined
+          token.sub            = student.id
+          token.name           = student.name
+          token.profilePicture = student.profilePicture ?? token.profilePicture ?? undefined
           return token
         }
 
