@@ -2029,3 +2029,208 @@ video {
     min-width: unset;
   }
 }
+
+
+/* ═══════════════════════════════════════════════════════════
+   REDESIGN UPGRADE — v2 Design System
+   Premium journal look for Work Immersion Narrative Tracker
+   ═══════════════════════════════════════════════════════════ */
+
+/* ── Journal card style ─────────────────────────────────── */
+.journal-card {
+  background: white;
+  border-radius: 20px;
+  border: 1px solid #E5E7EB;
+  box-shadow: 0 2px 12px rgba(0,0,0,0.06);
+  transition: box-shadow 0.25s ease, transform 0.25s cubic-bezier(0.34,1.2,0.64,1);
+  overflow: hidden;
+}
+.journal-card:hover {
+  box-shadow: 0 8px 32px rgba(0,0,0,0.10);
+  transform: translateY(-3px);
+}
+
+/* ── Status pill colors ─────────────────────────────────── */
+.pill-approved        { background: #D1FAE5; color: #065F46; }
+.pill-pending         { background: #FEF3C7; color: #92400E; }
+.pill-revision        { background: #FFEDD5; color: #9A3412; }
+.pill-draft           { background: #F3F4F6; color: #6B7280; }
+
+/* ── Day dot timeline ───────────────────────────────────── */
+.day-dot {
+  width: 36px; height: 36px; border-radius: 50%;
+  display: flex; align-items: center; justify-content: center;
+  font-size: 11px; font-weight: 800;
+  transition: transform 0.2s cubic-bezier(0.34,1.4,0.64,1), box-shadow 0.2s ease;
+  cursor: pointer; flex-shrink: 0;
+}
+.day-dot:hover { transform: scale(1.18); box-shadow: 0 4px 12px rgba(0,0,0,0.15); }
+.day-dot-done  { background: linear-gradient(135deg,#10B981,#059669); color: white; }
+.day-dot-today { background: linear-gradient(135deg,#F97316,#EA580C); color: white;
+  animation: pulseGlow 2s ease infinite; }
+.day-dot-empty { background: #F3F4F6; color: #9CA3AF; }
+
+/* ── Progress circle ────────────────────────────────────── */
+.progress-ring { transform: rotate(-90deg); }
+.progress-ring-circle {
+  transition: stroke-dashoffset 1s cubic-bezier(0.4,0,0.2,1);
+  stroke-linecap: round;
+}
+
+/* ── Search input ───────────────────────────────────────── */
+.search-input {
+  width: 100%; padding: 10px 16px 10px 40px;
+  border: 1.5px solid #E5E7EB; border-radius: 12px;
+  font-size: 14px; background: white; outline: none;
+  font-family: inherit; color: #111827;
+  transition: border-color 0.2s ease, box-shadow 0.2s ease;
+}
+.search-input:focus {
+  border-color: #F97316;
+  box-shadow: 0 0 0 3px rgba(249,115,22,0.12);
+}
+
+/* ── Section divider ────────────────────────────────────── */
+.section-divider {
+  display: flex; align-items: center; gap: 12; margin: 8px 0;
+}
+.section-divider::before, .section-divider::after {
+  content: ''; flex: 1; height: 1px; background: #E5E7EB;
+}
+
+/* ── Mood button ────────────────────────────────────────── */
+.mood-btn {
+  padding: 8px 12px; border-radius: 12px; border: 2px solid #E5E7EB;
+  background: white; cursor: pointer; font-size: 20px;
+  transition: all 0.18s cubic-bezier(0.34,1.4,0.64,1);
+  display: flex; flex-direction: column; align-items: center; gap: 2px;
+}
+.mood-btn:hover  { border-color: #F97316; transform: scale(1.12); background: #FFF7ED; }
+.mood-btn.active { border-color: #F97316; background: #FFF7ED; transform: scale(1.08); }
+.mood-btn span   { font-size: 10px; font-weight: 700; color: #6B7280; }
+
+/* ── Tooltip ─────────────────────────────────────────────── */
+.tooltip-wrap { position: relative; display: inline-flex; }
+.tooltip-box {
+  position: absolute; bottom: calc(100% + 8px); left: 50%;
+  transform: translateX(-50%) scale(0.9);
+  background: #1E293B; color: white; font-size: 12px; font-weight: 500;
+  padding: 6px 10px; border-radius: 8px; white-space: nowrap;
+  pointer-events: none; opacity: 0;
+  transition: opacity 0.15s ease, transform 0.15s ease;
+  z-index: 50; max-width: 240px; white-space: normal; text-align: center;
+  box-shadow: 0 4px 12px rgba(0,0,0,0.2);
+}
+.tooltip-box::after {
+  content: ''; position: absolute; top: 100%; left: 50%;
+  transform: translateX(-50%); border: 5px solid transparent;
+  border-top-color: #1E293B;
+}
+.tooltip-wrap:hover .tooltip-box {
+  opacity: 1; transform: translateX(-50%) scale(1);
+}
+
+/* ── Writing area ───────────────────────────────────────── */
+.journal-textarea {
+  width: 100%; padding: 16px 20px;
+  border: 1.5px solid #E5E7EB; border-radius: 14px;
+  font-size: 15px; line-height: 1.8; font-family: inherit;
+  color: #111827; background: white; resize: vertical;
+  outline: none; transition: border-color 0.2s ease, box-shadow 0.2s ease;
+}
+.journal-textarea:focus {
+  border-color: #F97316;
+  box-shadow: 0 0 0 3px rgba(249,115,22,0.12);
+}
+.journal-textarea::placeholder { color: #CBD5E1; font-style: italic; }
+
+/* ── FAQ accordion ──────────────────────────────────────── */
+.faq-item {
+  border: 1px solid #E5E7EB; border-radius: 14px; overflow: hidden;
+  transition: box-shadow 0.2s ease;
+}
+.faq-item:hover { box-shadow: 0 4px 12px rgba(0,0,0,0.06); }
+.faq-question {
+  width: 100%; padding: 16px 20px; background: white;
+  border: none; cursor: pointer; font-family: inherit;
+  display: flex; align-items: center; justify-content: space-between;
+  font-size: 14px; font-weight: 600; color: #111827; text-align: left;
+}
+.faq-answer {
+  padding: 0 20px; max-height: 0; overflow: hidden;
+  background: #FAFAFA; font-size: 14px; color: #6B7280; line-height: 1.7;
+  transition: max-height 0.3s ease, padding 0.3s ease;
+}
+.faq-answer.open { max-height: 300px; padding: 12px 20px 16px; }
+
+/* ── Help step dots ─────────────────────────────────────── */
+.step-dot {
+  width: 10px; height: 10px; border-radius: 50%;
+  background: #E5E7EB; transition: all 0.25s ease; cursor: pointer;
+}
+.step-dot.active { background: #F97316; transform: scale(1.3); }
+.step-dot.done   { background: #10B981; }
+
+/* ── Autosave status ────────────────────────────────────── */
+.save-status {
+  display: inline-flex; align-items: center; gap: 6px;
+  font-size: 12px; font-weight: 600; padding: 4px 10px; border-radius: 999px;
+  transition: all 0.3s ease;
+}
+.save-status.saving { background: #FEF3C7; color: #92400E; }
+.save-status.saved  { background: #D1FAE5; color: #065F46; }
+
+/* ── Tag chips ─────────────────────────────────────────── */
+.tag-chip {
+  display: inline-flex; align-items: center; gap: 4px;
+  padding: 3px 10px; border-radius: 999px; font-size: 12px; font-weight: 600;
+  background: #EFF6FF; color: #1D4ED8; border: 1px solid #BFDBFE;
+}
+
+/* ── Section label (inside narrative view) ──────────────── */
+.narrative-section-label {
+  font-size: 10px; font-weight: 800; text-transform: uppercase;
+  letter-spacing: 0.12em; color: #F97316; margin-bottom: 6px;
+}
+
+/* ── Gradient banner ─────────────────────────────────────── */
+.gradient-banner {
+  border-radius: 20px; padding: 24px 28px; color: white;
+  position: relative; overflow: hidden;
+  box-shadow: 0 8px 32px rgba(0,0,0,0.14);
+}
+.gradient-banner-dots {
+  position: absolute; inset: 0; opacity: 0.08; pointer-events: none;
+  background-image: radial-gradient(circle, white 1px, transparent 1px);
+  background-size: 22px 22px;
+}
+
+/* ── Journey timeline ───────────────────────────────────── */
+.timeline-line {
+  position: absolute; left: 18px; top: 0; bottom: 0;
+  width: 2px; background: linear-gradient(to bottom, #F97316, #FDE68A, #E5E7EB);
+}
+.timeline-item {
+  position: relative; padding-left: 52px; padding-bottom: 28px; cursor: pointer;
+}
+.timeline-dot {
+  position: absolute; left: 8px; top: 0;
+  width: 22px; height: 22px; border-radius: 50%; border: 3px solid white;
+  display: flex; align-items: center; justify-content: center;
+  box-shadow: 0 2px 6px rgba(0,0,0,0.12);
+}
+.timeline-card {
+  background: white; border-radius: 14px; border: 1px solid #E5E7EB;
+  padding: 14px 18px; transition: all 0.2s ease;
+}
+.timeline-card:hover { border-color: #F97316; box-shadow: 0 4px 16px rgba(249,115,22,0.1); }
+
+/* ── Color semantic system ──────────────────────────────── */
+.color-success { color: #059669; }
+.color-warning { color: #D97706; }
+.color-error   { color: #DC2626; }
+.color-info    { color: #2563EB; }
+.bg-success-light { background: #ECFDF5; }
+.bg-warning-light { background: #FFFBEB; }
+.bg-error-light   { background: #FEF2F2; }
+.bg-info-light    { background: #EFF6FF; }
