@@ -1,6 +1,6 @@
 ﻿'use client'
 
-import { useState, useRef, useEffect, useCallback } from 'react'
+import { useState, useRef, useEffect, useCallback, Suspense } from 'react'
 import { useRouter, useSearchParams } from 'next/navigation'
 import { useSession } from 'next-auth/react'
 import { Input } from '@/components/ui/Input'
@@ -140,9 +140,9 @@ function StepIndicator({ current }: { current: Step }) {
 }
 
 /* ════════════════════════════════════════════════════════════
-   PAGE
+   PAGE (inner — uses useSearchParams, must be inside Suspense)
 ═════════════════════════════════════════════════════════════ */
-export default function CreateNarrativePage() {
+function CreateNarrativeInner() {
   const router       = useRouter()
   const searchParams = useSearchParams()
   const { data: session } = useSession()
@@ -691,4 +691,23 @@ function buildContent(form: {
     `\n**How I Handled It:**\n${form.solutions || 'Not specified'}`,
     `\n**Reflection:**\n${form.reflection || 'Not specified'}`,
   ].join('\n')
+}
+
+/* ── Suspense wrapper — required because useSearchParams is used inside ── */
+export default function CreateNarrativePage() {
+  return (
+    <Suspense fallback={
+      <div style={{ minHeight: '100vh', display: 'flex', alignItems: 'center',
+        justifyContent: 'center', background: '#F8FAFC', flexDirection: 'column', gap: 16 }}>
+        <div style={{ width: 40, height: 40, border: '4px solid #FFEDD5',
+          borderTopColor: '#F97316', borderRadius: '50%', animation: 'spin 1s linear infinite' }} />
+        <style>{`@keyframes spin{to{transform:rotate(360deg)}}`}</style>
+        <p style={{ fontSize: 14, color: '#9CA3AF', fontWeight: 500, fontFamily: 'system-ui,sans-serif' }}>
+          Loading…
+        </p>
+      </div>
+    }>
+      <CreateNarrativeInner />
+    </Suspense>
+  )
 }
