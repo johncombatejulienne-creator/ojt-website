@@ -114,7 +114,29 @@ export default function Header({ strandCode, forceTeacher }: {
   ]
   const navItems = isTeacher ? teacherNav : studentNav
 
-  const handleSignOut = () => signOut({ callbackUrl: '/login', redirect: true })
+  const handleSignOut = () => {
+    // Clear all NextAuth cookies so next login starts completely fresh
+    const cookieNames = [
+      'next-auth.session-token',
+      'next-auth.csrf-token',
+      'next-auth.callback-url',
+      'next-auth.state',
+      'next-auth.pkce.code_verifier',
+      '__Secure-next-auth.session-token',
+      '__Secure-next-auth.csrf-token',
+      '__Secure-next-auth.callback-url',
+      '__Host-next-auth.csrf-token',
+    ]
+    cookieNames.forEach(name => {
+      document.cookie = `${name}=; expires=Thu, 01 Jan 1970 00:00:00 UTC; path=/; SameSite=None; Secure`
+      document.cookie = `${name}=; expires=Thu, 01 Jan 1970 00:00:00 UTC; path=/;`
+    })
+    // Also clear profile picture from sessionStorage for all keys
+    try {
+      Object.keys(sessionStorage).forEach(k => { if (k.startsWith('profilePicture')) sessionStorage.removeItem(k) })
+    } catch { /* private browsing */ }
+    signOut({ callbackUrl: '/login', redirect: true })
+  }
 
   return (
     <>

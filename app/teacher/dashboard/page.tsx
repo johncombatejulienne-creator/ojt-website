@@ -53,7 +53,7 @@ function Ava({ src, name, size = 40, round = false }: {
     </div>
   )
   return (
-    <div style={{ ...base, background: 'linear-gradient(135deg,#475569,#1E293B)' }}>
+    <div style={{ ...base, background: 'linear-gradient(135deg,#F97316,#EA580C)' }}>
       {initials}
     </div>
   )
@@ -95,7 +95,7 @@ function Tab({ label, active, count, onClick }: {
     <button onClick={onClick} style={{
       padding: '10px 20px', borderRadius: 10, fontSize: 13, fontWeight: 600,
       border: 'none', cursor: 'pointer', transition: 'all 0.15s',
-      background: active ? '#1E293B' : '#F3F4F6',
+      background: active ? 'linear-gradient(135deg,#F97316,#EA580C)' : '#F3F4F6',
       color: active ? 'white' : '#4B5563',
       display: 'flex', alignItems: 'center', gap: 6,
     }}>
@@ -504,17 +504,31 @@ export default function TeacherDashboard() {
   /* ── Loading ─────────────────────────────────────────────── */
   if (loading || status === 'loading') return (
     <div style={{
-      minHeight: '100vh', display: 'flex', alignItems: 'center',
-      justifyContent: 'center', background: '#F8FAFC',
+      minHeight: '100vh', display: 'flex', flexDirection: 'column',
+      alignItems: 'center', justifyContent: 'center',
+      background: 'linear-gradient(135deg,#F97316 0%,#EA580C 50%,#FBBF24 100%)',
     }}>
-      <div style={{ textAlign: 'center' }}>
-        <div style={{
-          width: 48, height: 48, border: '4px solid #CBD5E1',
-          borderTopColor: '#475569', borderRadius: '50%',
-          animation: 'spin 1s linear infinite', margin: '0 auto 12px',
-        }} />
-        <p style={{ fontSize: 14, color: '#6B7280' }}>Loading dashboard...</p>
+      <style>{`@keyframes spin{to{transform:rotate(360deg)}} @keyframes pulse{0%,100%{transform:scale(1)}50%{transform:scale(1.08)}}`}</style>
+      {/* Logo mark */}
+      <div style={{ width: 72, height: 72, borderRadius: 20,
+        background: 'rgba(255,255,255,0.25)', border: '3px solid rgba(255,255,255,0.5)',
+        display: 'flex', alignItems: 'center', justifyContent: 'center',
+        marginBottom: 20, boxShadow: '0 8px 32px rgba(0,0,0,0.15)',
+        animation: 'pulse 2s ease infinite' }}>
+        <svg style={{ width: 36, height: 36, color: 'white' }} fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2}
+            d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4"/>
+        </svg>
       </div>
+      <div style={{ width: 44, height: 44, border: '4px solid rgba(255,255,255,0.3)',
+        borderTopColor: 'white', borderRadius: '50%',
+        animation: 'spin 1s linear infinite', marginBottom: 16 }} />
+      <p style={{ fontSize: 15, fontWeight: 700, color: 'white', letterSpacing: '0.03em' }}>
+        Loading dashboard...
+      </p>
+      <p style={{ fontSize: 12, color: 'rgba(255,255,255,0.7)', marginTop: 4 }}>
+        PSBC Work Immersion Portal
+      </p>
     </div>
   )
 
@@ -538,34 +552,40 @@ export default function TeacherDashboard() {
 
         {/* ── Welcome Banner ──────────────────────────────── */}
         <div style={{
-          background: 'linear-gradient(135deg,#374151,#1F2937)',
-          borderRadius: 20, padding: '20px 24px', color: 'white',
-          boxShadow: '0 4px 20px rgba(0,0,0,0.2)', boxSizing: 'border-box',
+          background: 'linear-gradient(135deg,#F97316 0%,#EA580C 60%,#FBBF24 100%)',
+          borderRadius: 20, padding: '24px 28px', color: 'white',
+          boxShadow: '0 8px 32px rgba(249,115,22,0.35)', boxSizing: 'border-box',
           position: 'relative', overflow: 'hidden',
         }}>
-          <p style={{ fontSize: 11, fontWeight: 700, textTransform: 'uppercase',
-            letterSpacing: '0.06em', color: 'rgba(255,255,255,0.5)', marginBottom: 4 }}>
-            Teacher Dashboard
-          </p>
-          <h1 style={{ fontSize: 22, fontWeight: 900, marginBottom: 4,
-            overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
-            {userName}
-          </h1>
-          <p style={{ fontSize: 13, color: 'rgba(255,255,255,0.45)' }}>
-            Manage students, post announcements, and review work.
-          </p>
-          <button onClick={() => setDeleteAccountConfirm(true)} style={{
-            marginTop: 14, display: 'inline-flex', alignItems: 'center', gap: 6,
-            fontSize: 12, color: 'rgba(255,120,120,0.9)', fontWeight: 600,
-            background: 'rgba(255,255,255,0.07)', border: '1px solid rgba(255,100,100,0.2)',
-            borderRadius: 8, padding: '5px 12px', cursor: 'pointer',
-          }}>
-            <svg style={{ width: 13, height: 13 }} fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2}
-                d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
-            </svg>
-            Delete My Account
-          </button>
+          {/* dot pattern */}
+          <div style={{ position: 'absolute', inset: 0, opacity: 0.08, pointerEvents: 'none',
+            backgroundImage: 'radial-gradient(circle, white 1px, transparent 1px)',
+            backgroundSize: '22px 22px' }} />
+          <div style={{ position: 'relative' }}>
+            <p style={{ fontSize: 11, fontWeight: 700, textTransform: 'uppercase',
+              letterSpacing: '0.08em', color: 'rgba(255,255,255,0.75)', marginBottom: 4 }}>
+              Teacher Dashboard
+            </p>
+            <h1 style={{ fontSize: 24, fontWeight: 900, marginBottom: 4,
+              overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+              Welcome, {userName}! 👋
+            </h1>
+            <p style={{ fontSize: 13, color: 'rgba(255,255,255,0.75)', margin: 0 }}>
+              Manage students, post announcements, and review work immersion narratives.
+            </p>
+            <button onClick={() => setDeleteAccountConfirm(true)} style={{
+              marginTop: 16, display: 'inline-flex', alignItems: 'center', gap: 6,
+              fontSize: 12, color: 'rgba(255,200,200,0.9)', fontWeight: 600,
+              background: 'rgba(255,255,255,0.12)', border: '1px solid rgba(255,200,200,0.25)',
+              borderRadius: 8, padding: '5px 12px', cursor: 'pointer',
+            }}>
+              <svg style={{ width: 13, height: 13 }} fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2}
+                  d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+              </svg>
+              Delete My Account
+            </button>
+          </div>
         </div>
 
         {/* ── Stats ───────────────────────────────────────── */}
@@ -575,11 +595,11 @@ export default function TeacherDashboard() {
             icon={<svg style={{ width: 22, height: 22, color: 'white' }} fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197M13 7a4 4 0 11-8 0 4 4 0 018 0z" /></svg>}
           />
           <StatCard label="Teachers" value={teachers.length}
-            bg="linear-gradient(135deg,#8B5CF6,#6D28D9)"
+            bg="linear-gradient(135deg,#FB923C,#F97316)"
             icon={<svg style={{ width: 22, height: 22, color: 'white' }} fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10" /></svg>}
           />
           <StatCard label="Pending Reviews" value={stats.pending}
-            bg="linear-gradient(135deg,#10B981,#059669)"
+            bg="linear-gradient(135deg,#FBBF24,#F59E0B)"
             icon={<svg style={{ width: 22, height: 22, color: 'white' }} fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" /></svg>}
           />
         </div>
@@ -607,7 +627,7 @@ export default function TeacherDashboard() {
                   <button key={tab.key} onClick={() => setSectionFilter(tab.key)} style={{
                     padding: '5px 14px', borderRadius: 999, fontSize: 12, fontWeight: 600,
                     border: 'none', cursor: 'pointer',
-                    background: sectionFilter === tab.key ? '#1E293B' : '#F3F4F6',
+                    background: sectionFilter === tab.key ? 'linear-gradient(135deg,#F97316,#EA580C)' : '#F3F4F6',
                     color: sectionFilter === tab.key ? 'white' : '#4B5563',
                   }}>{tab.label}</button>
                 ))}
@@ -1195,7 +1215,7 @@ export default function TeacherDashboard() {
                 )}
 
                 <button type="submit" disabled={annoSubmitting} style={{
-                  padding: '12px 0', background: annoSubmitting ? '#9CA3AF' : '#1E293B',
+                  padding: '12px 0', background: annoSubmitting ? '#FED7AA' : 'linear-gradient(135deg,#F97316,#EA580C)',
                   color: 'white', border: 'none', borderRadius: 10,
                   fontSize: 14, fontWeight: 700, cursor: annoSubmitting ? 'not-allowed' : 'pointer',
                 }}>
