@@ -50,6 +50,10 @@ export const authOptions: NextAuthOptions = {
       const email = (user?.email ?? token.email) as string | undefined
       if (!email) return token
 
+      // Avoid re-fetching on every request — only look up DB when user just signed in
+      // token.userId is set after first lookup; skip DB on subsequent requests
+      if (token.userId && !user) return token
+
       try {
         // Teacher takes priority — if a Teacher record exists, they are a teacher
         const teacher = await prisma.teacher.findUnique({
