@@ -38,7 +38,7 @@ const STRAND_GRAD: Record<string, string> = {
   ABM:     'linear-gradient(135deg,#D97706,#F59E0B)',
   HUMSS:   'linear-gradient(135deg,#B45309,#D97706)',
   TVL:     'linear-gradient(135deg,#EA580C,#F97316)',
-  TEACHER: 'linear-gradient(135deg,#374151,#4B5563)',
+  TEACHER: 'linear-gradient(135deg,#F97316,#EA580C)',
   DEFAULT: 'linear-gradient(135deg,#F97316,#FBBF24)',
 }
 
