@@ -7,6 +7,9 @@ import { Input } from '@/components/ui/Input'
 import AppShell from '@/components/AppShell'
 import VerificationCamera from '@/components/VerificationCamera'
 
+// Force dynamic rendering — this page uses useSearchParams (?draft=ID)
+export const dynamic = 'force-dynamic'
+
 const MIN = 50
 
 type Step = 'form' | 'camera' | 'done'
