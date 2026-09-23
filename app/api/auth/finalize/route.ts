@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server'
 import { getServerSession } from 'next-auth'
 import { authOptions } from '@/lib/auth'
 import { prisma } from '@/lib/prisma'
+import { ErrorBoundaryHandler } from 'next/dist/client/components/error-boundary'
 
 /**
  * GET /api/auth/finalize?intent=teacher|student&next=/...
@@ -28,10 +29,17 @@ export async function GET(request: NextRequest) {
 
     const email = session.user.email
     const name  = session.user.name ?? email.split('@')[0]
-    const image = session.user.image ?? null
-
+    const image = session.user.image ?? null 
     if (intent === 'teacher') {
       // ── TEACHER sign-in ───────────────────────────────────
+      // GUARD: if this email already has a Student record, block teacher login
+      const existingStudent = await prisma.student.findUnique({ where: { email }, select: { id: true, name: true } })
+      if (existingStudent) {
+        // Sign them out and redirect to login with a clear error message
+        return redirectTo('/login?error=AlreadyStudent')
+      }
+
+      // Ensure Teacher record exists──────────────────────────
       // Ensure Teacher record exists
       const existing = await prisma.teacher.findUnique({ where: { email } })
       if (!existing) {
@@ -62,6 +70,12 @@ export async function GET(request: NextRequest) {
       }
     } else {
       // ── STUDENT sign-in ───────────────────────────────────
+      // GUARD: if this email already has a Teacher record, block student login
+      const existingTeacher = await prisma.teacher.findUnique({ where: { email }, select: { id: true, name: true } })
+      if (existingTeacher) {
+        return redirectTo('/login?error=AlreadyTeacher')
+      }
+
       // Ensure Student record exists
       const existing = await prisma.student.findUnique({ where: { email } })
       if (!existing) {

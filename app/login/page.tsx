@@ -1,9 +1,11 @@
 ﻿'use client'
 
-import React, { useState, useEffect } from 'react'
-import { signIn, signOut, useSession } from 'next-auth/react'
-import { useRouter } from 'next/navigation'
+import React, { useState, useEffect, Suspense } from 'react'
+import { signIn, useSession } from 'next-auth/react'
+import { useRouter, useSearchParams } from 'next/navigation'
 import { Input } from '@/components/ui/Input'
+
+export const dynamic = 'force-dynamic'
 
 /* ─── Strand data ────────────────────────────────────────── */
 const STRANDS = [
@@ -67,16 +69,27 @@ function GoogleIcon() {
 }
 
 /* ─── Page ───────────────────────────────────────────────── */
-export default function LoginPage() {
+function LoginPageInner() {
   const router = useRouter()
+  const searchParams = useSearchParams()
   const { data: session, status } = useSession()
 
-  const [loading,     setLoading]     = useState(false)
-  const [userType,    setUserType]    = useState<'student' | 'teacher'>('student')
-  const [email,       setEmail]       = useState('')
-  const [password,    setPassword]    = useState('')
-  const [showPw,      setShowPw]      = useState(false)
-  const [error,       setError]       = useState('')
+  // Read NextAuth error from URL — e.g. ?error=AlreadyStudent
+  const authError = searchParams.get('error')
+  const authErrorMsg = authError === 'AlreadyStudent'
+    ? '⚠️ This Google account is already registered as a Student. Please sign in using the Student tab.'
+    : authError === 'AlreadyTeacher'
+    ? '⚠️ This Google account is already registered as a Teacher. Please sign in using the Teacher / Admin tab.'
+    : authError === 'OAuthCallback'
+    ? '⚠️ Sign-in failed. Please try again.'
+    : null
+
+  const [loading,       setLoading]       = useState(false)
+  const [userType,      setUserType]      = useState<'student' | 'teacher'>('student')
+  const [email,         setEmail]         = useState('')
+  const [password,      setPassword]      = useState('')
+  const [showPw,        setShowPw]        = useState(false)
+  const [error,         setError]         = useState('')
   const [hoveredStrand, setHoveredStrand] = useState<string | null>(null)
 
   useEffect(() => {
@@ -291,6 +304,22 @@ export default function LoginPage() {
                 Sign in to your Work Immersion Portal
               </p>
 
+              {/* Auth error from URL (wrong role, OAuth failure) */}
+              {authErrorMsg && (
+                <div style={{
+                  display: 'flex', gap: 10, padding: '14px 16px',
+                  background: '#FFF7ED', border: '1.5px solid #FED7AA',
+                  borderRadius: 12, marginBottom: 16, fontSize: 13, color: '#92400E',
+                  lineHeight: 1.5,
+                }}>
+                  <svg style={{ width: 18, height: 18, flexShrink: 0, marginTop: 1, color: '#F97316' }} fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2}
+                      d="M12 9v2m0 4h.01M10.29 3.86L1.82 18a2 2 0 001.71 3h16.94a2 2 0 001.71-3L13.71 3.86a2 2 0 00-3.42 0z"/>
+                  </svg>
+                  {authErrorMsg}
+                </div>
+              )}
+
               {/* Error */}
               {error && (
                 <div style={{
@@ -437,3 +466,19 @@ export default function LoginPage() {
 }
 
 
+
+// Suspense wrapper required because LoginPageInner uses useSearchParams
+export default function LoginPage() {
+  return (
+    <Suspense fallback={
+      <div style={{ minHeight: '100vh', display: 'flex', alignItems: 'center',
+        justifyContent: 'center', background: 'linear-gradient(135deg,#F97316,#EA580C)' }}>
+        <div style={{ width: 44, height: 44, border: '4px solid rgba(255,255,255,0.3)',
+          borderTopColor: 'white', borderRadius: '50%', animation: 'spin 1s linear infinite' }} />
+        <style>{`@keyframes spin{to{transform:rotate(360deg)}}`}</style>
+      </div>
+    }>
+      <LoginPageInner />
+    </Suspense>
+  )
+}

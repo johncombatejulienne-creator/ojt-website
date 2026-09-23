@@ -2,6 +2,7 @@
 
 import Header from './Header'
 import HelpButton from './HelpButton'
+import InstallPrompt from './InstallPrompt'
 
 interface AppShellProps {
   children: React.ReactNode
@@ -37,6 +38,7 @@ export default function AppShell({ children, strandCode, forceTeacher, className
         </div>
       </main>
       <HelpButton />
+      <InstallPrompt />
     </div>
   )
 }

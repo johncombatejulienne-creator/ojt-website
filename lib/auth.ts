@@ -108,7 +108,7 @@ export const authOptions: NextAuthOptions = {
     },
   },
 
-  pages:   { signIn: "/login", error: "/login" },
+  pages:   { signIn: "/login", error: "/auth-error" },
   session: { strategy: "jwt", maxAge: 24 * 60 * 60 },
   secret:  process.env.NEXTAUTH_SECRET,
   useSecureCookies: true,

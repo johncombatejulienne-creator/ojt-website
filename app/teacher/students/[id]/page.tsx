@@ -244,6 +244,7 @@ export default function TeacherStudentDetailPage() {
   const [reviewTarget,  setReviewTarget]  = useState<Narrative | null>(null)
   const [toasts,        setToasts]        = useState<{ id: number; msg: string; kind: ToastKind }[]>([])
   const toastCounter = useRef(0)
+  const supervisorRef = useRef<HTMLSelectElement>(null)
 
   const studentId = params.id as string
 
@@ -337,8 +338,6 @@ export default function TeacherStudentDetailPage() {
   const pending    = submitted.filter(n => n.status === 'pending').length
   const revision   = submitted.filter(n => n.status === 'revision_requested').length
   const pct        = submitted.length > 0 ? Math.round((approved / submitted.length) * 100) : 0
-
-  const supervisorRef = useRef<HTMLSelectElement>(null)
 
   return (
     <AppShell forceTeacher>
