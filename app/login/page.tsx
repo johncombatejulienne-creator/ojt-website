@@ -94,21 +94,9 @@ export default function LoginPage() {
     try {
       const finalDest   = asTeacher ? '/teacher/dashboard' : '/dashboard'
       const callbackUrl = `/api/auth/finalize?intent=${asTeacher ? 'teacher' : 'student'}&next=${encodeURIComponent(finalDest)}`
-      // First sign out any existing session to clear stale cookies/state
-      // This prevents invalid_grant from cached OAuth codes
-      try { await fetch('/api/auth/signout', { method: 'POST' }) } catch { /* ignore */ }
-      // Clear all NextAuth cookies client-side too
-      const cookieNames = [
-        'next-auth.session-token','next-auth.csrf-token','next-auth.callback-url',
-        'next-auth.state','next-auth.pkce.code_verifier',
-        '__Secure-next-auth.session-token','__Secure-next-auth.csrf-token',
-      ]
-      cookieNames.forEach(name => {
-        document.cookie = `${name}=; expires=Thu, 01 Jan 1970 00:00:00 UTC; path=/; SameSite=None; Secure`
-        document.cookie = `${name}=; expires=Thu, 01 Jan 1970 00:00:00 UTC; path=/;`
-      })
-      // Use prompt=consent to force Google to issue a fresh grant (prevents invalid_grant)
-      await signIn('google', { callbackUrl, redirect: true, prompt: 'consent' })
+      // prompt=select_account shows Google account picker every time
+      // Do NOT clear cookies here — NextAuth needs its own cookies intact for PKCE
+      await signIn('google', { callbackUrl, redirect: true, prompt: 'select_account' })
     } catch { setError('An error occurred. Please try again.'); setLoading(false) }
   }
 

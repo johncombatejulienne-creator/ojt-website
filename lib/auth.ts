@@ -107,29 +107,4 @@ export const authOptions: NextAuthOptions = {
   pages:   { signIn: "/login", error: "/login" },
   session: { strategy: "jwt", maxAge: 24 * 60 * 60 },
   secret:  process.env.NEXTAUTH_SECRET,
-
-  // Fix "state missing from response" on Vercel — ensures cookies are
-  // set with the correct domain and SameSite policy for the production URL
-  cookies: {
-    pkceCodeVerifier: {
-      name: "next-auth.pkce.code_verifier",
-      options: { httpOnly: true, sameSite: "none", path: "/", secure: true },
-    },
-    state: {
-      name: "next-auth.state",
-      options: { httpOnly: true, sameSite: "none", path: "/", secure: true },
-    },
-    callbackUrl: {
-      name: "next-auth.callback-url",
-      options: { httpOnly: true, sameSite: "none", path: "/", secure: true },
-    },
-    sessionToken: {
-      name: "next-auth.session-token",
-      options: { httpOnly: true, sameSite: "none", path: "/", secure: true },
-    },
-    csrfToken: {
-      name: "next-auth.csrf-token",
-      options: { httpOnly: true, sameSite: "none", path: "/", secure: true },
-    },
-  },
 }
