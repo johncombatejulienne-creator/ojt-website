@@ -1,8 +1,7 @@
-// PSBC Work Immersion Portal — Service Worker v2
-// Strategy: cache-first for assets only, network-only for HTML pages
-// This prevents the stuck loader bug caused by serving stale HTML
+// PSBC Work Immersion Portal — Service Worker v4
+// IMPORTANT: Version bump forces old SW to be replaced immediately
 
-const CACHE_NAME = 'ojt-portal-v3'
+const CACHE_NAME = 'ojt-portal-v4'
 
 // Only cache these static assets — NOT HTML pages
 const STATIC_ASSETS = [

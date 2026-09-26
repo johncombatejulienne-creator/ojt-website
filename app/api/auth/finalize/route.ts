@@ -2,7 +2,6 @@ import { NextRequest, NextResponse } from 'next/server'
 import { getServerSession } from 'next-auth'
 import { authOptions } from '@/lib/auth'
 import { prisma } from '@/lib/prisma'
-import { ErrorBoundaryHandler } from 'next/dist/client/components/error-boundary'
 
 /**
  * GET /api/auth/finalize?intent=teacher|student&next=/...
@@ -39,7 +38,6 @@ export async function GET(request: NextRequest) {
         return redirectTo('/login?error=AlreadyStudent')
       }
 
-      // Ensure Teacher record exists──────────────────────────
       // Ensure Teacher record exists
       const existing = await prisma.teacher.findUnique({ where: { email } })
       if (!existing) {

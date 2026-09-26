@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from 'react'
 import { useRouter, useParams } from 'next/navigation'
+import { useSession } from 'next-auth/react'
 import AppShell from '@/components/AppShell'
 
 /* ─── Types ──────────────────────────────────────────────── */
@@ -79,6 +80,8 @@ export default function NarrativeDetailPage() {
   const router = useRouter()
   const params = useParams()
   const id = params.id as string
+  const { data: session } = useSession()
+  const isTeacher = session?.user?.role === 'teacher'
 
   const [narrative,  setNarrative]  = useState<NarrativeDetail | null>(null)
   const [loading,    setLoading]    = useState(true)
@@ -325,7 +328,8 @@ export default function NarrativeDetailPage() {
                 </button>
               )}
 
-              {!narrative.isDraft && (
+              {/* Only students can delete their own narratives */}
+              {!narrative.isDraft && !isTeacher && (
                 <button onClick={() => setConfirmDel(true)}
                   style={{ display: 'inline-flex', alignItems: 'center', gap: 6,
                     padding: '9px 18px', background: '#FEF2F2', color: '#DC2626',
@@ -478,26 +482,29 @@ export default function NarrativeDetailPage() {
           </div>
         )}
 
-        {/* ── Navigation: Prev / Back / Next ─────────────── */}
+        {/* ── Navigation: Back / New Entry (students only) ── */}
         <div style={{ display: 'flex', justifyContent: 'center', marginTop: 24, gap: 12 }}>
-          <button onClick={() => router.push('/narratives')}
+          <button onClick={() => router.push(isTeacher ? '/teacher/dashboard?tab=students' : '/narratives')}
             style={{ padding: '10px 22px', background: '#F3F4F6', color: '#374151',
               border: 'none', borderRadius: 12, fontSize: 13, fontWeight: 700,
               cursor: 'pointer', fontFamily: 'inherit', display: 'flex', alignItems: 'center', gap: 6 }}>
             <svg style={{ width: 14, height: 14 }} fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7"/>
             </svg>
-            All Narratives
+            {isTeacher ? 'Back to Students' : 'All Narratives'}
           </button>
-          <button onClick={() => router.push('/narratives/create')}
-            className="btn-premium"
-            style={{ padding: '10px 22px', fontSize: 13, borderRadius: 12,
-              display: 'flex', alignItems: 'center', gap: 6 }}>
-            <svg style={{ width: 14, height: 14 }} fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M12 4v16m8-8H4"/>
-            </svg>
-            New Entry
-          </button>
+          {/* Only show New Entry for students */}
+          {!isTeacher && (
+            <button onClick={() => router.push('/narratives/create')}
+              className="btn-premium"
+              style={{ padding: '10px 22px', fontSize: 13, borderRadius: 12,
+                display: 'flex', alignItems: 'center', gap: 6 }}>
+              <svg style={{ width: 14, height: 14 }} fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M12 4v16m8-8H4"/>
+              </svg>
+              New Entry
+            </button>
+          )}
         </div>
 
       </div>

@@ -240,20 +240,20 @@ export default function PageEffects() {
       {/* ── Page loader ───────────────── */}
       <div id="page-loader" role="status" aria-label="Loading">
         <div className="loader-logo-wrap">
-          <div style={{
-            width: 80, height: 80, borderRadius: '50%', overflow: 'hidden',
-            border: '3px solid rgba(255,255,255,0.8)',
-            boxShadow: '0 8px 32px rgba(249,115,22,0.4)',
-          }}>
-            {/* eslint-disable-next-line @next/next/no-img-element */}
-            <img
-              src="/psbc-logo.jpg"
-              alt="PSBC"
-              width={80}
-              height={80}
-              style={{ width: '100%', height: '100%', objectFit: 'cover' }}
-            />
-          </div>
+          {/* eslint-disable-next-line @next/next/no-img-element */}
+          <img
+            src="/psbc-logo.jpg"
+            alt="PSBC"
+            width={130}
+            height={130}
+            style={{
+              width: '130px', height: '130px',
+              objectFit: 'cover',
+              objectPosition: 'center center',
+              transform: 'scale(1.25)',
+              transformOrigin: 'center center',
+            }}
+          />
         </div>
         <div className="loader-ring" />
         <p className="loader-text">PSBC Work Immersion</p>
