@@ -13,7 +13,7 @@ interface AppShellProps {
 
 export default function AppShell({ children, strandCode, forceTeacher, className = '' }: AppShellProps) {
   return (
-    <div style={{ minHeight: '100vh', backgroundColor: '#F8FAFC', display: 'flex', flexDirection: 'column' }}>
+    <div style={{ minHeight: '100vh', background: 'linear-gradient(160deg,#FFF7ED 0%,#FFFBF5 40%,#F0F9FF 100%)', backgroundAttachment: 'fixed', display: 'flex', flexDirection: 'column' }}>
       <Header strandCode={strandCode} forceTeacher={forceTeacher} />
       <main style={{ flex: 1, width: '100%', overflowX: 'hidden' }} className={className}>
         {/* 

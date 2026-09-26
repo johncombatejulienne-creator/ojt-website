@@ -122,11 +122,11 @@ html {
 
 body {
   font-family: var(--font-sans);
-  background-color: var(--color-background);
+  background: linear-gradient(160deg, #FFF7ED 0%, #FFFBF5 40%, #F8FAFC 100%);
+  background-attachment: fixed;
   color: var(--color-text);
   line-height: 1.5;
   overflow-x: hidden;
-  /* Ensure content never bleeds to edges on any device */
   width: 100%;
   min-width: 0;
 }

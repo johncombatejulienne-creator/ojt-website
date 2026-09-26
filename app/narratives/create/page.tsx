@@ -1,4 +1,4 @@
-﻿'use client'
+'use client'
 
 import { useState, useRef, useEffect, useCallback, Suspense } from 'react'
 import { useRouter, useSearchParams } from 'next/navigation'
@@ -535,7 +535,7 @@ function CreateNarrativeInner() {
         )}
 
         {/* Journal form card */}
-        <div style={{ background: 'white', borderRadius: 20, border: '1px solid #E5E7EB',
+        <div style={{ background: 'linear-gradient(135deg,#FFFFFF,#FFFCF5)', borderRadius: 20, border: '1px solid #FEE9C5',
           boxShadow: '0 2px 12px rgba(0,0,0,0.06)', padding: '24px 26px',
           display: 'flex', flexDirection: 'column', gap: 22, boxSizing: 'border-box' }}>
 
@@ -653,7 +653,7 @@ What happened? Who did you work with? What processes did you learn? Be as detail
         </div>
 
         {/* Writing guidelines */}
-        <div style={{ background: 'white', borderRadius: 16, border: '1px solid #E5E7EB',
+        <div style={{ background: 'linear-gradient(135deg,#FFFFFF,#FFFCF5)', borderRadius: 16, border: '1px solid #FEE9C5',
           padding: '18px 22px', marginTop: 16, boxSizing: 'border-box' }}>
           <p style={{ fontWeight: 800, fontSize: 13, color: '#111827', marginBottom: 12, margin: '0 0 12px',
             display: 'flex', alignItems: 'center', gap: 6 }}>

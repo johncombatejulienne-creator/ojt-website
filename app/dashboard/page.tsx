@@ -511,8 +511,9 @@ export default function StudentDashboard() {
         {/* ══════════════════════════════════════════════════
             JOURNEY PREVIEW (recent narratives as timeline)
         ═══════════════════════════════════════════════════ */}
-        <div style={{ background: 'white', borderRadius: 20, border: '1px solid #E5E7EB',
-          boxShadow: '0 2px 12px rgba(0,0,0,0.06)', overflow: 'hidden',
+        <div style={{ background: 'linear-gradient(135deg,#FFFFFF,#FAFAFA)',
+          border: '1px solid #F0F0F0', borderRadius: 20,
+          boxShadow: '0 2px 16px rgba(249,115,22,0.07)', overflow: 'hidden',
           animation: 'fadeSlideUp 0.5s 0.2s ease both' }}>
           {/* Header */}
           <div style={{ padding: '18px 22px 14px', borderBottom: '1px solid #F3F4F6',
@@ -632,8 +633,9 @@ export default function StudentDashboard() {
         {/* ══════════════════════════════════════════════════
             PROGRESS DETAIL CARD
         ═══════════════════════════════════════════════════ */}
-        <div style={{ background: 'white', borderRadius: 20, border: '1px solid #E5E7EB',
-          boxShadow: '0 2px 12px rgba(0,0,0,0.06)', padding: '22px 24px',
+        <div style={{ background: 'linear-gradient(135deg,#FFFBEB,#FFF7ED)',
+          border: '1px solid #FED7AA', borderRadius: 20,
+          boxShadow: '0 2px 12px rgba(249,115,22,0.08)', padding: '22px 24px',
           animation: 'fadeSlideUp 0.5s 0.35s ease both', boxSizing: 'border-box' }}>
           <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between',
             flexWrap: 'wrap', gap: 10, marginBottom: 18 }}>
@@ -682,24 +684,24 @@ export default function StudentDashboard() {
           <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, minmax(0, 1fr))', gap: 12 }}
             className="grid-3">
             {[
-              { label: 'Company', value: student?.company, icon: icons.company },
-              { label: 'Supervisor', value: student?.supervisor?.name, icon: icons.user },
-              { label: 'Grade & Section',
+              { label: 'Company',       value: student?.company,            icon: icons.company, bg: '#FFF7ED', border: '#FED7AA' },
+              { label: 'Supervisor',    value: student?.supervisor?.name,   icon: icons.user,    bg: '#F0FDF4', border: '#A7F3D0' },
+              { label: 'Grade & Sec.',
                 value: student?.gradeLevel && student?.section?.name
-                  ? `Grade ${student.gradeLevel} — ${student.section.name}` : undefined,
-                icon: icons.grad },
-            ].map(({ label, value, icon }) => (
-              <div key={label} style={{ background: 'white', border: '1px solid #E5E7EB', borderRadius: 16,
-                padding: '16px 18px', boxSizing: 'border-box' }}>
-                <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 8 }}>
-                  <div style={{ width: 30, height: 30, borderRadius: 8, background: '#FFF7ED',
+                  ? `G${student.gradeLevel} — ${student.section.name}` : undefined,
+                icon: icons.grad, bg: '#EFF6FF', border: '#BFDBFE' },
+            ].map(({ label, value, icon, bg, border }) => (
+              <div key={label} style={{ background: bg, border: `1px solid ${border}`, borderRadius: 16,
+                padding: '14px 12px', boxSizing: 'border-box' }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: 6, marginBottom: 6 }}>
+                  <div style={{ width: 26, height: 26, borderRadius: 7, background: 'rgba(249,115,22,0.12)',
                     display: 'flex', alignItems: 'center', justifyContent: 'center', color: theme.accent, flexShrink: 0 }}>
                     {icon}
                   </div>
-                  <p style={{ fontSize: 11, fontWeight: 700, color: '#9CA3AF', textTransform: 'uppercase',
-                    letterSpacing: '0.07em', margin: 0 }}>{label}</p>
+                  <p style={{ fontSize: 10, fontWeight: 800, color: '#9CA3AF', textTransform: 'uppercase',
+                    letterSpacing: '0.06em', margin: 0, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{label}</p>
                 </div>
-                <p style={{ fontSize: 14, fontWeight: 600, color: value ? '#111827' : '#D1D5DB',
+                <p style={{ fontSize: 13, fontWeight: 600, color: value ? '#111827' : '#D1D5DB',
                   fontStyle: value ? 'normal' : 'italic', margin: 0,
                   overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
                   {value || 'Not set'}

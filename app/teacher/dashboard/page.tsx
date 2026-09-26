@@ -1,4 +1,4 @@
-﻿'use client'
+'use client'
 
 import { useEffect, useState, useCallback } from 'react'
 import { useSession, signOut } from 'next-auth/react'
@@ -643,7 +643,7 @@ export default function TeacherDashboard() {
         {activeTab === 'students' && (
           <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
             {/* Section filter + search */}
-            <div style={{ background: 'white', border: '1px solid #E5E7EB', borderRadius: 16, padding: '16px 20px' }}>
+            <div style={{ background: 'linear-gradient(135deg,#FFFFFF,#FFFBF5)', border: '1px solid #FEE9C5', borderRadius: 16, padding: '16px 20px' }}>
               <div style={{ display: 'flex', flexWrap: 'wrap', gap: 8, marginBottom: 12 }}>
                 {[{ key: 'all', label: `All (${students.length})` },
                   ...sections.map(s => ({ key: s.name, label: `${s.name} (${s.students.length})` }))
@@ -672,7 +672,7 @@ export default function TeacherDashboard() {
             </div>
 
             {/* Student list */}
-            <div style={{ background: 'white', border: '1px solid #E5E7EB', borderRadius: 16, overflow: 'hidden' }}>
+            <div style={{ background: 'linear-gradient(135deg,#FFFFFF,#FFFBF5)', border: '1px solid #FEE9C5', borderRadius: 16, overflow: 'hidden' }}>
               <div style={{ padding: '14px 20px', borderBottom: '1px solid #F3F4F6',
                 display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
                 <p style={{ fontWeight: 700, fontSize: 14, color: '#111827' }}>
@@ -751,7 +751,7 @@ export default function TeacherDashboard() {
         ════════════════════════════════════════════════ */}
         {activeTab === 'teachers' && (
           <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
-            <div style={{ background: 'white', border: '1px solid #E5E7EB', borderRadius: 16, padding: '14px 20px' }}>
+            <div style={{ background: 'linear-gradient(135deg,#FFFFFF,#FFFBF5)', border: '1px solid #FEE9C5', borderRadius: 16, padding: '14px 20px' }}>
               <input type="text" value={teacherSearch} onChange={e => setTeacherSearch(e.target.value)}
                 placeholder="Search teachers by name or email..."
                 style={inputStyle}
@@ -760,7 +760,7 @@ export default function TeacherDashboard() {
               />
             </div>
 
-            <div style={{ background: 'white', border: '1px solid #E5E7EB', borderRadius: 16, overflow: 'hidden' }}>
+            <div style={{ background: 'linear-gradient(135deg,#FFFFFF,#FFFBF5)', border: '1px solid #FEE9C5', borderRadius: 16, overflow: 'hidden' }}>
               <div style={{ padding: '14px 20px', borderBottom: '1px solid #F3F4F6',
                 display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
                 <p style={{ fontWeight: 700, fontSize: 14, color: '#111827' }}>Registered Teachers</p>
@@ -889,7 +889,7 @@ export default function TeacherDashboard() {
               </div>
             )}
 
-            <div style={{ background: 'white', border: '1px solid #E5E7EB', borderRadius: 16, overflow: 'hidden' }}>
+            <div style={{ background: 'linear-gradient(135deg,#FFFFFF,#FFFBF5)', border: '1px solid #FEE9C5', borderRadius: 16, overflow: 'hidden' }}>
               <div style={{ padding: '14px 20px', borderBottom: '1px solid #F3F4F6',
                 display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
                 <p style={{ fontWeight: 700, fontSize: 14, color: '#111827', margin: 0 }}>
@@ -982,7 +982,7 @@ export default function TeacherDashboard() {
 
             {/* ── Existing checklists ── */}
             {existingReqs.length > 0 && (
-              <div style={{ background: 'white', border: '1px solid #E5E7EB', borderRadius: 16, overflow: 'hidden' }}>
+              <div style={{ background: 'linear-gradient(135deg,#FFFFFF,#FFFBF5)', border: '1px solid #FEE9C5', borderRadius: 16, overflow: 'hidden' }}>
                 <div style={{ padding: '14px 20px', borderBottom: '1px solid #F3F4F6',
                   display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
                   <p style={{ fontWeight: 700, fontSize: 14, color: '#111827', margin: 0 }}>
@@ -1022,7 +1022,7 @@ export default function TeacherDashboard() {
             )}
 
             {/* ── Create new checklist ── */}
-            <div style={{ background: 'white', border: '1px solid #E5E7EB', borderRadius: 16, padding: '20px 24px' }}>
+            <div style={{ background: 'linear-gradient(135deg,#FFFFFF,#FFFBF5)', border: '1px solid #FEE9C5', borderRadius: 16, padding: '20px 24px' }}>
               <p style={{ fontWeight: 700, fontSize: 15, color: '#111827', marginBottom: 4 }}>
                 Create Requirement Checklist
               </p>
@@ -1137,7 +1137,7 @@ export default function TeacherDashboard() {
           <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
 
             {/* Create announcement form */}
-            <div style={{ background: 'white', border: '1px solid #E5E7EB', borderRadius: 16, padding: '20px 24px' }}>
+            <div style={{ background: 'linear-gradient(135deg,#FFFFFF,#FFFBF5)', border: '1px solid #FEE9C5', borderRadius: 16, padding: '20px 24px' }}>
               <p style={{ fontWeight: 700, fontSize: 15, color: '#111827', marginBottom: 16 }}>
                 Post New Announcement
               </p>
@@ -1249,7 +1249,7 @@ export default function TeacherDashboard() {
             </div>
 
             {/* Existing announcements */}
-            <div style={{ background: 'white', border: '1px solid #E5E7EB', borderRadius: 16, overflow: 'hidden' }}>
+            <div style={{ background: 'linear-gradient(135deg,#FFFFFF,#FFFBF5)', border: '1px solid #FEE9C5', borderRadius: 16, overflow: 'hidden' }}>
               <div style={{ padding: '14px 20px', borderBottom: '1px solid #F3F4F6' }}>
                 <p style={{ fontWeight: 700, fontSize: 14, color: '#111827' }}>
                   All Announcements ({announcements.length})
@@ -1310,7 +1310,7 @@ export default function TeacherDashboard() {
           <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
 
             {/* Header */}
-            <div style={{ background: 'white', border: '1px solid #E5E7EB', borderRadius: 16, padding: '18px 22px' }}>
+            <div style={{ background: 'linear-gradient(135deg,#FFFFFF,#FFFBF5)', border: '1px solid #FEE9C5', borderRadius: 16, padding: '18px 22px' }}>
               <h2 style={{ fontWeight: 800, fontSize: 16, color: '#111827', margin: '0 0 4px' }}>
                 👥 All Registered Accounts
               </h2>
@@ -1320,13 +1320,13 @@ export default function TeacherDashboard() {
             </div>
 
             {usersLoading ? (
-              <div style={{ background: 'white', border: '1px solid #E5E7EB', borderRadius: 16, padding: '48px 24px', textAlign: 'center' }}>
+              <div style={{ background: 'linear-gradient(135deg,#FFFFFF,#FFFBF5)', border: '1px solid #FEE9C5', borderRadius: 16, padding: '48px 24px', textAlign: 'center' }}>
                 <div style={{ width: 36, height: 36, border: '4px solid #FFEDD5', borderTopColor: '#F97316',
                   borderRadius: '50%', animation: 'spin 1s linear infinite', margin: '0 auto 12px' }} />
                 <p style={{ fontSize: 14, color: '#9CA3AF' }}>Loading accounts...</p>
               </div>
             ) : !allUsers ? (
-              <div style={{ background: 'white', border: '1px solid #E5E7EB', borderRadius: 16, padding: '48px 24px', textAlign: 'center' }}>
+              <div style={{ background: 'linear-gradient(135deg,#FFFFFF,#FFFBF5)', border: '1px solid #FEE9C5', borderRadius: 16, padding: '48px 24px', textAlign: 'center' }}>
                 <p style={{ fontSize: 14, color: '#9CA3AF' }}>Failed to load users.</p>
               </div>
             ) : (
@@ -1344,7 +1344,7 @@ export default function TeacherDashboard() {
                 </div>
 
                 {/* Students list */}
-                <div style={{ background: 'white', border: '1px solid #E5E7EB', borderRadius: 16, overflow: 'hidden' }}>
+                <div style={{ background: 'linear-gradient(135deg,#FFFFFF,#FFFBF5)', border: '1px solid #FEE9C5', borderRadius: 16, overflow: 'hidden' }}>
                   <div style={{ padding: '14px 20px', borderBottom: '1px solid #F3F4F6', background: '#FFFBEB',
                     display: 'flex', alignItems: 'center', gap: 10 }}>
                     <span style={{ fontSize: 16 }}>👨‍🎓</span>
@@ -1390,7 +1390,7 @@ export default function TeacherDashboard() {
                 </div>
 
                 {/* Teachers list */}
-                <div style={{ background: 'white', border: '1px solid #E5E7EB', borderRadius: 16, overflow: 'hidden' }}>
+                <div style={{ background: 'linear-gradient(135deg,#FFFFFF,#FFFBF5)', border: '1px solid #FEE9C5', borderRadius: 16, overflow: 'hidden' }}>
                   <div style={{ padding: '14px 20px', borderBottom: '1px solid #F3F4F6', background: '#FFFBEB',
                     display: 'flex', alignItems: 'center', gap: 10 }}>
                     <span style={{ fontSize: 16 }}>👩‍🏫</span>

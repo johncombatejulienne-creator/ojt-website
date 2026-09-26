@@ -1,106 +1,111 @@
-// PSBC Work Immersion Portal — Service Worker
-// Caches static assets for offline use
+// PSBC Work Immersion Portal — Service Worker v2
+// Strategy: cache-first for assets only, network-only for HTML pages
+// This prevents the stuck loader bug caused by serving stale HTML
 
-const CACHE_NAME = 'ojt-portal-v1'
-const OFFLINE_URL = '/login'
+const CACHE_NAME = 'ojt-portal-v3'
 
-// Assets to cache on install
+// Only cache these static assets — NOT HTML pages
 const STATIC_ASSETS = [
-  '/',
-  '/login',
-  '/dashboard',
-  '/narratives',
   '/manifest.json',
   '/icon-192.png',
   '/icon-512.png',
-  '/psbc-logo.svg',
+  '/icon-72.png',
+  '/psbc-logo.jpg',
 ]
 
-// Install — cache static assets
+// Install — cache only static assets
 self.addEventListener('install', event => {
   event.waitUntil(
-    caches.open(CACHE_NAME).then(cache => {
-      return cache.addAll(STATIC_ASSETS).catch(() => {
-        // Non-critical — don't fail install if some assets are missing
-      })
-    }).then(() => self.skipWaiting())
+    caches.open(CACHE_NAME).then(cache =>
+      cache.addAll(STATIC_ASSETS).catch(() => {})
+    ).then(() => self.skipWaiting())
   )
 })
 
-// Activate — clean up old caches
+// Activate — delete ALL old caches immediately
 self.addEventListener('activate', event => {
   event.waitUntil(
     caches.keys().then(keys =>
-      Promise.all(
-        keys
-          .filter(key => key !== CACHE_NAME)
-          .map(key => caches.delete(key))
-      )
+      Promise.all(keys.map(key => caches.delete(key)))
     ).then(() => self.clients.claim())
   )
 })
 
-// Fetch — network first, fall back to cache
+// Fetch strategy:
+// - HTML/navigation pages → ALWAYS network (never serve from cache)
+// - Static assets (images, manifest) → cache first
 self.addEventListener('fetch', event => {
   const { request } = event
   const url = new URL(request.url)
 
-  // Skip non-GET and API requests — always go to network
+  // Skip non-GET requests
   if (request.method !== 'GET') return
-  if (url.pathname.startsWith('/api/')) return
-  if (url.pathname.startsWith('/_next/')) return
 
-  event.respondWith(
-    fetch(request)
-      .then(response => {
-        // Cache successful responses for pages
-        if (response.ok && !url.pathname.startsWith('/api/')) {
-          const clone = response.clone()
-          caches.open(CACHE_NAME).then(cache => cache.put(request, clone))
-        }
-        return response
-      })
-      .catch(() => {
-        // Offline fallback
-        return caches.match(request).then(cached => {
-          if (cached) return cached
-          // For navigation requests, show login page
-          if (request.mode === 'navigate') {
-            return caches.match(OFFLINE_URL)
-          }
-          return new Response('Offline', { status: 503 })
+  // ALWAYS fetch HTML/navigation from network — never cache pages
+  // This prevents the stuck splash screen on re-open
+  if (request.mode === 'navigate' ||
+      request.headers.get('accept')?.includes('text/html') ||
+      url.pathname === '/' ||
+      url.pathname === '/login' ||
+      url.pathname === '/dashboard' ||
+      url.pathname.startsWith('/teacher') ||
+      url.pathname.startsWith('/narratives') ||
+      url.pathname.startsWith('/api/')) {
+    // Network only for all page requests
+    event.respondWith(
+      fetch(request).catch(() =>
+        new Response('You are offline. Please reconnect and try again.', {
+          status: 503,
+          headers: { 'Content-Type': 'text/plain' }
         })
+      )
+    )
+    return
+  }
+
+  // Cache-first for static assets only (images, icons, manifest)
+  if (url.pathname.match(/\.(png|jpg|jpeg|svg|ico|webp|json)$/)) {
+    event.respondWith(
+      caches.match(request).then(cached => {
+        if (cached) return cached
+        return fetch(request).then(response => {
+          if (response.ok) {
+            const clone = response.clone()
+            caches.open(CACHE_NAME).then(cache => cache.put(request, clone))
+          }
+          return response
+        }).catch(() => cached ?? new Response('', { status: 404 }))
       })
+    )
+    return
+  }
+
+  // Everything else → network only
+  event.respondWith(fetch(request))
+})
+
+// Push notifications
+self.addEventListener('push', event => {
+  const data = event.data?.json() ?? {}
+  event.waitUntil(
+    self.registration.showNotification(data.title ?? 'PSBC Work Immersion', {
+      body:    data.body ?? 'You have a new notification',
+      icon:    '/icon-192.png',
+      badge:   '/icon-72.png',
+      vibrate: [100, 50, 100],
+      data:    { url: data.url ?? '/' },
+    })
   )
 })
 
-// Handle push notifications (for future use)
-self.addEventListener('push', event => {
-  const data = event.data?.json() ?? {}
-  const title   = data.title   ?? 'PSBC Work Immersion'
-  const options = {
-    body:    data.body    ?? 'You have a new notification',
-    icon:    '/icon-192.png',
-    badge:   '/icon-72.png',
-    vibrate: [100, 50, 100],
-    data:    { url: data.url ?? '/' },
-  }
-  event.waitUntil(self.registration.showNotification(title, options))
-})
-
-// Open app when notification is clicked
 self.addEventListener('notificationclick', event => {
   event.notification.close()
   const url = event.notification.data?.url ?? '/'
   event.waitUntil(
     clients.matchAll({ type: 'window' }).then(windowClients => {
-      // Focus existing window if open
       for (const client of windowClients) {
-        if (client.url === url && 'focus' in client) {
-          return client.focus()
-        }
+        if (client.url === url && 'focus' in client) return client.focus()
       }
-      // Open new window
       if (clients.openWindow) return clients.openWindow(url)
     })
   )

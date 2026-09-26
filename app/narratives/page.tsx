@@ -1,4 +1,4 @@
-﻿'use client'
+'use client'
 
 import { useEffect, useState, useCallback } from 'react'
 import { useRouter } from 'next/navigation'
@@ -38,7 +38,7 @@ const STATUS: Record<string, { bg: string; color: string; border: string; label:
 /* ─── Skeleton card ──────────────────────────────────────── */
 function SkeletonCard() {
   return (
-    <div style={{ background: 'white', borderRadius: 20, border: '1px solid #E5E7EB', padding: '20px 22px', boxSizing: 'border-box' }}>
+    <div style={{ background: 'linear-gradient(135deg,#FFFFFF,#FFFCF5)', borderRadius: 20, border: '1px solid #FEE9C5', padding: '20px 22px', boxSizing: 'border-box' }}>
       <div style={{ display: 'flex', gap: 14, alignItems: 'flex-start' }}>
         <div className="skeleton" style={{ width: 60, height: 60, borderRadius: 14, flexShrink: 0 }} />
         <div style={{ flex: 1, minWidth: 0 }}>
@@ -243,7 +243,7 @@ export default function NarrativesPage() {
         </div>
 
         {/* ── Search + filters ──────────────────────────── */}
-        <div style={{ background: 'white', borderRadius: 16, border: '1px solid #E5E7EB',
+        <div style={{ background: 'linear-gradient(135deg,#FFFFFF,#FFFCF5)', borderRadius: 16, border: '1px solid #FEE9C5',
           padding: '16px 18px', marginBottom: 20, boxSizing: 'border-box',
           boxShadow: '0 1px 6px rgba(0,0,0,0.05)' }}>
           {/* Search bar */}
@@ -313,7 +313,7 @@ export default function NarrativesPage() {
         ) : filtered.length === 0 ? (
 
           /* ── Empty state ─────────────────────────────── */
-          <div style={{ background: 'white', borderRadius: 20, border: '1px solid #E5E7EB',
+          <div style={{ background: 'linear-gradient(135deg,#FFFFFF,#FFFCF5)', borderRadius: 20, border: '1px solid #FEE9C5',
             padding: '64px 32px', textAlign: 'center', boxSizing: 'border-box' }}>
             <div style={{ fontSize: 56, marginBottom: 16 }}>
               {filter === 'draft' ? '📝' : filter === 'submitted' ? '📬' : '📖'}
@@ -365,7 +365,7 @@ export default function NarrativesPage() {
 
               return (
                 <div key={n.id} className="narr-card"
-                  style={{ background: 'white', borderRadius: 20, border: '1px solid #E5E7EB',
+                  style={{ background: 'linear-gradient(135deg,#FFFFFF,#FFFCF5)', borderRadius: 20, border: '1px solid #FEE9C5',
                     overflow: 'hidden', boxSizing: 'border-box',
                     animation: `fadeSlideUp 0.4s ${idx * 60}ms ease both` }}>
 

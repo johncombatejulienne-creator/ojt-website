@@ -2,6 +2,7 @@
 
 import { useState } from 'react'
 import { useRouter } from 'next/navigation'
+import { useSession } from 'next-auth/react'
 import AppShell from '@/components/AppShell'
 
 /* ─── FAQ data ───────────────────────────────────────────── */
@@ -40,7 +41,7 @@ function SectionTitle({ id, icon, title, subtitle }: { id: string; icon: string;
 /* ─── Guide card ─────────────────────────────────────────── */
 function GuideCard({ icon, title, steps }: { icon: string; title: string; steps: string[] }) {
   return (
-    <div style={{ background: 'white', borderRadius: 16, border: '1px solid #E5E7EB', padding: '18px 20px',
+    <div style={{ background: 'linear-gradient(135deg,#FFFFFF,#FFFCF5)', borderRadius: 16, border: '1px solid #FEE9C5', padding: '18px 20px',
       boxShadow: '0 2px 8px rgba(0,0,0,0.04)', boxSizing: 'border-box' }}>
       <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 14 }}>
         <span style={{ fontSize: 22 }}>{icon}</span>
@@ -235,7 +236,7 @@ export default function HelpPage() {
         ═══════════════════════════════════════════════ */}
         <SectionTitle id="writing" icon="✍️" title="Writing a Good Narrative"
           subtitle="Tips for producing clear, detailed, and reflective narratives" />
-        <div style={{ background: 'white', borderRadius: 18, border: '1px solid #E5E7EB',
+        <div style={{ background: 'linear-gradient(135deg,#FFFFFF,#FFFCF5)', borderRadius: 18, border: '1px solid #FEE9C5',
           padding: '22px 24px', marginBottom: 32, boxSizing: 'border-box' }}>
           <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(240px, 1fr))', gap: 20 }}>
             {[

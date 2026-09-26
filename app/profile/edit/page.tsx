@@ -1,4 +1,4 @@
-﻿'use client'
+'use client'
 
 import { useEffect, useRef, useState, useCallback } from 'react'
 import { useSession } from 'next-auth/react'
@@ -70,7 +70,7 @@ const lbl: React.CSSProperties = {
   textTransform: 'uppercase', letterSpacing: '0.06em', marginBottom: 6,
 }
 const card: React.CSSProperties = {
-  background: 'white', borderRadius: 16, border: '1px solid #E5E7EB',
+  background: 'linear-gradient(135deg,#FFFFFF,#FFFCF5)', borderRadius: 16, border: '1px solid #FEE9C5',
   padding: '20px 24px', boxShadow: '0 1px 4px rgba(0,0,0,0.06)',
   boxSizing: 'border-box',
 }
