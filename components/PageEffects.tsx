@@ -2,7 +2,6 @@
 
 import { useEffect } from 'react'
 import { usePathname } from 'next/navigation'
-import Image from 'next/image'
 
 /**
  * PageEffects
@@ -38,11 +37,17 @@ export default function PageEffects() {
       setTimeout(() => { loader.style.display = 'none' }, 600)
     }
 
+    // Force hide after 2.5s max — prevents stuck loader on PWA/cached loads
+    const forceHide = setTimeout(hide, 2500)
+
     if (document.readyState === 'complete') {
-      setTimeout(hide, 700)
+      clearTimeout(forceHide)
+      setTimeout(hide, 400)
     } else {
-      window.addEventListener('load', () => setTimeout(hide, 700), { once: true })
+      window.addEventListener('load', () => { clearTimeout(forceHide); setTimeout(hide, 400) }, { once: true })
     }
+
+    return () => clearTimeout(forceHide)
   }, [])
 
   /* ── Page-enter animation on route change ────────────── */
@@ -236,17 +241,17 @@ export default function PageEffects() {
       <div id="page-loader" role="status" aria-label="Loading">
         <div className="loader-logo-wrap">
           <div style={{
-            width: 72, height: 72, borderRadius: 18, background: 'white',
-            display: 'flex', alignItems: 'center', justifyContent: 'center',
-            padding: 6, boxShadow: '0 8px 32px rgba(249,115,22,0.4)',
+            width: 80, height: 80, borderRadius: '50%', overflow: 'hidden',
+            border: '3px solid rgba(255,255,255,0.8)',
+            boxShadow: '0 8px 32px rgba(249,115,22,0.4)',
           }}>
-            <Image
-              src="/psbc-logo.svg"
+            {/* eslint-disable-next-line @next/next/no-img-element */}
+            <img
+              src="/psbc-logo.jpg"
               alt="PSBC"
-              width={60}
-              height={60}
-              style={{ width: '100%', height: '100%', objectFit: 'contain' }}
-              priority
+              width={80}
+              height={80}
+              style={{ width: '100%', height: '100%', objectFit: 'cover' }}
             />
           </div>
         </div>

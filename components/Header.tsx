@@ -153,7 +153,7 @@ export default function Header({ strandCode, forceTeacher }: {
               <div style={{ width: 44, height: 44, borderRadius: '50%', overflow: 'hidden',
                 background: 'white', flexShrink: 0,
                 boxShadow: '0 2px 8px rgba(0,0,0,0.2)',
-                border: '2px solid rgba(255,255,255,0.6)' }}>
+                border: '2px solid rgba(255,255,255,0.9)' }}>
                 {/* eslint-disable-next-line @next/next/no-img-element */}
                 <img
                   src="/psbc-logo.jpg"

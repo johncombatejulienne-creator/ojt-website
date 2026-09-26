@@ -522,21 +522,19 @@ export default function TeacherDashboard() {
       alignItems: 'center', justifyContent: 'center',
       background: 'linear-gradient(135deg,#F97316 0%,#EA580C 50%,#FBBF24 100%)',
     }}>
-      <style>{`@keyframes spin{to{transform:rotate(360deg)}} @keyframes pulse{0%,100%{transform:scale(1)}50%{transform:scale(1.08)}}`}</style>
-      {/* Logo mark */}
-      <div style={{ width: 72, height: 72, borderRadius: 20,
-        background: 'rgba(255,255,255,0.25)', border: '3px solid rgba(255,255,255,0.5)',
-        display: 'flex', alignItems: 'center', justifyContent: 'center',
-        marginBottom: 20, boxShadow: '0 8px 32px rgba(0,0,0,0.15)',
-        animation: 'pulse 2s ease infinite' }}>
-        <svg style={{ width: 36, height: 36, color: 'white' }} fill="none" stroke="currentColor" viewBox="0 0 24 24">
-          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2}
-            d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4"/>
-        </svg>
+      <style>{`@keyframes spin{to{transform:rotate(360deg)}} @keyframes pulse{0%,100%{transform:scale(1)}50%{transform:scale(1.06)}}`}</style>
+      {/* Circular PSBC logo */}
+      <div style={{ width: 100, height: 100, borderRadius: '50%', overflow: 'hidden',
+        border: '4px solid rgba(255,255,255,0.8)',
+        boxShadow: '0 8px 32px rgba(0,0,0,0.2)',
+        marginBottom: 24, animation: 'pulse 2s ease infinite',
+        background: 'white' }}>
+        {/* eslint-disable-next-line @next/next/no-img-element */}
+        <img src="/psbc-logo.jpg" alt="PSBC" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
       </div>
-      <div style={{ width: 44, height: 44, border: '4px solid rgba(255,255,255,0.3)',
+      <div style={{ width: 40, height: 40, border: '4px solid rgba(255,255,255,0.3)',
         borderTopColor: 'white', borderRadius: '50%',
-        animation: 'spin 1s linear infinite', marginBottom: 16 }} />
+        animation: 'spin 1s linear infinite', marginBottom: 14 }} />
       <p style={{ fontSize: 15, fontWeight: 700, color: 'white', letterSpacing: '0.03em' }}>
         Loading dashboard...
       </p>
@@ -603,7 +601,7 @@ export default function TeacherDashboard() {
         </div>
 
         {/* ── Stats ───────────────────────────────────────── */}
-        <div className="grid-3">
+        <div className="stats-grid">
           <StatCard label="Total Students" value={stats.students}
             bg="linear-gradient(135deg,#F97316,#EA580C)"
             icon={<svg style={{ width: 22, height: 22, color: 'white' }} fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197M13 7a4 4 0 11-8 0 4 4 0 018 0z" /></svg>}

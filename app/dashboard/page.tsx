@@ -273,7 +273,8 @@ export default function StudentDashboard() {
 
   useEffect(() => {
     if (status === 'unauthenticated') router.push('/login')
-  }, [status, router])
+    if (status === 'authenticated' && session?.user?.role === 'teacher') router.push('/teacher/dashboard')
+  }, [status, session?.user?.role, router])
 
   useEffect(() => {
     if (!session?.user) return
@@ -300,23 +301,23 @@ export default function StudentDashboard() {
   /* ── Loading ──────────────────────────────────────────── */
   if (loading || status === 'loading') return (
     <div style={{ minHeight: '100vh', display: 'flex', flexDirection: 'column',
-      alignItems: 'center', justifyContent: 'center', background: '#F8FAFC', gap: 20 }}>
-      <div style={{ width: 64, height: 64, borderRadius: 18,
-        background: 'linear-gradient(135deg,#F97316,#FBBF24)',
-        display: 'flex', alignItems: 'center', justifyContent: 'center',
-        boxShadow: '0 8px 24px rgba(249,115,22,0.4)', animation: 'pulse 2s ease infinite' }}>
-        <svg style={{ width: 32, height: 32, color: 'white' }} fill="none" stroke="currentColor" viewBox="0 0 24 24">
-          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2}
-            d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.746 0 3.332.477 4.5 1.253v13C19.832 18.477 18.246 18 16.5 18c-1.746 0-3.332.477-4.5 1.253" />
-        </svg>
+      alignItems: 'center', justifyContent: 'center',
+      background: 'linear-gradient(135deg,#F97316 0%,#EA580C 60%,#FBBF24 100%)', gap: 20 }}>
+      {/* Real PSBC circular logo */}
+      <div style={{ width: 100, height: 100, borderRadius: '50%', overflow: 'hidden',
+        border: '4px solid rgba(255,255,255,0.8)',
+        boxShadow: '0 8px 28px rgba(0,0,0,0.2)', animation: 'pulse 2s ease infinite',
+        background: 'white' }}>
+        {/* eslint-disable-next-line @next/next/no-img-element */}
+        <img src="/psbc-logo.jpg" alt="PSBC" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
       </div>
       <div style={{ display: 'flex', gap: 6 }}>
         {[0,1,2].map(i => (
-          <div key={i} style={{ width: 8, height: 8, borderRadius: '50%', background: '#F97316',
+          <div key={i} style={{ width: 8, height: 8, borderRadius: '50%', background: 'rgba(255,255,255,0.8)',
             animation: `bounce 1.2s ease ${i * 0.15}s infinite` }} />
         ))}
       </div>
-      <p style={{ fontSize: 14, color: '#9CA3AF', fontWeight: 500 }}>Loading your journal...</p>
+      <p style={{ fontSize: 14, color: 'rgba(255,255,255,0.85)', fontWeight: 600 }}>Loading your journal...</p>
       <style>{`
         @keyframes bounce { 0%,80%,100%{transform:scale(0.8);opacity:0.5} 40%{transform:scale(1.2);opacity:1} }
         @keyframes pulse  { 0%,100%{transform:scale(1)} 50%{transform:scale(1.05)} }

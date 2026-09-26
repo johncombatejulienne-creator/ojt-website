@@ -74,7 +74,7 @@ function LoginPageInner() {
   const searchParams = useSearchParams()
   const { data: session, status } = useSession()
 
-  // Read NextAuth error from URL — e.g. ?error=AlreadyStudent
+  // Read NextAuth error from URL ï¿½ e.g. ?error=AlreadyStudent
   const authError = searchParams.get('error')
   const authErrorMsg = authError === 'AlreadyStudent'
     ? '?? This Google account is already registered as a Student. Please sign in using the Student tab.'
@@ -98,7 +98,7 @@ function LoginPageInner() {
       // Only redirect once the role is resolved (not 'pending')
       if (role === 'teacher') router.push('/teacher/dashboard')
       else if (role === 'student') router.push('/dashboard')
-      // role === 'pending' means finalize hasn't run yet — stay on login
+      // role === 'pending' means finalize hasn't run yet ï¿½ stay on login
     }
   }, [status, session, router])
 
@@ -108,7 +108,7 @@ function LoginPageInner() {
       const finalDest   = asTeacher ? '/teacher/dashboard' : '/dashboard'
       const callbackUrl = `/api/auth/finalize?intent=${asTeacher ? 'teacher' : 'student'}&next=${encodeURIComponent(finalDest)}`
       // prompt=select_account shows Google account picker every time
-      // Do NOT clear cookies here — NextAuth needs its own cookies intact for PKCE
+      // Do NOT clear cookies here ï¿½ NextAuth needs its own cookies intact for PKCE
       await signIn('google', { callbackUrl, redirect: true, prompt: 'select_account' })
     } catch { setError('An error occurred. Please try again.'); setLoading(false) }
   }
@@ -178,7 +178,7 @@ function LoginPageInner() {
                 Paete Science and<br />Business College Inc.
               </p>
               <p style={{ color: 'rgba(255,255,255,0.7)', fontSize: 12, margin: '4px 0 0' }}>
-                Paete, Laguna · 
+                Paete, Laguna
               </p>
             </div>
           </div>
@@ -230,7 +230,7 @@ function LoginPageInner() {
 
         {/* Footer */}
         <p style={{ color: 'rgba(255,255,255,0.2)', fontSize: 11, margin: 0, position: 'relative' }}>
-          &copy; {new Date().getFullYear()} Work Immersion Portal · Senior High School Management System
+          &copy; {new Date().getFullYear()} Work Immersion Portal ï¿½ Senior High School Management System
         </p>
       </div>
 
@@ -334,7 +334,7 @@ function LoginPageInner() {
                 </div>
               )}
 
-              {/* Student — Google only */}
+              {/* Student ï¿½ Google only */}
               {userType === 'student' && (
                 <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
                   <div style={{
@@ -370,7 +370,7 @@ function LoginPageInner() {
                 </div>
               )}
 
-              {/* Teacher — Google primary + email fallback */}
+              {/* Teacher ï¿½ Google primary + email fallback */}
               {userType === 'teacher' && (
                 <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
                   <button
@@ -408,7 +408,7 @@ function LoginPageInner() {
                     <div style={{ position: 'relative' }}>
                       <Input label="Password" type={showPw ? 'text' : 'password'} value={password}
                         onChange={e => setPassword(e.target.value)}
-                        placeholder="••••••••" required autoComplete="current-password"
+                        placeholder="ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½" required autoComplete="current-password"
                         rightIcon={
                           <button type="button" onClick={() => setShowPw(v => !v)}
                             style={{ background: 'none', border: 'none', cursor: 'pointer',
