@@ -65,11 +65,11 @@ export async function POST(
       },
     })
 
-    // Update narrative status to indicate photo was submitted
+    // Update narrative verificationStatus — use valid schema values only
     await prisma.narrative.update({
       where: { id },
-      data:  { verificationStatus: 'photo_submitted' },
-    }).catch(() => {}) // field may not exist yet
+      data:  { verificationStatus: 'on_time' },
+    }).catch(() => {})
 
     return NextResponse.json({ success: true, photoId: photo.id })
   } catch (error) {

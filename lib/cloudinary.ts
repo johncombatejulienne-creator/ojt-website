@@ -19,11 +19,11 @@ export async function uploadToCloudinary(
 ): Promise<string> {
   const { maxWidth = 800, maxHeight = 800 } = options ?? {}
 
-  // Simple upload — no transformation string in signature
+  // Simple upload — no transformation string, no quality in signature
+  // This avoids Invalid Signature errors from transformation params
   const result = await cloudinary.uploader.upload(data, {
     folder:        `ojt-portal/${folder}`,
     resource_type: 'image',
-    // Width/height limits via upload options (not transformation string)
     width:         maxWidth,
     height:        maxHeight,
     crop:          'limit',
