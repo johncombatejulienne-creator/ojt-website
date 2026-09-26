@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from 'next/server'
 import { getServerSession } from 'next-auth'
 import { authOptions } from '@/lib/auth'
 import { prisma } from '@/lib/prisma'
-import { uploadToCloudinary, deleteFromCloudinary, isCloudinaryConfigured } from '@/lib/cloudinary'
+import { uploadImage, deleteImage } from '@/lib/storage'
 
 const ALLOWED = ['image/jpeg', 'image/jpg', 'image/png', 'image/webp', 'image/gif']
 const MAX_SIZE = 5 * 1024 * 1024  // 5MB
@@ -30,27 +30,21 @@ export async function POST(request: NextRequest) {
     }
 
     const buffer = Buffer.from(await file.arrayBuffer())
-    let imageUrl: string
 
-    if (isCloudinaryConfigured()) {
-      try {
-        // Delete old image first
-        if (teacher.profilePicture) await deleteFromCloudinary(teacher.profilePicture)
-        const base64 = `data:${file.type};base64,${buffer.toString('base64')}`
-        imageUrl = await uploadToCloudinary(base64, 'profile-pictures', {
-          maxWidth: 400, maxHeight: 400, quality: 85,
-        })
-      } catch (cloudErr) {
-        console.warn('Cloudinary failed, using base64 fallback:', cloudErr)
-        imageUrl = `data:${file.type};base64,${buffer.toString('base64')}`
-      }
-    } else {
-      imageUrl = `data:${file.type};base64,${buffer.toString('base64')}`
-    }
+    // Upload: Supabase first → Cloudinary fallback → base64 last resort
+    const { url: imageUrl, provider } = await uploadImage(
+      buffer, file.type,
+      'profile-pictures', 'profile-pictures',
+      { maxWidth: 400, maxHeight: 400 }
+    )
+    console.log(`Teacher profile picture uploaded via: ${provider}`)
+
+    // Delete old image after successful upload
+    if (teacher.profilePicture) await deleteImage(teacher.profilePicture, 'profile-pictures')
 
     const updated = await prisma.teacher.update({
-      where: { email: session.user.email },
-      data:  { profilePicture: imageUrl },
+      where:  { email: session.user.email },
+      data:   { profilePicture: imageUrl },
       select: { profilePicture: true },
     })
 
@@ -73,9 +67,7 @@ export async function DELETE() {
     })
     if (!teacher) return NextResponse.json({ error: 'Teacher record not found' }, { status: 404 })
 
-    if (teacher.profilePicture && isCloudinaryConfigured()) {
-      await deleteFromCloudinary(teacher.profilePicture)
-    }
+    if (teacher.profilePicture) await deleteImage(teacher.profilePicture, 'profile-pictures')
 
     await prisma.teacher.update({
       where: { email: session.user.email }, data: { profilePicture: null },

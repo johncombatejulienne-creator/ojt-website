@@ -2,13 +2,8 @@ import { NextRequest, NextResponse } from 'next/server'
 import { getServerSession } from 'next-auth'
 import { authOptions } from '@/lib/auth'
 import { prisma } from '@/lib/prisma'
-import { uploadToCloudinary, isCloudinaryConfigured } from '@/lib/cloudinary'
+import { uploadImage } from '@/lib/storage'
 
-/**
- * POST /api/narratives/[id]/verification-photo
- * Saves a verification photo (base64 data URL) to the narrative's photos.
- * The photo is stored directly in the DB as a base64 string.
- */
 export async function POST(
   request: NextRequest,
   { params }: { params: Promise<{ id: string }> }
@@ -29,32 +24,32 @@ export async function POST(
 
     // Verify the narrative belongs to this student
     const narrative = await prisma.narrative.findUnique({
-      where: { id },
-      select: { studentId: true },
+      where: { id }, select: { studentId: true },
     })
     if (!narrative) return NextResponse.json({ error: 'Narrative not found' }, { status: 404 })
 
     const student = await prisma.student.findUnique({
-      where: { email: session.user.email },
-      select: { id: true },
+      where: { email: session.user.email }, select: { id: true },
     })
     if (!student || narrative.studentId !== student.id) {
       return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
     }
 
-    // Upload to Cloudinary if configured, else store as base64
-    let photoUrl = photoDataUrl
-    if (isCloudinaryConfigured()) {
-      try {
-        photoUrl = await uploadToCloudinary(photoDataUrl, 'verification-photos', {
-          maxWidth: 800, maxHeight: 600, quality: 88,
-        })
-      } catch {
-        // Fallback to base64 if Cloudinary fails
-        photoUrl = photoDataUrl
-      }
-    }
-    // Save as a Photo record (isVerified = true = it's a verification photo)
+    // Convert base64 data URL to buffer
+    const matches = photoDataUrl.match(/^data:([^;]+);base64,(.+)$/)
+    if (!matches) return NextResponse.json({ error: 'Invalid photo format' }, { status: 400 })
+    const mimeType = matches[1]
+    const buffer   = Buffer.from(matches[2], 'base64')
+
+    // Upload: Supabase Storage first → Cloudinary fallback → base64 last resort
+    const { url: photoUrl, provider } = await uploadImage(
+      buffer, mimeType,
+      'verification-photos', 'verification-photos',
+      { maxWidth: 800, maxHeight: 600 }
+    )
+    console.log(`Verification photo uploaded via: ${provider}`)
+
+    // Save Photo record
     const photo = await prisma.photo.create({
       data: {
         narrativeId: id,
@@ -65,13 +60,13 @@ export async function POST(
       },
     })
 
-    // Update narrative verificationStatus — use valid schema values only
+    // Update narrative verificationStatus (valid values: on_time | late)
     await prisma.narrative.update({
       where: { id },
       data:  { verificationStatus: 'on_time' },
     }).catch(() => {})
 
-    return NextResponse.json({ success: true, photoId: photo.id })
+    return NextResponse.json({ success: true, photoId: photo.id, provider })
   } catch (error) {
     console.error('Verification photo error:', error)
     return NextResponse.json({ error: 'Failed to save verification photo' }, { status: 500 })

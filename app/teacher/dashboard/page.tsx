@@ -166,13 +166,23 @@ function ConfirmModal({ title, body, confirmLabel = 'Confirm', danger = false,
 }
 
 /* ─── Page ───────────────────────────────────────────────── */
-type ActiveTab = 'students' | 'teachers' | 'announcements' | 'narratives' | 'requirements'
+type ActiveTab = 'students' | 'teachers' | 'announcements' | 'narratives' | 'requirements' | 'users'
 
 interface PendingNarrative {
   id: string; date: string; content: string; status: string
   submissionDate?: string; submissionTime?: string
   student: { id: string; name: string; studentId: string; email: string }
   photos: { url: string; isVerified: boolean }[]
+}
+
+interface AllUser {
+  id: string; name: string; email: string; role: 'student' | 'teacher'
+  profilePicture?: string | null; createdAt: string
+  // student-specific
+  studentId?: string; narrativeCount?: number
+  strandName?: string | null; sectionName?: string | null; supervisorName?: string | null
+  // teacher-specific
+  teacherId?: string; accessLevel?: string
 }
 
 export default function TeacherDashboard() {
@@ -199,6 +209,10 @@ export default function TeacherDashboard() {
   // Teachers state
   const [teachers,  setTeachers]  = useState<Teacher[]>([])
   const [teacherSearch, setTeacherSearch] = useState('')
+
+  // All registered users (for Users tab)
+  const [allUsers,      setAllUsers]      = useState<{ students: AllUser[]; teachers: AllUser[]; total: { students: number; teachers: number } } | null>(null)
+  const [usersLoading,  setUsersLoading]  = useState(false)
 
   // Narratives state
   const [pendingNarratives, setPendingNarratives] = useState<PendingNarrative[]>([])
@@ -611,6 +625,18 @@ export default function TeacherDashboard() {
           <Tab label="Narratives"    active={activeTab === 'narratives'}    count={pendingNarratives.length} onClick={() => setActiveTab('narratives')} />
           <Tab label="Requirements"  active={activeTab === 'requirements'}                               onClick={() => setActiveTab('requirements')} />
           <Tab label="Announcements" active={activeTab === 'announcements'} count={announcements.length} onClick={() => setActiveTab('announcements')} />
+          <Tab label="👥 All Users"  active={activeTab === 'users'}
+            onClick={async () => {
+              setActiveTab('users')
+              if (!allUsers) {
+                setUsersLoading(true)
+                try {
+                  const res = await fetch('/api/admin/users')
+                  if (res.ok) { const d = await res.json(); setAllUsers(d) }
+                } catch { /* silent */ }
+                finally { setUsersLoading(false) }
+              }
+            }} />
         </div>
 
         {/* ════════════════════════════════════════════════
@@ -1276,6 +1302,143 @@ export default function TeacherDashboard() {
                 ))
               )}
             </div>
+          </div>
+        )}
+
+        {/* ════════════════════════════════════════════════
+            USERS TAB — all registered accounts
+        ════════════════════════════════════════════════ */}
+        {activeTab === 'users' && (
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
+
+            {/* Header */}
+            <div style={{ background: 'white', border: '1px solid #E5E7EB', borderRadius: 16, padding: '18px 22px' }}>
+              <h2 style={{ fontWeight: 800, fontSize: 16, color: '#111827', margin: '0 0 4px' }}>
+                👥 All Registered Accounts
+              </h2>
+              <p style={{ fontSize: 13, color: '#9CA3AF', margin: 0 }}>
+                Every Gmail that has signed into the portal and their role.
+              </p>
+            </div>
+
+            {usersLoading ? (
+              <div style={{ background: 'white', border: '1px solid #E5E7EB', borderRadius: 16, padding: '48px 24px', textAlign: 'center' }}>
+                <div style={{ width: 36, height: 36, border: '4px solid #FFEDD5', borderTopColor: '#F97316',
+                  borderRadius: '50%', animation: 'spin 1s linear infinite', margin: '0 auto 12px' }} />
+                <p style={{ fontSize: 14, color: '#9CA3AF' }}>Loading accounts...</p>
+              </div>
+            ) : !allUsers ? (
+              <div style={{ background: 'white', border: '1px solid #E5E7EB', borderRadius: 16, padding: '48px 24px', textAlign: 'center' }}>
+                <p style={{ fontSize: 14, color: '#9CA3AF' }}>Failed to load users.</p>
+              </div>
+            ) : (
+              <>
+                {/* Summary */}
+                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12 }}>
+                  <div style={{ background: 'linear-gradient(135deg,#F97316,#EA580C)', borderRadius: 14, padding: '16px 20px', color: 'white' }}>
+                    <p style={{ fontSize: 11, fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.08em', color: 'rgba(255,255,255,0.75)', margin: '0 0 4px' }}>Students</p>
+                    <p style={{ fontSize: 32, fontWeight: 900, margin: 0 }}>{allUsers.total.students}</p>
+                  </div>
+                  <div style={{ background: 'linear-gradient(135deg,#FBBF24,#F59E0B)', borderRadius: 14, padding: '16px 20px', color: 'white' }}>
+                    <p style={{ fontSize: 11, fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.08em', color: 'rgba(255,255,255,0.75)', margin: '0 0 4px' }}>Teachers</p>
+                    <p style={{ fontSize: 32, fontWeight: 900, margin: 0 }}>{allUsers.total.teachers}</p>
+                  </div>
+                </div>
+
+                {/* Students list */}
+                <div style={{ background: 'white', border: '1px solid #E5E7EB', borderRadius: 16, overflow: 'hidden' }}>
+                  <div style={{ padding: '14px 20px', borderBottom: '1px solid #F3F4F6', background: '#FFFBEB',
+                    display: 'flex', alignItems: 'center', gap: 10 }}>
+                    <span style={{ fontSize: 16 }}>👨‍🎓</span>
+                    <p style={{ fontWeight: 800, fontSize: 14, color: '#92400E', margin: 0 }}>
+                      Students ({allUsers.total.students})
+                    </p>
+                  </div>
+                  {allUsers.students.length === 0 ? (
+                    <div style={{ padding: '32px 24px', textAlign: 'center' }}>
+                      <p style={{ fontSize: 14, color: '#9CA3AF' }}>No students registered yet.</p>
+                    </div>
+                  ) : (
+                    allUsers.students.map((u, i) => (
+                      <div key={u.id} style={{ padding: '14px 20px', boxSizing: 'border-box',
+                        borderBottom: i < allUsers.students.length - 1 ? '1px solid #F9FAFB' : 'none',
+                        display: 'flex', alignItems: 'center', gap: 14 }}>
+                        <Ava src={u.profilePicture} name={u.name} size={40} round />
+                        <div style={{ flex: 1, minWidth: 0 }}>
+                          <div style={{ display: 'flex', alignItems: 'center', gap: 8, flexWrap: 'wrap' }}>
+                            <p style={{ fontWeight: 700, fontSize: 14, color: '#111827', margin: 0 }}>{u.name}</p>
+                            <span style={{ fontSize: 10, fontWeight: 800, background: '#FFF7ED', color: '#F97316',
+                              border: '1px solid #FED7AA', padding: '2px 8px', borderRadius: 999 }}>STUDENT</span>
+                          </div>
+                          <p style={{ fontSize: 12, color: '#6B7280', margin: '2px 0 0',
+                            overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                            {u.email}
+                          </p>
+                          <div style={{ display: 'flex', flexWrap: 'wrap', gap: 8, marginTop: 4 }}>
+                            {u.studentId && <span style={{ fontSize: 11, color: '#9CA3AF' }}>ID: {u.studentId}</span>}
+                            {u.strandName && <span style={{ fontSize: 11, color: '#9CA3AF' }}>• {u.strandName}</span>}
+                            {u.sectionName && <span style={{ fontSize: 11, color: '#9CA3AF' }}>• {u.sectionName}</span>}
+                            <span style={{ fontSize: 11, color: '#9CA3AF' }}>• {u.narrativeCount ?? 0} narrative{u.narrativeCount !== 1 ? 's' : ''}</span>
+                          </div>
+                        </div>
+                        <div style={{ textAlign: 'right', flexShrink: 0 }}>
+                          <p style={{ fontSize: 11, color: '#D1D5DB', margin: 0 }}>
+                            Joined {new Date(u.createdAt).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })}
+                          </p>
+                        </div>
+                      </div>
+                    ))
+                  )}
+                </div>
+
+                {/* Teachers list */}
+                <div style={{ background: 'white', border: '1px solid #E5E7EB', borderRadius: 16, overflow: 'hidden' }}>
+                  <div style={{ padding: '14px 20px', borderBottom: '1px solid #F3F4F6', background: '#FFFBEB',
+                    display: 'flex', alignItems: 'center', gap: 10 }}>
+                    <span style={{ fontSize: 16 }}>👩‍🏫</span>
+                    <p style={{ fontWeight: 800, fontSize: 14, color: '#92400E', margin: 0 }}>
+                      Teachers ({allUsers.total.teachers})
+                    </p>
+                  </div>
+                  {allUsers.teachers.length === 0 ? (
+                    <div style={{ padding: '32px 24px', textAlign: 'center' }}>
+                      <p style={{ fontSize: 14, color: '#9CA3AF' }}>No teachers registered yet.</p>
+                    </div>
+                  ) : (
+                    allUsers.teachers.map((u, i) => (
+                      <div key={u.id} style={{ padding: '14px 20px', boxSizing: 'border-box',
+                        borderBottom: i < allUsers.teachers.length - 1 ? '1px solid #F9FAFB' : 'none',
+                        display: 'flex', alignItems: 'center', gap: 14 }}>
+                        <Ava src={u.profilePicture} name={u.name} size={40} round />
+                        <div style={{ flex: 1, minWidth: 0 }}>
+                          <div style={{ display: 'flex', alignItems: 'center', gap: 8, flexWrap: 'wrap' }}>
+                            <p style={{ fontWeight: 700, fontSize: 14, color: '#111827', margin: 0 }}>{u.name}</p>
+                            <span style={{ fontSize: 10, fontWeight: 800, background: '#ECFDF5', color: '#065F46',
+                              border: '1px solid #A7F3D0', padding: '2px 8px', borderRadius: 999 }}>TEACHER</span>
+                            {u.email === session?.user?.email && (
+                              <span style={{ fontSize: 10, fontWeight: 700, background: '#EFF6FF', color: '#1D4ED8',
+                                padding: '2px 8px', borderRadius: 999 }}>YOU</span>
+                            )}
+                          </div>
+                          <p style={{ fontSize: 12, color: '#6B7280', margin: '2px 0 0',
+                            overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                            {u.email}
+                          </p>
+                          {u.teacherId && (
+                            <p style={{ fontSize: 11, color: '#9CA3AF', margin: '2px 0 0' }}>ID: {u.teacherId}</p>
+                          )}
+                        </div>
+                        <div style={{ textAlign: 'right', flexShrink: 0 }}>
+                          <p style={{ fontSize: 11, color: '#D1D5DB', margin: 0 }}>
+                            Joined {new Date(u.createdAt).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })}
+                          </p>
+                        </div>
+                      </div>
+                    ))
+                  )}
+                </div>
+              </>
+            )}
           </div>
         )}
 
