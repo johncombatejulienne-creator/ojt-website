@@ -122,7 +122,7 @@ html {
 
 body {
   font-family: var(--font-sans);
-  background: linear-gradient(160deg, #FFF7ED 0%, #FFFBF5 40%, #F8FAFC 100%);
+  background: linear-gradient(160deg, #FEF3C7 0%, #FFEDD5 35%, #FFF7ED 65%, #FEF9EE 100%);
   background-attachment: fixed;
   color: var(--color-text);
   line-height: 1.5;
@@ -1966,6 +1966,7 @@ input[type="date"] {
 ───────────────────────────────────────────────────────── */
 img {
   -webkit-backface-visibility: hidden;
+  backface-visibility: hidden;
   image-rendering: -webkit-optimize-contrast;
 }
 

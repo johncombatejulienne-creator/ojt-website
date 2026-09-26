@@ -281,19 +281,25 @@ function LoginPageInner() {
             border: '1px solid rgba(249,115,22,0.15)',
             overflow: 'hidden',
           }}>
-            {/* Role tabs */}
-            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', borderBottom: '1px solid #F3F4F6' }}>
+            {/* Role tabs — pill selector */}
+            <div style={{ padding: '20px 20px 0', display: 'flex', gap: 8 }}>
               {(['student', 'teacher'] as const).map(t => (
-                <button key={t} onClick={() => { setUserType(t); setError('') }} style={{
-                  padding: '16px', fontSize: 14, fontWeight: 700, border: 'none',
-                  cursor: 'pointer', fontFamily: 'inherit', transition: 'all 0.2s',
-                  background: userType === t ? 'white' : '#F9FAFB',
-                  color: userType === t ? '#F97316' : '#9CA3AF',
-                  borderBottom: userType === t ? '2.5px solid #F97316' : '2.5px solid transparent',
-                }}>
+                <button key={t} onClick={() => { setUserType(t); setError('') }}
+                  style={{
+                    flex: 1, padding: '12px 16px', borderRadius: 14, fontSize: 14, fontWeight: 700,
+                    border: 'none', cursor: 'pointer', fontFamily: 'inherit',
+                    transition: 'all 0.22s cubic-bezier(0.34,1.2,0.64,1)',
+                    background: userType === t
+                      ? 'linear-gradient(135deg,#F97316,#EA580C)'
+                      : '#F3F4F6',
+                    color: userType === t ? 'white' : '#9CA3AF',
+                    boxShadow: userType === t ? '0 4px 14px rgba(249,115,22,0.4)' : 'none',
+                    transform: userType === t ? 'scale(1.03)' : 'scale(1)',
+                    display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 7,
+                  }}>
                   {t === 'student'
-                    ? <><svg style={{ width: 16, height: 16, display: 'inline', marginRight: 5 }} fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 14l9-5-9-5-9 5 9 5z"/><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 14l6.16-3.422a12.083 12.083 0 01.665 6.479A11.952 11.952 0 0012 20.055a11.952 11.952 0 00-6.824-2.998 12.078 12.078 0 01.665-6.479L12 14z"/></svg>Student</>
-                    : <><svg style={{ width: 16, height: 16, display: 'inline', marginRight: 5 }} fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"/></svg>Teacher / Admin</>
+                    ? <><svg style={{ width: 16, height: 16 }} fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 14l9-5-9-5-9 5 9 5z"/><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 14l6.16-3.422a12.083 12.083 0 01.665 6.479A11.952 11.952 0 0012 20.055a11.952 11.952 0 00-6.824-2.998 12.078 12.078 0 01.665-6.479L12 14z"/></svg>Student</>
+                    : <><svg style={{ width: 16, height: 16 }} fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"/></svg>Teacher / Admin</>
                   }
                 </button>
               ))}
