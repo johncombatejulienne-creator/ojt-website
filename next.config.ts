@@ -1,17 +1,15 @@
 import type { NextConfig } from "next"
 
 const nextConfig: NextConfig = {
-  // Allow next/image to serve Google profile pictures
   images: {
     remotePatterns: [
-      {
-        protocol: "https",
-        hostname: "lh3.googleusercontent.com",
-      },
-      {
-        protocol: "https",
-        hostname: "*.googleusercontent.com",
-      },
+      // Google profile pictures (OAuth)
+      { protocol: "https", hostname: "lh3.googleusercontent.com" },
+      { protocol: "https", hostname: "*.googleusercontent.com" },
+      // Cloudinary — profile pictures & verification photos
+      { protocol: "https", hostname: "res.cloudinary.com" },
+      // Supabase Storage (fallback)
+      { protocol: "https", hostname: "*.supabase.co" },
     ],
   },
 }
