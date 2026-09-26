@@ -93,11 +93,14 @@ function Tab({ label, active, count, onClick }: {
 }) {
   return (
     <button onClick={onClick} style={{
-      padding: '10px 20px', borderRadius: 10, fontSize: 13, fontWeight: 600,
-      border: 'none', cursor: 'pointer', transition: 'all 0.15s',
-      background: active ? 'linear-gradient(135deg,#F97316,#EA580C)' : '#F3F4F6',
-      color: active ? 'white' : '#4B5563',
+      padding: '10px 18px', borderRadius: 999, fontSize: 13, fontWeight: 700,
+      border: active ? 'none' : '1px solid rgba(229,231,235,0.8)',
+      cursor: 'pointer', transition: 'all 0.2s cubic-bezier(0.34,1.2,0.64,1)',
+      background: active ? 'linear-gradient(135deg,#F97316,#EA580C)' : 'rgba(255,255,255,0.8)',
+      color: active ? 'white' : '#6B7280',
       display: 'flex', alignItems: 'center', gap: 6,
+      flexShrink: 0, whiteSpace: 'nowrap',
+      boxShadow: active ? '0 3px 12px rgba(249,115,22,0.4)' : '0 1px 3px rgba(0,0,0,0.08)',
     }}>
       {label}
       {count !== undefined && (
@@ -617,7 +620,13 @@ export default function TeacherDashboard() {
         </div>
 
         {/* ── Tabs ────────────────────────────────────────── */}
-        <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
+        <div style={{
+          display: 'flex', gap: 8, overflowX: 'auto', paddingBottom: 4,
+          scrollbarWidth: 'none', msOverflowStyle: 'none',
+          WebkitOverflowScrolling: 'touch',
+        }}
+          className="hide-scrollbar">
+          <style>{`.hide-scrollbar::-webkit-scrollbar{display:none}`}</style>
           <Tab label="Students"      active={activeTab === 'students'}      count={students.length}      onClick={() => setActiveTab('students')} />
           <Tab label="Teachers"      active={activeTab === 'teachers'}      count={teachers.length}      onClick={() => setActiveTab('teachers')} />
           <Tab label="Narratives"    active={activeTab === 'narratives'}    count={pendingNarratives.length} onClick={() => setActiveTab('narratives')} />
