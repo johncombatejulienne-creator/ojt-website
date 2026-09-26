@@ -1,4 +1,4 @@
-﻿'use client'
+'use client'
 
 import React, { useState, useEffect, Suspense } from 'react'
 import { signIn, useSession } from 'next-auth/react'
@@ -7,7 +7,7 @@ import { Input } from '@/components/ui/Input'
 
 export const dynamic = 'force-dynamic'
 
-/* ─── Strand data ────────────────────────────────────────── */
+/* --- Strand data ------------------------------------------ */
 const STRANDS = [
   {
     code: 'STEM', name: 'Science, Technology, Engineering & Mathematics',
@@ -56,7 +56,7 @@ const STRANDS = [
   },
 ]
 
-/* ─── Google icon ────────────────────────────────────────── */
+/* --- Google icon ------------------------------------------ */
 function GoogleIcon() {
   return (
     <svg style={{ width: 20, height: 20, flexShrink: 0 }} viewBox="0 0 24 24" fill="none">
@@ -68,20 +68,20 @@ function GoogleIcon() {
   )
 }
 
-/* ─── Page ───────────────────────────────────────────────── */
+/* --- Page ------------------------------------------------- */
 function LoginPageInner() {
   const router = useRouter()
   const searchParams = useSearchParams()
   const { data: session, status } = useSession()
 
-  // Read NextAuth error from URL — e.g. ?error=AlreadyStudent
+  // Read NextAuth error from URL � e.g. ?error=AlreadyStudent
   const authError = searchParams.get('error')
   const authErrorMsg = authError === 'AlreadyStudent'
-    ? '⚠️ This Google account is already registered as a Student. Please sign in using the Student tab.'
+    ? '?? This Google account is already registered as a Student. Please sign in using the Student tab.'
     : authError === 'AlreadyTeacher'
-    ? '⚠️ This Google account is already registered as a Teacher. Please sign in using the Teacher / Admin tab.'
+    ? '?? This Google account is already registered as a Teacher. Please sign in using the Teacher / Admin tab.'
     : authError === 'OAuthCallback'
-    ? '⚠️ Sign-in failed. Please try again.'
+    ? '?? Sign-in failed. Please try again.'
     : null
 
   const [loading,       setLoading]       = useState(false)
@@ -98,7 +98,7 @@ function LoginPageInner() {
       // Only redirect once the role is resolved (not 'pending')
       if (role === 'teacher') router.push('/teacher/dashboard')
       else if (role === 'student') router.push('/dashboard')
-      // role === 'pending' means finalize hasn't run yet — stay on login
+      // role === 'pending' means finalize hasn't run yet � stay on login
     }
   }, [status, session, router])
 
@@ -108,7 +108,7 @@ function LoginPageInner() {
       const finalDest   = asTeacher ? '/teacher/dashboard' : '/dashboard'
       const callbackUrl = `/api/auth/finalize?intent=${asTeacher ? 'teacher' : 'student'}&next=${encodeURIComponent(finalDest)}`
       // prompt=select_account shows Google account picker every time
-      // Do NOT clear cookies here — NextAuth needs its own cookies intact for PKCE
+      // Do NOT clear cookies here � NextAuth needs its own cookies intact for PKCE
       await signIn('google', { callbackUrl, redirect: true, prompt: 'select_account' })
     } catch { setError('An error occurred. Please try again.'); setLoading(false) }
   }
@@ -139,7 +139,7 @@ function LoginPageInner() {
   return (
     <div style={{ minHeight: '100vh', display: 'flex', fontFamily: '-apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif' }}>
 
-      {/* ── LEFT SIDE: Branding ──────────────────────────── */}
+      {/* -- LEFT SIDE: Branding ---------------------------- */}
       <div style={{
         display: 'none',
         flex: 1, background: 'linear-gradient(145deg, #7C2D12 0%, #EA580C 40%, #FBBF24 100%)',
@@ -170,7 +170,7 @@ function LoginPageInner() {
               boxShadow: '0 8px 32px rgba(0,0,0,0.2)', padding: 4, flexShrink: 0,
             }}>
               {/* eslint-disable-next-line @next/next/no-img-element */}
-              <img src="/psbc-logo.svg" alt="PSBC Logo" style={{ width: '100%', height: '100%', objectFit: 'contain' }} />
+              <img src="/psbc-logo.jpg" onError={(e) => { (e.target as HTMLImageElement).src = "/psbc-logo.svg" }} alt="PSBC Logo" style={{ width: '100%', height: '100%', objectFit: 'contain' }} />
             </div>
             <div>
               <p style={{ color: 'white', fontWeight: 900, fontSize: 17, margin: 0, lineHeight: 1.2,
@@ -178,7 +178,7 @@ function LoginPageInner() {
                 Paete Science and<br />Business College Inc.
               </p>
               <p style={{ color: 'rgba(255,255,255,0.7)', fontSize: 12, margin: '4px 0 0' }}>
-                Paete, Laguna · 
+                Paete, Laguna � 
               </p>
             </div>
           </div>
@@ -230,11 +230,11 @@ function LoginPageInner() {
 
         {/* Footer */}
         <p style={{ color: 'rgba(255,255,255,0.2)', fontSize: 11, margin: 0, position: 'relative' }}>
-          &copy; {new Date().getFullYear()} Work Immersion Portal · Senior High School Management System
+          &copy; {new Date().getFullYear()} Work Immersion Portal � Senior High School Management System
         </p>
       </div>
 
-      {/* ── RIGHT SIDE: Login card ───────────────────────── */}
+      {/* -- RIGHT SIDE: Login card ------------------------- */}
       <div style={{
         flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center',
         background: 'linear-gradient(160deg, #FFF7ED 0%, #F8FAFC 40%, #EEF2FF 100%)',
@@ -262,7 +262,7 @@ function LoginPageInner() {
               margin: '0 auto 14px', boxShadow: '0 8px 24px rgba(249,115,22,0.25)', padding: 4,
             }}>
               {/* eslint-disable-next-line @next/next/no-img-element */}
-              <img src="/psbc-logo.svg" alt="PSBC" style={{ width: '100%', height: '100%', objectFit: 'contain' }} />
+              <img src="/psbc-logo.jpg" onError={(e) => { (e.target as HTMLImageElement).src = "/psbc-logo.svg" }} alt="PSBC" style={{ width: '100%', height: '100%', objectFit: 'contain' }} />
             </div>
             <p style={{ fontSize: 17, fontWeight: 900, color: '#111827', margin: 0 }}>
               PSBC Work Immersion Portal
@@ -291,7 +291,7 @@ function LoginPageInner() {
                   color: userType === t ? '#F97316' : '#9CA3AF',
                   borderBottom: userType === t ? '2.5px solid #F97316' : '2.5px solid transparent',
                 }}>
-                  {t === 'student' ? '🎓 Student' : '👨‍🏫 Teacher / Admin'}
+                  {t === 'student' ? '?? Student' : '????? Teacher / Admin'}
                 </button>
               ))}
             </div>
@@ -334,7 +334,7 @@ function LoginPageInner() {
                 </div>
               )}
 
-              {/* Student — Google only */}
+              {/* Student � Google only */}
               {userType === 'student' && (
                 <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
                   <div style={{
@@ -370,7 +370,7 @@ function LoginPageInner() {
                 </div>
               )}
 
-              {/* Teacher — Google primary + email fallback */}
+              {/* Teacher � Google primary + email fallback */}
               {userType === 'teacher' && (
                 <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
                   <button
@@ -408,7 +408,7 @@ function LoginPageInner() {
                     <div style={{ position: 'relative' }}>
                       <Input label="Password" type={showPw ? 'text' : 'password'} value={password}
                         onChange={e => setPassword(e.target.value)}
-                        placeholder="••••••••" required autoComplete="current-password"
+                        placeholder="��������" required autoComplete="current-password"
                         rightIcon={
                           <button type="button" onClick={() => setShowPw(v => !v)}
                             style={{ background: 'none', border: 'none', cursor: 'pointer',
@@ -448,7 +448,7 @@ function LoginPageInner() {
         </div>
       </div>
 
-      {/* ── CSS for responsive two-column ────────────────── */}
+      {/* -- CSS for responsive two-column ------------------ */}
       <style>{`
         @keyframes spin { to { transform: rotate(360deg); } }
 

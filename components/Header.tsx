@@ -150,19 +150,28 @@ export default function Header({ strandCode, forceTeacher }: {
             <button onClick={() => router.push(dashPath)}
               style={{ display: 'flex', alignItems: 'center', gap: 10, background: 'none',
                 border: 'none', cursor: 'pointer', flexShrink: 0 }}>
-              <div style={{ width: 40, height: 40, borderRadius: 8, overflow: 'hidden',
+              <div style={{ width: 44, height: 44, borderRadius: '50%', overflow: 'hidden',
                 background: 'white', flexShrink: 0,
-                boxShadow: '0 2px 8px rgba(0,0,0,0.15)' }}>
+                boxShadow: '0 2px 8px rgba(0,0,0,0.2)',
+                border: '2px solid rgba(255,255,255,0.6)' }}>
                 {/* eslint-disable-next-line @next/next/no-img-element */}
-                <img src="/psbc-logo.svg" alt="PSBC Logo" style={{ width: '100%', height: '100%', objectFit: 'contain' }} />
+                <img
+                  src="/psbc-logo.jpg"
+                  alt="PSBC Logo"
+                  style={{ width: '100%', height: '100%', objectFit: 'cover' }}
+                  onError={(e) => {
+                    // Fallback to SVG if JPG not found
+                    ;(e.target as HTMLImageElement).src = '/psbc-logo.svg'
+                  }}
+                />
               </div>
               <div style={{ display: 'none' }} className="header-title">
-                <p style={{ color: 'white', fontWeight: 800, fontSize: 13, margin: 0, lineHeight: 1.2,
+                <p style={{ color: 'white', fontWeight: 900, fontSize: 13, margin: 0, lineHeight: 1.2,
                   textShadow: '0 1px 2px rgba(0,0,0,0.2)' }}>
                   PSBC Work Immersion
                 </p>
-                <p style={{ color: 'rgba(255,255,255,0.75)', fontSize: 10, margin: 0 }}>
-                  Paete Science and Business College
+                <p style={{ color: 'rgba(255,255,255,0.8)', fontSize: 10, margin: 0 }}>
+                  Paete, Laguna
                 </p>
               </div>
             </button>
