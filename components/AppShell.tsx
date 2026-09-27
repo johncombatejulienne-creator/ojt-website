@@ -19,7 +19,7 @@ export default function AppShell({ children, strandCode, forceTeacher, className
     <TutorialProvider>
       <TutorialAutoStart />
       <TutorialOverlay />
-      <div style={{ minHeight: '100vh', background: 'linear-gradient(160deg,#FEF3C7 0%,#FFEDD5 35%,#FFF7ED 65%,#FEF9EE 100%)', backgroundAttachment: 'fixed', display: 'flex', flexDirection: 'column' }}>
+      <div style={{ minHeight: '100vh', background: '#F8FAFC', display: 'flex', flexDirection: 'column' }}>
         <Header strandCode={strandCode} forceTeacher={forceTeacher} />
         <main style={{ flex: 1, width: '100%', overflowX: 'hidden' }} className={className}>
           <div

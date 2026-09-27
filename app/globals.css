@@ -122,8 +122,7 @@ html {
 
 body {
   font-family: var(--font-sans);
-  background: linear-gradient(160deg, #FEF3C7 0%, #FFEDD5 35%, #FFF7ED 65%, #FEF9EE 100%);
-  background-attachment: fixed;
+  background: #F8FAFC;
   color: var(--color-text);
   line-height: 1.5;
   overflow-x: hidden;

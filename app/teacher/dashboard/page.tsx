@@ -88,11 +88,11 @@ function StatCard({ label, value, icon, bg }: {
 }
 
 /* ─── Tab Button ─────────────────────────────────────────── */
-function Tab({ label, active, count, onClick }: {
-  label: string; active: boolean; count?: number; onClick: () => void
+function Tab({ label, active, count, onClick, dataTut }: {
+  label: string; active: boolean; count?: number; onClick: () => void; dataTut?: string
 }) {
   return (
-    <button onClick={onClick} style={{
+    <button onClick={onClick} data-tutorial={dataTut} style={{
       padding: '10px 18px', borderRadius: 999, fontSize: 13, fontWeight: 700,
       border: active ? 'none' : '1px solid rgba(229,231,235,0.8)',
       cursor: 'pointer', transition: 'all 0.2s cubic-bezier(0.34,1.2,0.64,1)',
@@ -627,12 +627,12 @@ export default function TeacherDashboard() {
         }}
           className="hide-scrollbar">
           <style>{`.hide-scrollbar::-webkit-scrollbar{display:none}`}</style>
-          <Tab label="Students"      active={activeTab === 'students'}      count={students.length}      onClick={() => setActiveTab('students')} data-tut="students-tab" />
+          <Tab label="Students"      active={activeTab === 'students'}      count={students.length}      onClick={() => setActiveTab('students')} dataTut="students-tab" />
           <Tab label="Teachers"      active={activeTab === 'teachers'}      count={teachers.length}      onClick={() => setActiveTab('teachers')} />
-          <Tab label="Narratives"    active={activeTab === 'narratives'}    count={pendingNarratives.length} onClick={() => setActiveTab('narratives')} data-tut="narratives-tab" />
-          <Tab label="Requirements"  active={activeTab === 'requirements'}                               onClick={() => setActiveTab('requirements')} data-tut="requirements-tab" />
-          <Tab label="Announcements" active={activeTab === 'announcements'} count={announcements.length} onClick={() => setActiveTab('announcements')} data-tut="announcements-tab" />
-          <Tab label="👥 All Users"  active={activeTab === 'users'} data-tut="all-users-tab"
+          <Tab label="Narratives"    active={activeTab === 'narratives'}    count={pendingNarratives.length} onClick={() => setActiveTab('narratives')} dataTut="narratives-tab" />
+          <Tab label="Requirements"  active={activeTab === 'requirements'}                               onClick={() => setActiveTab('requirements')} dataTut="requirements-tab" />
+          <Tab label="Announcements" active={activeTab === 'announcements'} count={announcements.length} onClick={() => setActiveTab('announcements')} dataTut="announcements-tab" />
+          <Tab label="👥 All Users"  active={activeTab === 'users'} dataTut="all-users-tab"
             onClick={async () => {
               setActiveTab('users')
               if (!allUsers) {
