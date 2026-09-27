@@ -34,12 +34,12 @@ export function Avatar({ src, name, size = 34, round = true }: {
 
 /* ─── Strand gradient for header ────────────────────────── */
 const STRAND_GRAD: Record<string, string> = {
-  STEM:    'linear-gradient(135deg,#1D4ED8 0%,#2563EB 55%,#3B82F6 100%)',
-  ABM:     'linear-gradient(135deg,#047857 0%,#059669 55%,#10B981 100%)',
-  HUMSS:   'linear-gradient(135deg,#7E22CE 0%,#9333EA 55%,#A855F7 100%)',
-  TVL:     'linear-gradient(135deg,#D97706 0%,#E8971F 55%,#F5A623 100%)',
-  TEACHER: 'linear-gradient(135deg,#92400E 0%,#B45309 40%,#E8971F 100%)',
-  DEFAULT: 'linear-gradient(135deg,#B45309 0%,#D97706 50%,#F5A623 100%)',
+  STEM:    'linear-gradient(135deg,#3B82F6 0%,#60A5FA 55%,#93C5FD 100%)',
+  ABM:     'linear-gradient(135deg,#10B981 0%,#34D399 55%,#6EE7B7 100%)',
+  HUMSS:   'linear-gradient(135deg,#A855F7 0%,#C084FC 55%,#D8B4FE 100%)',
+  TVL:     'linear-gradient(135deg,#F97316 0%,#FB923C 55%,#FDBA74 100%)',
+  TEACHER: 'linear-gradient(135deg,#F97316 0%,#FB923C 50%,#FED7AA 100%)',
+  DEFAULT: 'linear-gradient(135deg,#F97316 0%,#FB923C 50%,#FED7AA 100%)',
 }
 
 /* ─── Nav item ───────────────────────────────────────────── */

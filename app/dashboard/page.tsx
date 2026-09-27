@@ -23,11 +23,11 @@ interface RecentNarrative {
 
 /* ─── Strand themes ──────────────────────────────────────── */
 const STRAND_THEME: Record<string, { grad: string; accent: string }> = {
-  STEM:    { grad: 'linear-gradient(135deg,#1D4ED8 0%,#2563EB 50%,#3B82F6 100%)', accent: '#2563EB' },
-  ABM:     { grad: 'linear-gradient(135deg,#047857 0%,#059669 55%,#10B981 100%)', accent: '#059669' },
-  HUMSS:   { grad: 'linear-gradient(135deg,#7E22CE 0%,#9333EA 55%,#A855F7 100%)', accent: '#9333EA' },
-  TVL:     { grad: 'linear-gradient(135deg,#D97706 0%,#E8971F 55%,#F5A623 100%)', accent: '#D97706' },
-  DEFAULT: { grad: 'linear-gradient(135deg,#92400E 0%,#B45309 45%,#E8971F 100%)', accent: '#B45309' },
+  STEM:    { grad: 'linear-gradient(135deg,#3B82F6 0%,#60A5FA 50%,#BAE6FD 100%)', accent: '#3B82F6' },
+  ABM:     { grad: 'linear-gradient(135deg,#10B981 0%,#34D399 50%,#A7F3D0 100%)', accent: '#10B981' },
+  HUMSS:   { grad: 'linear-gradient(135deg,#A855F7 0%,#C084FC 50%,#E9D5FF 100%)', accent: '#A855F7' },
+  TVL:     { grad: 'linear-gradient(135deg,#F97316 0%,#FB923C 50%,#FDBA74 100%)', accent: '#F97316' },
+  DEFAULT: { grad: 'linear-gradient(135deg,#F97316 0%,#FB923C 50%,#FED7AA 100%)', accent: '#F97316' },
 }
 
 const STATUS_CFG: Record<string, { bg: string; color: string; dot: string; label: string }> = {
@@ -79,7 +79,7 @@ function ProgressCircle({ pct, size = 120, stroke = 10 }: { pct: number; size?: 
   const [anim, setAnim] = useState(0)
   useEffect(() => { const t = setTimeout(() => setAnim(pct), 300); return () => clearTimeout(t) }, [pct])
   const offset = circ - (anim / 100) * circ
-  const color = pct >= 100 ? '#059669' : pct >= 60 ? '#E8971F' : '#F5A623'
+  const color = pct >= 100 ? '#10B981' : pct >= 60 ? '#F97316' : '#FB923C'
   return (
     <div style={{ position: 'relative', width: size, height: size, flexShrink: 0 }}>
       <svg width={size} height={size} style={{ transform: 'rotate(-90deg)' }}>
@@ -307,7 +307,7 @@ export default function StudentDashboard() {
   const pct      = Math.min(cl.progressPercentage, 100)
   const userName = student?.name ?? session?.user?.name ?? 'Student'
   const firstName = userName.split(' ')[0]
-  const progressColor = pct >= 100 ? '#059669' : pct >= 60 ? '#E8971F' : '#F5A623'
+  const progressColor = pct >= 100 ? '#10B981' : pct >= 60 ? '#F97316' : '#FB923C'
   const progressLabel = pct >= 100 ? 'Complete! 🎉' : pct >= 60 ? 'In Progress' : 'Getting Started'
 
   return (
@@ -471,13 +471,13 @@ export default function StudentDashboard() {
         ═══════════════════════════════════════════════════ */}
         <div data-tutorial="stat-cards" className="stats-grid" style={{ animation: 'fadeSlideUp 0.5s 0.1s ease both' }}>
           <StatCard label="Narratives" value={<AnimCount to={ns.total} />} sub="total submissions"
-            bg="linear-gradient(135deg,#B45309,#E8971F)"
+            bg="linear-gradient(135deg,#F97316,#FB923C,#FDBA74)"
             icon={icons.narratives} onClick={() => router.push('/narratives')} />
           <StatCard label="This Week" value={<AnimCount to={ns.thisWeek} />} sub="narratives this week"
-            bg="linear-gradient(135deg,#D97706,#F5A623)"
+            bg="linear-gradient(135deg,#FB923C,#FCA070,#FED7AA)"
             icon={icons.week} onClick={() => router.push('/narratives')} />
           <StatCard label="Pending Review" value={<AnimCount to={ns.pending} />} sub="awaiting feedback"
-            bg="linear-gradient(135deg,#92400E,#B45309)"
+            bg="linear-gradient(135deg,#FBBF24,#FCD34D,#FDE68A)"
             icon={icons.pending} onClick={() => router.push('/narratives')} />
           <StatCard label="Requirements" value={`${pct}%`} sub={`${cl.completedItems}/${cl.totalItems} done`}
             bg={`linear-gradient(135deg,${progressColor},${progressColor}CC)`}
@@ -609,9 +609,9 @@ export default function StudentDashboard() {
         {/* ══════════════════════════════════════════════════
             PROGRESS DETAIL CARD
         ═══════════════════════════════════════════════════ */}
-        <div style={{ background: 'linear-gradient(135deg,#FFFBF0,#FEF3C7)',
-          border: '1px solid #FDE68A', borderRadius: 20,
-          boxShadow: '0 2px 12px rgba(232,151,31,0.1)', padding: '22px 24px',
+        <div style={{ background: 'linear-gradient(135deg,#FFF7ED,#FFEDD5)',
+          border: '1px solid #FED7AA', borderRadius: 20,
+          boxShadow: '0 2px 12px rgba(249,115,22,0.08)', padding: '22px 24px',
           animation: 'fadeSlideUp 0.5s 0.35s ease both', boxSizing: 'border-box' }}>
           <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between',
             flexWrap: 'wrap', gap: 10, marginBottom: 18 }}>

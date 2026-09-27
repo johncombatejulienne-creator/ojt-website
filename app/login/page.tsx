@@ -143,7 +143,7 @@ function LoginPageInner() {
       {/* -- LEFT SIDE: Branding ---------------------------- */}
       <div style={{
         display: 'none',
-        flex: 1, background: 'linear-gradient(145deg,#78350F 0%,#B45309 45%,#F5A623 100%)',
+        flex: 1, background: 'linear-gradient(145deg,#F97316 0%,#FB923C 45%,#FED7AA 100%)',
         padding: '48px', position: 'relative', overflow: 'hidden',
         flexDirection: 'column', justifyContent: 'space-between',
       }} className="login-left">
@@ -238,11 +238,11 @@ function LoginPageInner() {
       {/* -- RIGHT SIDE: Login card ------------------------- */}
       <div style={{
         flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center',
-        background: '#FAFAF7',
+        background: '#FFF8F0',
         backgroundImage: [
-          'radial-gradient(at 15% 15%, rgba(245,166,35,0.1) 0, transparent 50%)',
-          'radial-gradient(at 85% 8%,  rgba(232,151,31,0.08) 0, transparent 45%)',
-          'radial-gradient(at 50% 92%, rgba(245,166,35,0.07) 0, transparent 50%)',
+          'radial-gradient(at 0% 0%,   rgba(251,146,60,0.2) 0, transparent 50%)',
+          'radial-gradient(at 100% 0%, rgba(253,186,116,0.16) 0, transparent 45%)',
+          'radial-gradient(at 50% 100%,rgba(254,215,170,0.14) 0, transparent 50%)',
         ].join(','),
         padding: '32px 24px', minHeight: '100vh', position: 'relative', overflow: 'hidden',
       }}>
@@ -296,10 +296,10 @@ function LoginPageInner() {
                     border: 'none', cursor: 'pointer', fontFamily: 'inherit',
                     transition: 'all 0.22s cubic-bezier(0.34,1.2,0.64,1)',
                     background: userType === t
-                      ? 'linear-gradient(135deg,#E8971F,#F5A623)'
+                      ? 'linear-gradient(135deg,#F97316,#FB923C,#FDBA74)'
                       : '#F3F4F6',
                     color: userType === t ? 'white' : '#9CA3AF',
-                    boxShadow: userType === t ? '0 4px 14px rgba(232,151,31,0.35)' : 'none',
+                    boxShadow: userType === t ? '0 4px 14px rgba(249,115,22,0.3)' : 'none',
                     transform: userType === t ? 'scale(1.03)' : 'scale(1)',
                     display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 7,
                   }}>
@@ -405,11 +405,11 @@ function LoginPageInner() {
                     disabled={loading}
                     style={{
                       display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 10,
-                      padding: '13px', background: loading ? '#D97706' : 'linear-gradient(135deg,#E8971F,#F5A623)',
+                      padding: '13px', background: loading ? '#FDBA74' : 'linear-gradient(135deg,#F97316,#FB923C)',
                       border: 'none', borderRadius: 12, fontSize: 14, fontWeight: 700,
                       color: 'white', cursor: loading ? 'not-allowed' : 'pointer',
                       fontFamily: 'inherit', transition: 'opacity 0.2s',
-                      boxShadow: '0 4px 14px rgba(232,151,31,0.4)',
+                      boxShadow: '0 4px 14px rgba(249,115,22,0.3)',
                     }}
                     onMouseEnter={e => { if (!loading) (e.currentTarget as HTMLElement).style.opacity = '0.9' }}
                     onMouseLeave={e => { if (!loading) (e.currentTarget as HTMLElement).style.opacity = '1' }}

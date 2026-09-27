@@ -53,7 +53,7 @@ function Ava({ src, name, size = 40, round = false }: {
     </div>
   )
   return (
-    <div style={{ ...base, background: 'linear-gradient(135deg,#B45309,#E8971F)' }}>
+    <div style={{ ...base, background: 'linear-gradient(135deg,#F97316,#FB923C)' }}>
       {initials}
     </div>
   )
@@ -65,24 +65,26 @@ function StatCard({ label, value, icon, bg }: {
 }) {
   return (
     <div style={{
-      background: bg, borderRadius: 16, padding: '16px 18px', color: 'white',
-      display: 'flex', alignItems: 'center', justifyContent: 'space-between',
-      gap: 12, overflow: 'hidden', boxSizing: 'border-box',
-      boxShadow: '0 4px 12px rgba(0,0,0,0.15)',
+      background: bg, borderRadius: 18, padding: '18px 20px', color: 'white',
+      display: 'flex', flexDirection: 'column', gap: 10,
+      minWidth: 140, flex: '0 0 auto',
+      boxShadow: '0 4px 16px rgba(249,115,22,0.18)',
+      position: 'relative', overflow: 'hidden',
     }}>
-      <div style={{ minWidth: 0, flex: 1 }}>
-        <p style={{
-          fontSize: 11, fontWeight: 700, textTransform: 'uppercase',
-          letterSpacing: '0.07em', color: 'rgba(255,255,255,0.75)',
-          marginBottom: 4, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap',
-        }}>{label}</p>
-        <p style={{ fontSize: 34, fontWeight: 900, lineHeight: 1 }}>{value}</p>
-      </div>
+      {/* shine */}
+      <div style={{ position:'absolute', top:0, right:0, width:60, height:60,
+        background:'radial-gradient(circle at top right,rgba(255,255,255,0.2),transparent 65%)',
+        pointerEvents:'none' }}/>
       <div style={{
-        width: 44, height: 44, borderRadius: 10,
-        background: 'rgba(255,255,255,0.15)',
-        display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0,
+        width: 36, height: 36, borderRadius: 10,
+        background: 'rgba(255,255,255,0.2)',
+        display: 'flex', alignItems: 'center', justifyContent: 'center',
       }}>{icon}</div>
+      <div>
+        <p style={{ fontSize: 11, fontWeight: 700, textTransform: 'uppercase',
+          letterSpacing: '0.07em', color: 'rgba(255,255,255,0.8)', marginBottom: 2 }}>{label}</p>
+        <p style={{ fontSize: 30, fontWeight: 900, lineHeight: 1 }}>{value}</p>
+      </div>
     </div>
   )
 }
@@ -93,21 +95,22 @@ function Tab({ label, active, count, onClick, dataTut }: {
 }) {
   return (
     <button onClick={onClick} data-tutorial={dataTut} style={{
-      padding: '10px 18px', borderRadius: 999, fontSize: 13, fontWeight: 700,
-      border: active ? 'none' : '1px solid rgba(229,231,235,0.8)',
-      cursor: 'pointer', transition: 'all 0.2s cubic-bezier(0.34,1.2,0.64,1)',
-      background: active ? 'linear-gradient(135deg,#E8971F,#F5A623)' : 'rgba(255,255,255,0.85)',
-      color: active ? 'white' : '#6B7280',
+      padding: '9px 16px', borderRadius: 12, fontSize: 13, fontWeight: 700,
+      border: active ? 'none' : '1.5px solid #FFE4C4',
+      cursor: 'pointer', transition: 'all 0.2s ease',
+      background: active ? 'linear-gradient(135deg,#F97316,#FB923C)' : 'white',
+      color: active ? 'white' : '#78716C',
       display: 'flex', alignItems: 'center', gap: 6,
       flexShrink: 0, whiteSpace: 'nowrap',
-      boxShadow: active ? '0 3px 12px rgba(249,115,22,0.4)' : '0 1px 3px rgba(0,0,0,0.08)',
+      boxShadow: active ? '0 3px 12px rgba(249,115,22,0.35)' : '0 1px 3px rgba(0,0,0,0.06)',
     }}>
       {label}
       {count !== undefined && (
         <span style={{
-          background: active ? 'rgba(255,255,255,0.2)' : '#E5E7EB',
-          color: active ? 'white' : '#6B7280',
-          fontSize: 11, fontWeight: 700, padding: '1px 7px', borderRadius: 999,
+          background: active ? 'rgba(255,255,255,0.25)' : '#FEE2CC',
+          color: active ? 'white' : '#EA580C',
+          fontSize: 11, fontWeight: 800, padding: '1px 7px', borderRadius: 999,
+          minWidth: 20, textAlign: 'center',
         }}>{count}</span>
       )}
     </button>
@@ -563,76 +566,106 @@ export default function TeacherDashboard() {
 
   return (
     <AppShell forceTeacher>
-      <div style={{ display: 'flex', flexDirection: 'column', gap: 20 }}>
+      <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
 
         {/* ── Welcome Banner ──────────────────────────────── */}
         <div data-tutorial="teacher-banner" style={{
-          background: 'linear-gradient(135deg,#92400E 0%,#B45309 40%,#E8971F 100%)',
-          borderRadius: 20, padding: '24px 28px', color: 'white',
-          boxShadow: '0 8px 32px rgba(180,83,9,0.3)', boxSizing: 'border-box',
+          background: 'linear-gradient(135deg,#F97316 0%,#FB923C 55%,#FED7AA 100%)',
+          borderRadius: 22, padding: '22px 22px 20px', color: 'white',
+          boxShadow: '0 8px 28px rgba(249,115,22,0.22)', boxSizing: 'border-box',
           position: 'relative', overflow: 'hidden',
         }}>
-          {/* dot pattern */}
-          <div style={{ position: 'absolute', inset: 0, opacity: 0.08, pointerEvents: 'none',
-            backgroundImage: 'radial-gradient(circle, white 1px, transparent 1px)',
-            backgroundSize: '22px 22px' }} />
-          <div style={{ position: 'relative' }}>
-            <p style={{ fontSize: 11, fontWeight: 700, textTransform: 'uppercase',
-              letterSpacing: '0.08em', color: 'rgba(255,255,255,0.75)', marginBottom: 4 }}>
-              Teacher Dashboard
-            </p>
-            <h1 style={{ fontSize: 24, fontWeight: 900, marginBottom: 4,
-              overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
-              Welcome, {userName}! 👋
-            </h1>
-            <p style={{ fontSize: 13, color: 'rgba(255,255,255,0.75)', margin: 0 }}>
-              Manage students, post announcements, and review work immersion narratives.
-            </p>
+          {/* subtle dot pattern */}
+          <div style={{ position:'absolute', inset:0, opacity:0.07, pointerEvents:'none',
+            backgroundImage:'radial-gradient(circle, white 1.5px, transparent 1.5px)',
+            backgroundSize:'20px 20px' }}/>
+          {/* shine */}
+          <div style={{ position:'absolute', top:-40, right:-40, width:160, height:160,
+            borderRadius:'50%', background:'radial-gradient(circle,rgba(255,255,255,0.15),transparent 65%)',
+            pointerEvents:'none' }}/>
+
+          <div style={{ position:'relative', display:'flex', alignItems:'flex-start', justifyContent:'space-between', gap:12 }}>
+            <div style={{ flex:1, minWidth:0 }}>
+              <p style={{ fontSize:10, fontWeight:700, textTransform:'uppercase',
+                letterSpacing:'0.1em', color:'rgba(255,255,255,0.7)', marginBottom:5 }}>
+                Teacher Dashboard
+              </p>
+              <h1 style={{ fontSize:22, fontWeight:900, marginBottom:3, lineHeight:1.2,
+                overflow:'hidden', textOverflow:'ellipsis', whiteSpace:'nowrap' }}>
+                Welcome, {userName}! 👋
+              </h1>
+              <p style={{ fontSize:12, color:'rgba(255,255,255,0.75)', margin:0, lineHeight:1.5 }}>
+                Manage students &amp; review narratives
+              </p>
+            </div>
+            {/* Quick action: delete account */}
             <button onClick={() => setDeleteAccountConfirm(true)} style={{
-              marginTop: 16, display: 'inline-flex', alignItems: 'center', gap: 6,
-              fontSize: 12, color: 'rgba(255,200,200,0.9)', fontWeight: 600,
-              background: 'rgba(255,255,255,0.12)', border: '1px solid rgba(255,200,200,0.25)',
-              borderRadius: 8, padding: '5px 12px', cursor: 'pointer',
-            }}>
-              <svg style={{ width: 13, height: 13 }} fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              display:'flex', alignItems:'center', justifyContent:'center',
+              width:36, height:36, borderRadius:10, flexShrink:0,
+              background:'rgba(255,255,255,0.15)', border:'1px solid rgba(255,255,255,0.2)',
+              cursor:'pointer', color:'white',
+            }} title="Delete My Account">
+              <svg style={{ width:16, height:16 }} fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2}
                   d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
               </svg>
-              Delete My Account
             </button>
+          </div>
+
+          {/* Quick stats strip */}
+          <div style={{ position:'relative', display:'flex', gap:10, marginTop:16, flexWrap:'wrap' }}>
+            {[
+              { label:'Students', val: stats.students },
+              { label:'Pending',  val: stats.pending  },
+              { label:'Teachers', val: teachers.length },
+            ].map(s => (
+              <div key={s.label} style={{
+                background:'rgba(255,255,255,0.18)', borderRadius:10,
+                padding:'8px 14px', display:'flex', alignItems:'center', gap:8,
+                backdropFilter:'blur(4px)',
+              }}>
+                <span style={{ fontSize:20, fontWeight:900, color:'white', lineHeight:1 }}>{s.val}</span>
+                <span style={{ fontSize:11, color:'rgba(255,255,255,0.75)', fontWeight:600 }}>{s.label}</span>
+              </div>
+            ))}
           </div>
         </div>
 
-        {/* ── Stats ───────────────────────────────────────── */}
-        <div data-tutorial="teacher-stats" style={{ display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: 14 }}>
+        {/* ── Stat Cards — horizontal scroll on mobile ────── */}
+        <div data-tutorial="teacher-stats" style={{
+          display:'flex', gap:12, overflowX:'auto', paddingBottom:6,
+          scrollbarWidth:'none', WebkitOverflowScrolling:'touch',
+        }} className="hide-scrollbar">
           <StatCard label="Total Students" value={stats.students}
-            bg="linear-gradient(135deg,#B45309,#E8971F)"
-            icon={<svg style={{ width: 22, height: 22, color: 'white' }} fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197M13 7a4 4 0 11-8 0 4 4 0 018 0z" /></svg>}
+            bg="linear-gradient(135deg,#F97316,#FB923C,#FDBA74)"
+            icon={<svg style={{ width:20, height:20, color:'white' }} fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197M13 7a4 4 0 11-8 0 4 4 0 018 0z"/></svg>}
           />
           <StatCard label="Teachers" value={teachers.length}
-            bg="linear-gradient(135deg,#92400E,#B45309)"
-            icon={<svg style={{ width: 22, height: 22, color: 'white' }} fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10" /></svg>}
+            bg="linear-gradient(135deg,#FB923C,#FCA070,#FED7AA)"
+            icon={<svg style={{ width:20, height:20, color:'white' }} fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10"/></svg>}
           />
           <StatCard label="Pending Reviews" value={stats.pending}
-            bg="linear-gradient(135deg,#D97706,#F5A623)"
-            icon={<svg style={{ width: 22, height: 22, color: 'white' }} fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" /></svg>}
+            bg="linear-gradient(135deg,#FBBF24,#FCD34D,#FDE68A)"
+            icon={<svg style={{ width:20, height:20, color:'white' }} fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/></svg>}
+          />
+          <StatCard label="Sections" value={stats.sections}
+            bg="linear-gradient(135deg,#FDE68A,#FEF3C7,#FFFBEB)"
+            icon={<svg style={{ width:20, height:20, color:'white' }} fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 6h16M4 10h16M4 14h16M4 18h16"/></svg>}
           />
         </div>
 
-        {/* ── Tabs ────────────────────────────────────────── */}
+        {/* ── Tabs ─────────────────────────────────────────── */}
         <div style={{
-          display: 'flex', gap: 8, overflowX: 'auto', paddingBottom: 4,
-          scrollbarWidth: 'none', msOverflowStyle: 'none',
-          WebkitOverflowScrolling: 'touch',
-        }}
-          className="hide-scrollbar">
+          display:'flex', gap:8, overflowX:'auto', paddingBottom:2,
+          scrollbarWidth:'none', WebkitOverflowScrolling:'touch',
+        }} className="hide-scrollbar">
           <style>{`.hide-scrollbar::-webkit-scrollbar{display:none}`}</style>
-          <Tab label="Students"      active={activeTab === 'students'}      count={students.length}      onClick={() => setActiveTab('students')} dataTut="students-tab" />
-          <Tab label="Teachers"      active={activeTab === 'teachers'}      count={teachers.length}      onClick={() => setActiveTab('teachers')} />
-          <Tab label="Narratives"    active={activeTab === 'narratives'}    count={pendingNarratives.length} onClick={() => setActiveTab('narratives')} dataTut="narratives-tab" />
-          <Tab label="Requirements"  active={activeTab === 'requirements'}                               onClick={() => setActiveTab('requirements')} dataTut="requirements-tab" />
-          <Tab label="Announcements" active={activeTab === 'announcements'} count={announcements.length} onClick={() => setActiveTab('announcements')} dataTut="announcements-tab" />
-          <Tab label="👥 All Users"  active={activeTab === 'users'} dataTut="all-users-tab"
+          <Tab label="Students"      active={activeTab==='students'}      count={students.length}          onClick={()=>setActiveTab('students')}      dataTut="students-tab" />
+          <Tab label="Teachers"      active={activeTab==='teachers'}      count={teachers.length}          onClick={()=>setActiveTab('teachers')} />
+          <Tab label="Narratives"    active={activeTab==='narratives'}    count={pendingNarratives.length} onClick={()=>setActiveTab('narratives')}    dataTut="narratives-tab" />
+          <Tab label="Requirements"  active={activeTab==='requirements'}                                  onClick={()=>setActiveTab('requirements')}  dataTut="requirements-tab" />
+          <Tab label="Announcements" active={activeTab==='announcements'} count={announcements.length}    onClick={()=>setActiveTab('announcements')} dataTut="announcements-tab" />
+          <Tab label="👥 All Users"  active={activeTab==='users'}                                         dataTut="all-users-tab"
             onClick={async () => {
               setActiveTab('users')
               if (!allUsers) {
@@ -652,7 +685,8 @@ export default function TeacherDashboard() {
         {activeTab === 'students' && (
           <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
             {/* Section filter + search */}
-            <div style={{ background: 'linear-gradient(135deg,#FFFFFF,#FFFBF5)', border: '1px solid #FEE9C5', borderRadius: 16, padding: '16px 20px' }}>
+            <div style={{ background:'white', border:'1px solid #FFE4C4', borderRadius:16, padding:'16px 18px',
+              boxShadow:'0 2px 8px rgba(249,115,22,0.06)' }}>
               <div style={{ display: 'flex', flexWrap: 'wrap', gap: 8, marginBottom: 12 }}>
                 {[{ key: 'all', label: `All (${students.length})` },
                   ...sections.map(s => ({ key: s.name, label: `${s.name} (${s.students.length})` }))
@@ -674,14 +708,15 @@ export default function TeacherDashboard() {
                 <input type="text" value={search} onChange={e => setSearch(e.target.value)}
                   placeholder="Search students by name, email, or ID..."
                   style={{ ...inputStyle, paddingLeft: 36 }}
-                  onFocus={e => { e.target.style.borderColor = '#6366F1' }}
+                  onFocus={e => { e.target.style.borderColor = '#F97316' }}
                   onBlur={e => { e.target.style.borderColor = '#E5E7EB' }}
                 />
               </div>
             </div>
 
             {/* Student list */}
-            <div style={{ background: 'linear-gradient(135deg,#FFFFFF,#FFFBF5)', border: '1px solid #FEE9C5', borderRadius: 16, overflow: 'hidden' }}>
+            <div style={{ background:'white', border:'1px solid #FFE4C4', borderRadius:16, overflow:'hidden',
+              boxShadow:'0 2px 8px rgba(249,115,22,0.06)' }}>
               <div style={{ padding: '14px 20px', borderBottom: '1px solid #F3F4F6',
                 display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
                 <p style={{ fontWeight: 700, fontSize: 14, color: '#111827' }}>
@@ -760,16 +795,18 @@ export default function TeacherDashboard() {
         ════════════════════════════════════════════════ */}
         {activeTab === 'teachers' && (
           <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
-            <div style={{ background: 'linear-gradient(135deg,#FFFFFF,#FFFBF5)', border: '1px solid #FEE9C5', borderRadius: 16, padding: '14px 20px' }}>
+            <div style={{ background:'white', border:'1px solid #FFE4C4', borderRadius:16, padding:'14px 18px',
+              boxShadow:'0 2px 8px rgba(249,115,22,0.06)' }}>
               <input type="text" value={teacherSearch} onChange={e => setTeacherSearch(e.target.value)}
                 placeholder="Search teachers by name or email..."
                 style={inputStyle}
-                onFocus={e => { e.target.style.borderColor = '#6366F1' }}
+                onFocus={e => { e.target.style.borderColor = '#F97316' }}
                 onBlur={e => { e.target.style.borderColor = '#E5E7EB' }}
               />
             </div>
 
-            <div style={{ background: 'linear-gradient(135deg,#FFFFFF,#FFFBF5)', border: '1px solid #FEE9C5', borderRadius: 16, overflow: 'hidden' }}>
+            <div style={{ background:'white', border:'1px solid #FFE4C4', borderRadius:16, overflow:'hidden',
+              boxShadow:'0 2px 8px rgba(249,115,22,0.06)' }}>
               <div style={{ padding: '14px 20px', borderBottom: '1px solid #F3F4F6',
                 display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
                 <p style={{ fontWeight: 700, fontSize: 14, color: '#111827' }}>Registered Teachers</p>
@@ -1128,7 +1165,7 @@ export default function TeacherDashboard() {
                 </div>
 
                 <button type="submit" disabled={reqSubmitting} style={{
-                  padding: '12px', background: reqSubmitting ? '#FDE68A' : 'linear-gradient(135deg,#E8971F,#F5A623)',
+                  padding: '12px', background: reqSubmitting ? '#FDBA74' : 'linear-gradient(135deg,#F97316,#FB923C)',
                   color: 'white', border: 'none', borderRadius: 12, fontSize: 14, fontWeight: 700,
                   cursor: reqSubmitting ? 'not-allowed' : 'pointer', fontFamily: 'inherit',
                 }}>
@@ -1248,7 +1285,7 @@ export default function TeacherDashboard() {
                 )}
 
                 <button type="submit" disabled={annoSubmitting} style={{
-                  padding: '12px 0', background: annoSubmitting ? '#FDE68A' : 'linear-gradient(135deg,#E8971F,#F5A623)',
+                  padding: '12px 0', background: annoSubmitting ? '#FDBA74' : 'linear-gradient(135deg,#F97316,#FB923C)',
                   color: 'white', border: 'none', borderRadius: 10,
                   fontSize: 14, fontWeight: 700, cursor: annoSubmitting ? 'not-allowed' : 'pointer',
                 }}>
@@ -1342,11 +1379,11 @@ export default function TeacherDashboard() {
               <>
                 {/* Summary */}
                 <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12 }}>
-                  <div style={{ background: 'linear-gradient(135deg,#B45309,#E8971F)', borderRadius: 14, padding: '16px 20px', color: 'white' }}>
-                    <p style={{ fontSize: 11, fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.08em', color: 'rgba(255,255,255,0.75)', margin: '0 0 4px' }}>Students</p>
+                  <div style={{ background: 'linear-gradient(135deg,#F97316,#FB923C,#FDBA74)', borderRadius: 14, padding: '16px 20px', color: 'white' }}>
+                    <p style={{ fontSize: 11, fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.08em', color: 'rgba(255,255,255,0.85)', margin: '0 0 4px' }}>Students</p>
                     <p style={{ fontSize: 32, fontWeight: 900, margin: 0 }}>{allUsers.total.students}</p>
                   </div>
-                  <div style={{ background: 'linear-gradient(135deg,#92400E,#B45309)', borderRadius: 14, padding: '16px 20px', color: 'white' }}>
+                  <div style={{ background: 'linear-gradient(135deg,#FB923C,#FCA070,#FED7AA)', borderRadius: 14, padding: '16px 20px', color: 'white' }}>
                     <p style={{ fontSize: 11, fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.08em', color: 'rgba(255,255,255,0.75)', margin: '0 0 4px' }}>Teachers</p>
                     <p style={{ fontSize: 32, fontWeight: 900, margin: 0 }}>{allUsers.total.teachers}</p>
                   </div>

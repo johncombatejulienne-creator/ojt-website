@@ -21,11 +21,11 @@ export default function AppShell({ children, strandCode, forceTeacher, className
       <TutorialOverlay />
       <div style={{
         minHeight: '100vh',
-        background: '#FAFAF7',
+        background: '#FFF8F0',
         backgroundImage: [
-          'radial-gradient(at 10% 10%, rgba(245,166,35,0.07) 0, transparent 48%)',
-          'radial-gradient(at 88% 6%,  rgba(232,151,31,0.06) 0, transparent 44%)',
-          'radial-gradient(at 50% 96%, rgba(245,166,35,0.05) 0, transparent 48%)',
+          'radial-gradient(at 0% 0%,   rgba(251,146,60,0.18) 0, transparent 50%)',
+          'radial-gradient(at 100% 0%, rgba(253,186,116,0.14) 0, transparent 50%)',
+          'radial-gradient(at 50% 100%,rgba(254,215,170,0.12) 0, transparent 50%)',
         ].join(','),
         display: 'flex',
         flexDirection: 'column',

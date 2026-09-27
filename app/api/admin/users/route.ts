@@ -56,17 +56,25 @@ export async function GET() {
       orderBy: { createdAt: 'desc' },
     })
 
+    // Build a set of teacher emails so we can exclude dual-role accounts from students
+    const teacherEmails = new Set(teachers.map(t => t.email))
+
     return NextResponse.json({
-      students: students.map(s => ({
-        ...s,
-        role: 'student',
-        narrativeCount: s._count.narratives,
-        strandName:   s.strand?.name ?? null,
-        sectionName:  s.section?.name ?? null,
-        supervisorName: s.supervisor?.name ?? null,
-      })),
+      students: students
+        .filter(s => !teacherEmails.has(s.email))   // exclude anyone who is also a teacher
+        .map(s => ({
+          ...s,
+          role: 'student',
+          narrativeCount: s._count.narratives,
+          strandName:   s.strand?.name ?? null,
+          sectionName:  s.section?.name ?? null,
+          supervisorName: s.supervisor?.name ?? null,
+        })),
       teachers: teachers.map(t => ({ ...t, role: 'teacher' })),
-      total: { students: students.length, teachers: teachers.length },
+      total: {
+        students: students.filter(s => !teacherEmails.has(s.email)).length,
+        teachers: teachers.length,
+      },
     })
   } catch (error) {
     console.error('GET /api/admin/users error:', error)
