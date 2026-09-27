@@ -231,6 +231,7 @@ export default function NarrativesPage() {
               </p>
             </div>
             <button onClick={() => router.push('/narratives/create')}
+              data-tutorial="new-narrative"
               className="btn-premium"
               style={{ display: 'flex', alignItems: 'center', gap: 8, padding: '11px 20px',
                 fontSize: 14, flexShrink: 0, borderRadius: 12 }}>

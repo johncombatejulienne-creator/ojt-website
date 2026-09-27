@@ -1,4 +1,4 @@
-﻿'use client'
+'use client'
 
 import { useEffect, useState, useRef } from 'react'
 import { useSession } from 'next-auth/react'
@@ -343,7 +343,7 @@ export default function StudentDashboard() {
         {/* ══════════════════════════════════════════════════
             WELCOME BANNER — gradient + progress circle
         ═══════════════════════════════════════════════════ */}
-        <div className="gradient-banner" style={{ background: theme.grad, animation: 'fadeSlideUp 0.5s ease both' }}>
+        <div data-tutorial="dashboard-banner" className="gradient-banner" style={{ background: theme.grad, animation: 'fadeSlideUp 0.5s ease both' }}>
           <div className="gradient-banner-dots" />
 
           {/* Top: avatar + name + action buttons */}
@@ -384,7 +384,7 @@ export default function StudentDashboard() {
               </button>
               {/* Notification bell */}
               <div style={{ position: 'relative' }} ref={notifRef}>
-                <button onClick={() => { setShowNotif(v => !v); if (unread > 0) markAllRead() }}
+                <button data-tutorial="notifications" onClick={() => { setShowNotif(v => !v); if (unread > 0) markAllRead() }}
                   style={{ width: '100%', position: 'relative', background: 'rgba(255,255,255,0.18)',
                     border: '1px solid rgba(255,255,255,0.35)', borderRadius: 10,
                     padding: '7px 12px', cursor: 'pointer', display: 'flex', alignItems: 'center',
@@ -493,7 +493,7 @@ export default function StudentDashboard() {
         {/* ══════════════════════════════════════════════════
             STATS GRID
         ═══════════════════════════════════════════════════ */}
-        <div className="stats-grid" style={{ animation: 'fadeSlideUp 0.5s 0.1s ease both' }}>
+        <div data-tutorial="stat-cards" className="stats-grid" style={{ animation: 'fadeSlideUp 0.5s 0.1s ease both' }}>
           <StatCard label="Narratives" value={<AnimCount to={ns.total} />} sub="total submissions"
             bg="linear-gradient(135deg,#F97316,#FB923C)"
             icon={icons.narratives} onClick={() => router.push('/narratives')} />
@@ -617,7 +617,7 @@ export default function StudentDashboard() {
             <h2 style={{ fontSize: 15, fontWeight: 800, color: '#111827', margin: 0 }}>Quick Actions</h2>
             <div style={{ flex: 1, height: 1, background: '#E5E7EB' }} />
           </div>
-          <div className="grid-2">
+          <div data-tutorial="narratives-list" className="grid-2">
             <QuickAction label="New Narrative" desc="Document today's work experience"
               accent="#F97316" onClick={() => router.push('/narratives/create')} icon={icons.pen} />
             <QuickAction label="My Narratives" desc="View and manage all submissions"

@@ -566,7 +566,7 @@ export default function TeacherDashboard() {
       <div style={{ display: 'flex', flexDirection: 'column', gap: 20 }}>
 
         {/* ── Welcome Banner ──────────────────────────────── */}
-        <div style={{
+        <div data-tutorial="teacher-banner" style={{
           background: 'linear-gradient(135deg,#F97316 0%,#EA580C 60%,#FBBF24 100%)',
           borderRadius: 20, padding: '24px 28px', color: 'white',
           boxShadow: '0 8px 32px rgba(249,115,22,0.35)', boxSizing: 'border-box',
@@ -604,7 +604,7 @@ export default function TeacherDashboard() {
         </div>
 
         {/* ── Stats ───────────────────────────────────────── */}
-        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: 14 }}>
+        <div data-tutorial="teacher-stats" style={{ display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: 14 }}>
           <StatCard label="Total Students" value={stats.students}
             bg="linear-gradient(135deg,#F97316,#EA580C)"
             icon={<svg style={{ width: 22, height: 22, color: 'white' }} fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197M13 7a4 4 0 11-8 0 4 4 0 018 0z" /></svg>}
@@ -627,12 +627,12 @@ export default function TeacherDashboard() {
         }}
           className="hide-scrollbar">
           <style>{`.hide-scrollbar::-webkit-scrollbar{display:none}`}</style>
-          <Tab label="Students"      active={activeTab === 'students'}      count={students.length}      onClick={() => setActiveTab('students')} />
+          <Tab label="Students"      active={activeTab === 'students'}      count={students.length}      onClick={() => setActiveTab('students')} data-tut="students-tab" />
           <Tab label="Teachers"      active={activeTab === 'teachers'}      count={teachers.length}      onClick={() => setActiveTab('teachers')} />
-          <Tab label="Narratives"    active={activeTab === 'narratives'}    count={pendingNarratives.length} onClick={() => setActiveTab('narratives')} />
-          <Tab label="Requirements"  active={activeTab === 'requirements'}                               onClick={() => setActiveTab('requirements')} />
-          <Tab label="Announcements" active={activeTab === 'announcements'} count={announcements.length} onClick={() => setActiveTab('announcements')} />
-          <Tab label="👥 All Users"  active={activeTab === 'users'}
+          <Tab label="Narratives"    active={activeTab === 'narratives'}    count={pendingNarratives.length} onClick={() => setActiveTab('narratives')} data-tut="narratives-tab" />
+          <Tab label="Requirements"  active={activeTab === 'requirements'}                               onClick={() => setActiveTab('requirements')} data-tut="requirements-tab" />
+          <Tab label="Announcements" active={activeTab === 'announcements'} count={announcements.length} onClick={() => setActiveTab('announcements')} data-tut="announcements-tab" />
+          <Tab label="👥 All Users"  active={activeTab === 'users'} data-tut="all-users-tab"
             onClick={async () => {
               setActiveTab('users')
               if (!allUsers) {

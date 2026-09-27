@@ -244,7 +244,7 @@ export default function Header({ strandCode, forceTeacher }: {
 
               {/* Profile button */}
               <div style={{ position: 'relative' }}>
-                <button onClick={() => setMenuOpen(v => !v)}
+                <button data-tutorial="profile-menu" onClick={() => setMenuOpen(v => !v)}
                   style={{ display: 'flex', alignItems: 'center', gap: 8,
                     background: 'rgba(255,255,255,0.12)', border: '1px solid rgba(255,255,255,0.2)',
                     borderRadius: 10, padding: '6px 10px 6px 7px', cursor: 'pointer',
