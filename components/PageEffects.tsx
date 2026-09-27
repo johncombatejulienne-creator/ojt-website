@@ -27,27 +27,6 @@ export default function PageEffects() {
   useEffect(() => {
     // Mark JS as ready — enables scroll-reveal hiding
     document.documentElement.classList.add('js-ready')
-
-    const loader = document.getElementById('page-loader')
-    if (!loader) return
-    if (loader.classList.contains('loader-hidden')) return
-
-    const hide = () => {
-      loader.classList.add('loader-hidden')
-      setTimeout(() => { loader.style.display = 'none' }, 600)
-    }
-
-    // Force hide after 2.5s max — prevents stuck loader on PWA/cached loads
-    const forceHide = setTimeout(hide, 2500)
-
-    if (document.readyState === 'complete') {
-      clearTimeout(forceHide)
-      setTimeout(hide, 400)
-    } else {
-      window.addEventListener('load', () => { clearTimeout(forceHide); setTimeout(hide, 400) }, { once: true })
-    }
-
-    return () => clearTimeout(forceHide)
   }, [])
 
   /* ── Page-enter animation on route change ────────────── */
@@ -236,28 +215,7 @@ export default function PageEffects() {
     <>
       {/* ── Scroll progress bar ───────── */}
       <div id="scroll-progress" aria-hidden="true" />
-
-      {/* ── Page loader ───────────────── */}
-      <div id="page-loader" role="status" aria-label="Loading">
-        <div className="loader-logo-wrap">
-          {/* eslint-disable-next-line @next/next/no-img-element */}
-          <img
-            src="/psbc-logo.jpg"
-            alt="PSBC"
-            width={130}
-            height={130}
-            style={{
-              width: '130px', height: '130px',
-              objectFit: 'cover',
-              objectPosition: 'center center',
-              transform: 'scale(1.25)',
-              transformOrigin: 'center center',
-            }}
-          />
-        </div>
-        <div className="loader-ring" />
-        <p className="loader-text">PSBC Work Immersion</p>
-      </div>
+      {/* Page loader removed — no loading screen on open */}
     </>
   )
 }

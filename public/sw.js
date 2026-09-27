@@ -1,7 +1,40 @@
-// PSBC Work Immersion Portal — Service Worker v4
-// IMPORTANT: Version bump forces old SW to be replaced immediately
+// PSBC Work Immersion Portal — Service Worker v5
+// Minimal SW — NO caching, NO splash screen, NO offline page
+// Just handles push notifications
 
-const CACHE_NAME = 'ojt-portal-v4'
+const CACHE_NAME = 'ojt-portal-v5'
+
+// Delete ALL old caches on activate
+self.addEventListener('install', () => self.skipWaiting())
+
+self.addEventListener('activate', event => {
+  event.waitUntil(
+    caches.keys().then(keys => Promise.all(keys.map(k => caches.delete(k))))
+      .then(() => self.clients.claim())
+  )
+})
+
+// Pass ALL requests directly to network — no caching at all
+self.addEventListener('fetch', () => { /* network only */ })
+
+// Push notifications only
+self.addEventListener('push', event => {
+  const data = event.data?.json() ?? {}
+  event.waitUntil(
+    self.registration.showNotification(data.title ?? 'PSBC Work Immersion', {
+      body: data.body ?? 'You have a new notification',
+      icon: '/icon-192.png',
+      badge: '/icon-72.png',
+      data: { url: data.url ?? '/' },
+    })
+  )
+})
+
+self.addEventListener('notificationclick', event => {
+  event.notification.close()
+  const url = event.notification.data?.url ?? '/'
+  event.waitUntil(clients.openWindow(url))
+})
 
 // Only cache these static assets — NOT HTML pages
 const STATIC_ASSETS = [
