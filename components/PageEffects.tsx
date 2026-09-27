@@ -19,10 +19,24 @@ export default function PageEffects() {
 
   /* ── Register Service Worker (PWA) ─────────────────────── */
   useEffect(() => {
-    if ('serviceWorker' in navigator) {
-      navigator.serviceWorker.register('/sw.js', { scope: '/' })
-        .catch(() => { /* SW not critical */ })
-    }
+    if (!('serviceWorker' in navigator)) return
+    navigator.serviceWorker.register('/sw.js', { scope: '/' })
+      .then(reg => {
+        // When a new SW takes over, reload the page to get fresh JS/CSS
+        reg.addEventListener('updatefound', () => {
+          const newWorker = reg.installing
+          if (!newWorker) return
+          newWorker.addEventListener('statechange', () => {
+            if (newWorker.state === 'activated') window.location.reload()
+          })
+        })
+      })
+      .catch(() => { /* SW not critical */ })
+
+    // Also reload if the SW sends us an SW_UPDATED message
+    navigator.serviceWorker.addEventListener('message', e => {
+      if (e.data?.type === 'SW_UPDATED') window.location.reload()
+    })
   }, [])
   useEffect(() => {
     // Mark JS as ready — enables scroll-reveal hiding

@@ -53,7 +53,7 @@ function Ava({ src, name, size = 40, round = false }: {
     </div>
   )
   return (
-    <div style={{ ...base, background: 'linear-gradient(135deg,#F97316,#EA580C)' }}>
+    <div style={{ ...base, background: 'linear-gradient(135deg,#B45309,#E8971F)' }}>
       {initials}
     </div>
   )
@@ -96,7 +96,7 @@ function Tab({ label, active, count, onClick, dataTut }: {
       padding: '10px 18px', borderRadius: 999, fontSize: 13, fontWeight: 700,
       border: active ? 'none' : '1px solid rgba(229,231,235,0.8)',
       cursor: 'pointer', transition: 'all 0.2s cubic-bezier(0.34,1.2,0.64,1)',
-      background: active ? 'linear-gradient(135deg,#F97316,#EA580C)' : 'rgba(255,255,255,0.8)',
+      background: active ? 'linear-gradient(135deg,#E8971F,#F5A623)' : 'rgba(255,255,255,0.85)',
       color: active ? 'white' : '#6B7280',
       display: 'flex', alignItems: 'center', gap: 6,
       flexShrink: 0, whiteSpace: 'nowrap',
@@ -254,6 +254,10 @@ export default function TeacherDashboard() {
   const [deleteTeacherTarget,  setDeleteTeacherTarget]  = useState<Teacher | null>(null)
   const [deletingTeacher,      setDeletingTeacher]      = useState(false)
 
+  // Delete teacher from the All Users tab (AllUser type)
+  const [deleteAllUserTeacher,    setDeleteAllUserTeacher]    = useState<AllUser | null>(null)
+  const [deletingAllUserTeacher,  setDeletingAllUserTeacher]  = useState(false)
+
   /* ── Load all data ──────────────────────────────────────── */
   const loadData = useCallback(async () => {
     setLoading(true)
@@ -406,6 +410,28 @@ export default function TeacherDashboard() {
     }
   }
 
+  /* ── Delete teacher from All Users tab ─────────────────── */
+  const handleDeleteAllUserTeacher = async () => {
+    if (!deleteAllUserTeacher) return
+    setDeletingAllUserTeacher(true)
+    try {
+      const res = await fetch(`/api/teacher/teachers/${deleteAllUserTeacher.id}`, { method: 'DELETE' })
+      if (!res.ok) throw new Error('Failed')
+      setAllUsers(prev => prev ? {
+        ...prev,
+        teachers: prev.teachers.filter(t => t.id !== deleteAllUserTeacher.id),
+        total: { ...prev.total, teachers: prev.total.teachers - 1 },
+      } : prev)
+      // Also keep the Teachers tab in sync
+      setTeachers(prev => prev.filter(t => t.id !== deleteAllUserTeacher.id))
+      setDeleteAllUserTeacher(null)
+    } catch {
+      alert('Failed to delete teacher account.')
+    } finally {
+      setDeletingAllUserTeacher(false)
+    }
+  }
+
   /* ── Review narrative ───────────────────────────────────── */
   const handleReview = async (narrativeId: string, action: 'approved' | 'revision_requested') => {
     setReviewSubmitting(true)
@@ -519,33 +545,7 @@ export default function TeacherDashboard() {
   }
 
   /* ── Loading ─────────────────────────────────────────────── */
-  if (loading || status === 'loading') return (
-    <div style={{
-      minHeight: '100vh', display: 'flex', flexDirection: 'column',
-      alignItems: 'center', justifyContent: 'center',
-      background: 'linear-gradient(135deg,#F97316 0%,#EA580C 50%,#FBBF24 100%)',
-    }}>
-      <style>{`@keyframes spin{to{transform:rotate(360deg)}} @keyframes pulse{0%,100%{transform:scale(1)}50%{transform:scale(1.06)}}`}</style>
-      {/* Circular PSBC logo */}
-      <div style={{ width: 100, height: 100, borderRadius: '50%', overflow: 'hidden',
-        border: '4px solid rgba(255,255,255,0.8)',
-        boxShadow: '0 8px 32px rgba(0,0,0,0.2)',
-        marginBottom: 24, animation: 'pulse 2s ease infinite',
-        background: 'white' }}>
-        {/* eslint-disable-next-line @next/next/no-img-element */}
-        <img src="/psbc-logo.jpg" alt="PSBC" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
-      </div>
-      <div style={{ width: 40, height: 40, border: '4px solid rgba(255,255,255,0.3)',
-        borderTopColor: 'white', borderRadius: '50%',
-        animation: 'spin 1s linear infinite', marginBottom: 14 }} />
-      <p style={{ fontSize: 15, fontWeight: 700, color: 'white', letterSpacing: '0.03em' }}>
-        Loading dashboard...
-      </p>
-      <p style={{ fontSize: 12, color: 'rgba(255,255,255,0.7)', marginTop: 4 }}>
-        PSBC Work Immersion Portal
-      </p>
-    </div>
-  )
+  if (loading || status === 'loading') return null
 
   const userName = session?.user?.name ?? session?.user?.email?.split('@')[0] ?? 'Teacher'
 
@@ -567,9 +567,9 @@ export default function TeacherDashboard() {
 
         {/* ── Welcome Banner ──────────────────────────────── */}
         <div data-tutorial="teacher-banner" style={{
-          background: 'linear-gradient(135deg,#F97316 0%,#EA580C 60%,#FBBF24 100%)',
+          background: 'linear-gradient(135deg,#92400E 0%,#B45309 40%,#E8971F 100%)',
           borderRadius: 20, padding: '24px 28px', color: 'white',
-          boxShadow: '0 8px 32px rgba(249,115,22,0.35)', boxSizing: 'border-box',
+          boxShadow: '0 8px 32px rgba(180,83,9,0.3)', boxSizing: 'border-box',
           position: 'relative', overflow: 'hidden',
         }}>
           {/* dot pattern */}
@@ -606,15 +606,15 @@ export default function TeacherDashboard() {
         {/* ── Stats ───────────────────────────────────────── */}
         <div data-tutorial="teacher-stats" style={{ display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: 14 }}>
           <StatCard label="Total Students" value={stats.students}
-            bg="linear-gradient(135deg,#F97316,#EA580C)"
+            bg="linear-gradient(135deg,#B45309,#E8971F)"
             icon={<svg style={{ width: 22, height: 22, color: 'white' }} fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197M13 7a4 4 0 11-8 0 4 4 0 018 0z" /></svg>}
           />
           <StatCard label="Teachers" value={teachers.length}
-            bg="linear-gradient(135deg,#FB923C,#F97316)"
+            bg="linear-gradient(135deg,#92400E,#B45309)"
             icon={<svg style={{ width: 22, height: 22, color: 'white' }} fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10" /></svg>}
           />
           <StatCard label="Pending Reviews" value={stats.pending}
-            bg="linear-gradient(135deg,#FBBF24,#F59E0B)"
+            bg="linear-gradient(135deg,#D97706,#F5A623)"
             icon={<svg style={{ width: 22, height: 22, color: 'white' }} fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" /></svg>}
           />
         </div>
@@ -660,7 +660,7 @@ export default function TeacherDashboard() {
                   <button key={tab.key} onClick={() => setSectionFilter(tab.key)} style={{
                     padding: '5px 14px', borderRadius: 999, fontSize: 12, fontWeight: 600,
                     border: 'none', cursor: 'pointer',
-                    background: sectionFilter === tab.key ? 'linear-gradient(135deg,#F97316,#EA580C)' : '#F3F4F6',
+                    background: sectionFilter === tab.key ? 'linear-gradient(135deg,#E8971F,#F5A623)' : '#F3F4F6',
                     color: sectionFilter === tab.key ? 'white' : '#4B5563',
                   }}>{tab.label}</button>
                 ))}
@@ -880,8 +880,8 @@ export default function TeacherDashboard() {
                     <button
                       onClick={() => handleReview(reviewingId, 'revision_requested')}
                       disabled={reviewSubmitting}
-                      style={{ flex: 1, padding: '10px', background: '#FFEDD5', color: '#9A3412',
-                        border: '1px solid #FED7AA', borderRadius: 10, fontSize: 13, fontWeight: 700,
+                      style={{ flex: 1, padding: '10px', background: '#FFFBF0', color: '#92400E',
+                        border: '1px solid #FDE68A', borderRadius: 10, fontSize: 13, fontWeight: 700,
                         cursor: reviewSubmitting ? 'not-allowed' : 'pointer', fontFamily: 'inherit' }}>
                       {reviewSubmitting ? '...' : 'Request Revision'}
                     </button>
@@ -951,7 +951,7 @@ export default function TeacherDashboard() {
                               </span>
                             )}
                           </div>
-                          <p style={{ fontSize: 13, fontWeight: 600, color: '#F97316', margin: '0 0 3px' }}>
+                          <p style={{ fontSize: 13, fontWeight: 600, color: '#E8971F', margin: '0 0 3px' }}>
                             {n.student.name}
                             <span style={{ color: '#9CA3AF', fontWeight: 400 }}> · {n.student.studentId}</span>
                           </p>
@@ -970,7 +970,7 @@ export default function TeacherDashboard() {
                           <button
                             onClick={() => { setReviewingId(n.id); setReviewComment('') }}
                             style={{ padding: '6px 14px', borderRadius: 8, fontSize: 12, fontWeight: 700,
-                              background: '#F97316', color: 'white', border: 'none', cursor: 'pointer', fontFamily: 'inherit' }}>
+                              background: 'linear-gradient(135deg,#E8971F,#F5A623)', color: 'white', border: 'none', cursor: 'pointer', fontFamily: 'inherit' }}>
                             Review
                           </button>
                         </div>
@@ -1128,7 +1128,7 @@ export default function TeacherDashboard() {
                 </div>
 
                 <button type="submit" disabled={reqSubmitting} style={{
-                  padding: '12px', background: reqSubmitting ? '#FED7AA' : '#F97316',
+                  padding: '12px', background: reqSubmitting ? '#FDE68A' : 'linear-gradient(135deg,#E8971F,#F5A623)',
                   color: 'white', border: 'none', borderRadius: 12, fontSize: 14, fontWeight: 700,
                   cursor: reqSubmitting ? 'not-allowed' : 'pointer', fontFamily: 'inherit',
                 }}>
@@ -1248,7 +1248,7 @@ export default function TeacherDashboard() {
                 )}
 
                 <button type="submit" disabled={annoSubmitting} style={{
-                  padding: '12px 0', background: annoSubmitting ? '#FED7AA' : 'linear-gradient(135deg,#F97316,#EA580C)',
+                  padding: '12px 0', background: annoSubmitting ? '#FDE68A' : 'linear-gradient(135deg,#E8971F,#F5A623)',
                   color: 'white', border: 'none', borderRadius: 10,
                   fontSize: 14, fontWeight: 700, cursor: annoSubmitting ? 'not-allowed' : 'pointer',
                 }}>
@@ -1329,8 +1329,8 @@ export default function TeacherDashboard() {
             </div>
 
             {usersLoading ? (
-              <div style={{ background: 'linear-gradient(135deg,#FFFFFF,#FFFBF5)', border: '1px solid #FEE9C5', borderRadius: 16, padding: '48px 24px', textAlign: 'center' }}>
-                <div style={{ width: 36, height: 36, border: '4px solid #FFEDD5', borderTopColor: '#F97316',
+              <div style={{ background: 'linear-gradient(135deg,#FFFFFF,#FFFBF0)', border: '1px solid #FDE68A', borderRadius: 16, padding: '48px 24px', textAlign: 'center' }}>
+                <div style={{ width: 36, height: 36, border: '4px solid #FEF3C7', borderTopColor: '#E8971F',
                   borderRadius: '50%', animation: 'spin 1s linear infinite', margin: '0 auto 12px' }} />
                 <p style={{ fontSize: 14, color: '#9CA3AF' }}>Loading accounts...</p>
               </div>
@@ -1342,11 +1342,11 @@ export default function TeacherDashboard() {
               <>
                 {/* Summary */}
                 <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12 }}>
-                  <div style={{ background: 'linear-gradient(135deg,#F97316,#EA580C)', borderRadius: 14, padding: '16px 20px', color: 'white' }}>
+                  <div style={{ background: 'linear-gradient(135deg,#B45309,#E8971F)', borderRadius: 14, padding: '16px 20px', color: 'white' }}>
                     <p style={{ fontSize: 11, fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.08em', color: 'rgba(255,255,255,0.75)', margin: '0 0 4px' }}>Students</p>
                     <p style={{ fontSize: 32, fontWeight: 900, margin: 0 }}>{allUsers.total.students}</p>
                   </div>
-                  <div style={{ background: 'linear-gradient(135deg,#FBBF24,#F59E0B)', borderRadius: 14, padding: '16px 20px', color: 'white' }}>
+                  <div style={{ background: 'linear-gradient(135deg,#92400E,#B45309)', borderRadius: 14, padding: '16px 20px', color: 'white' }}>
                     <p style={{ fontSize: 11, fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.08em', color: 'rgba(255,255,255,0.75)', margin: '0 0 4px' }}>Teachers</p>
                     <p style={{ fontSize: 32, fontWeight: 900, margin: 0 }}>{allUsers.total.teachers}</p>
                   </div>
@@ -1374,8 +1374,8 @@ export default function TeacherDashboard() {
                         <div style={{ flex: 1, minWidth: 0 }}>
                           <div style={{ display: 'flex', alignItems: 'center', gap: 8, flexWrap: 'wrap' }}>
                             <p style={{ fontWeight: 700, fontSize: 14, color: '#111827', margin: 0 }}>{u.name}</p>
-                            <span style={{ fontSize: 10, fontWeight: 800, background: '#FFF7ED', color: '#F97316',
-                              border: '1px solid #FED7AA', padding: '2px 8px', borderRadius: 999 }}>STUDENT</span>
+                            <span style={{ fontSize: 10, fontWeight: 800, background: '#FFFBF0', color: '#E8971F',
+                              border: '1px solid #FDE68A', padding: '2px 8px', borderRadius: 999 }}>STUDENT</span>
                           </div>
                           <p style={{ fontSize: 12, color: '#6B7280', margin: '2px 0 0',
                             overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
@@ -1435,10 +1435,32 @@ export default function TeacherDashboard() {
                             <p style={{ fontSize: 11, color: '#9CA3AF', margin: '2px 0 0' }}>ID: {u.teacherId}</p>
                           )}
                         </div>
-                        <div style={{ textAlign: 'right', flexShrink: 0 }}>
+                        <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-end', gap: 6, flexShrink: 0 }}>
                           <p style={{ fontSize: 11, color: '#D1D5DB', margin: 0 }}>
                             Joined {new Date(u.createdAt).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })}
                           </p>
+                          {/* Only show delete for other teachers, not yourself */}
+                          {u.email !== session?.user?.email && (
+                            <button
+                              onClick={() => setDeleteAllUserTeacher(u)}
+                              style={{
+                                display: 'flex', alignItems: 'center', gap: 5,
+                                padding: '5px 10px', borderRadius: 8,
+                                background: '#FEF2F2', color: '#DC2626',
+                                border: '1px solid #FECACA',
+                                fontSize: 11, fontWeight: 700, cursor: 'pointer',
+                                fontFamily: 'inherit', transition: 'all 0.15s',
+                              }}
+                              onMouseEnter={e => { (e.currentTarget as HTMLElement).style.background = '#FEE2E2' }}
+                              onMouseLeave={e => { (e.currentTarget as HTMLElement).style.background = '#FEF2F2' }}
+                            >
+                              <svg style={{ width: 12, height: 12 }} fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2}
+                                  d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+                              </svg>
+                              Delete
+                            </button>
+                          )}
                         </div>
                       </div>
                     ))
@@ -1488,6 +1510,33 @@ export default function TeacherDashboard() {
               </div>
               <p style={{ marginTop: 12, color: '#EF4444', fontWeight: 500, fontSize: 13 }}>
                 All their narratives and data will be permanently deleted.
+              </p>
+            </div>
+          }
+        />
+      )}
+
+      {/* ── Delete Teacher (All Users tab) Modal ─────────── */}
+      {deleteAllUserTeacher && (
+        <ConfirmModal
+          title="Delete Teacher Account?"
+          danger
+          confirmLabel={deletingAllUserTeacher ? 'Deleting...' : 'Yes, Delete Teacher'}
+          loading={deletingAllUserTeacher}
+          onConfirm={handleDeleteAllUserTeacher}
+          onCancel={() => setDeleteAllUserTeacher(null)}
+          body={
+            <div>
+              <p style={{ marginBottom: 12 }}>You are about to permanently delete:</p>
+              <div style={{ background: '#F9FAFB', borderRadius: 10, padding: '12px 16px' }}>
+                <p style={{ fontWeight: 700, fontSize: 15, color: '#111827' }}>{deleteAllUserTeacher.name}</p>
+                <p style={{ fontSize: 12, color: '#9CA3AF', marginTop: 2 }}>{deleteAllUserTeacher.email}</p>
+                {deleteAllUserTeacher.teacherId && (
+                  <p style={{ fontSize: 12, color: '#9CA3AF' }}>ID: {deleteAllUserTeacher.teacherId}</p>
+                )}
+              </div>
+              <p style={{ marginTop: 12, color: '#EF4444', fontWeight: 500, fontSize: 13 }}>
+                This action is permanent and cannot be undone.
               </p>
             </div>
           }

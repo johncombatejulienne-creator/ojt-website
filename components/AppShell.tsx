@@ -19,7 +19,17 @@ export default function AppShell({ children, strandCode, forceTeacher, className
     <TutorialProvider>
       <TutorialAutoStart />
       <TutorialOverlay />
-      <div style={{ minHeight: '100vh', background: '#F8FAFC', display: 'flex', flexDirection: 'column' }}>
+      <div style={{
+        minHeight: '100vh',
+        background: '#FAFAF7',
+        backgroundImage: [
+          'radial-gradient(at 10% 10%, rgba(245,166,35,0.07) 0, transparent 48%)',
+          'radial-gradient(at 88% 6%,  rgba(232,151,31,0.06) 0, transparent 44%)',
+          'radial-gradient(at 50% 96%, rgba(245,166,35,0.05) 0, transparent 48%)',
+        ].join(','),
+        display: 'flex',
+        flexDirection: 'column',
+      }}>
         <Header strandCode={strandCode} forceTeacher={forceTeacher} />
         <main style={{ flex: 1, width: '100%', overflowX: 'hidden' }} className={className}>
           <div

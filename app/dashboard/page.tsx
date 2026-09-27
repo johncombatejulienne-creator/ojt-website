@@ -23,17 +23,17 @@ interface RecentNarrative {
 
 /* ─── Strand themes ──────────────────────────────────────── */
 const STRAND_THEME: Record<string, { grad: string; accent: string }> = {
-  STEM:    { grad: 'linear-gradient(135deg,#F97316 0%,#FBBF24 100%)', accent: '#F97316' },
-  ABM:     { grad: 'linear-gradient(135deg,#D97706 0%,#F59E0B 100%)', accent: '#D97706' },
-  HUMSS:   { grad: 'linear-gradient(135deg,#B45309 0%,#D97706 100%)', accent: '#B45309' },
-  TVL:     { grad: 'linear-gradient(135deg,#EA580C 0%,#F97316 100%)', accent: '#EA580C' },
-  DEFAULT: { grad: 'linear-gradient(135deg,#F97316 0%,#FBBF24 100%)', accent: '#F97316' },
+  STEM:    { grad: 'linear-gradient(135deg,#1D4ED8 0%,#2563EB 50%,#3B82F6 100%)', accent: '#2563EB' },
+  ABM:     { grad: 'linear-gradient(135deg,#047857 0%,#059669 55%,#10B981 100%)', accent: '#059669' },
+  HUMSS:   { grad: 'linear-gradient(135deg,#7E22CE 0%,#9333EA 55%,#A855F7 100%)', accent: '#9333EA' },
+  TVL:     { grad: 'linear-gradient(135deg,#D97706 0%,#E8971F 55%,#F5A623 100%)', accent: '#D97706' },
+  DEFAULT: { grad: 'linear-gradient(135deg,#92400E 0%,#B45309 45%,#E8971F 100%)', accent: '#B45309' },
 }
 
 const STATUS_CFG: Record<string, { bg: string; color: string; dot: string; label: string }> = {
   approved:           { bg: '#D1FAE5', color: '#065F46', dot: '#10B981', label: 'Approved' },
   pending:            { bg: '#FEF3C7', color: '#92400E', dot: '#F59E0B', label: 'Pending' },
-  revision_requested: { bg: '#FFEDD5', color: '#9A3412', dot: '#F97316', label: 'Revision' },
+  revision_requested: { bg: '#FFFBF0', color: '#92400E', dot: '#E8971F', label: 'Revision' },
 }
 
 function getGreeting() {
@@ -79,7 +79,7 @@ function ProgressCircle({ pct, size = 120, stroke = 10 }: { pct: number; size?: 
   const [anim, setAnim] = useState(0)
   useEffect(() => { const t = setTimeout(() => setAnim(pct), 300); return () => clearTimeout(t) }, [pct])
   const offset = circ - (anim / 100) * circ
-  const color = pct >= 100 ? '#10B981' : pct >= 60 ? '#F59E0B' : '#F97316'
+  const color = pct >= 100 ? '#059669' : pct >= 60 ? '#E8971F' : '#F5A623'
   return (
     <div style={{ position: 'relative', width: size, height: size, flexShrink: 0 }}>
       <svg width={size} height={size} style={{ transform: 'rotate(-90deg)' }}>
@@ -204,9 +204,9 @@ function NotifIcon({ type }: { type: string }) {
     </div>
   )
   if (type === 'revision_requested') return (
-    <div style={{ width: 34, height: 34, borderRadius: 10, background: '#FFEDD5',
+    <div style={{ width: 34, height: 34, borderRadius: 10, background: '#FFFBF0',
       display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
-      <svg style={{ width: 16, height: 16, color: '#EA580C' }} fill="none" stroke="currentColor" viewBox="0 0 24 24">
+      <svg style={{ width: 16, height: 16, color: '#E8971F' }} fill="none" stroke="currentColor" viewBox="0 0 24 24">
         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"/>
       </svg>
     </div>
@@ -299,31 +299,7 @@ export default function StudentDashboard() {
   }, [session])
 
   /* ── Loading ──────────────────────────────────────────── */
-  if (loading || status === 'loading') return (
-    <div style={{ minHeight: '100vh', display: 'flex', flexDirection: 'column',
-      alignItems: 'center', justifyContent: 'center',
-      background: 'linear-gradient(135deg,#F97316 0%,#EA580C 60%,#FBBF24 100%)', gap: 20 }}>
-      {/* Real PSBC circular logo */}
-      <div style={{ width: 100, height: 100, borderRadius: '50%', overflow: 'hidden',
-        border: '4px solid rgba(255,255,255,0.8)',
-        boxShadow: '0 8px 28px rgba(0,0,0,0.2)', animation: 'pulse 2s ease infinite',
-        background: 'white' }}>
-        {/* eslint-disable-next-line @next/next/no-img-element */}
-        <img src="/psbc-logo.jpg" alt="PSBC" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
-      </div>
-      <div style={{ display: 'flex', gap: 6 }}>
-        {[0,1,2].map(i => (
-          <div key={i} style={{ width: 8, height: 8, borderRadius: '50%', background: 'rgba(255,255,255,0.8)',
-            animation: `bounce 1.2s ease ${i * 0.15}s infinite` }} />
-        ))}
-      </div>
-      <p style={{ fontSize: 14, color: 'rgba(255,255,255,0.85)', fontWeight: 600 }}>Loading your journal...</p>
-      <style>{`
-        @keyframes bounce { 0%,80%,100%{transform:scale(0.8);opacity:0.5} 40%{transform:scale(1.2);opacity:1} }
-        @keyframes pulse  { 0%,100%{transform:scale(1)} 50%{transform:scale(1.05)} }
-      `}</style>
-    </div>
-  )
+  if (loading || status === 'loading') return null
 
   const strandKey = student?.strand?.name?.toUpperCase().split(' ')
     .find(w => ['STEM', 'ABM', 'HUMSS', 'TVL'].includes(w)) ?? 'DEFAULT'
@@ -331,7 +307,7 @@ export default function StudentDashboard() {
   const pct      = Math.min(cl.progressPercentage, 100)
   const userName = student?.name ?? session?.user?.name ?? 'Student'
   const firstName = userName.split(' ')[0]
-  const progressColor = pct >= 100 ? '#10B981' : pct >= 60 ? '#F59E0B' : '#F97316'
+  const progressColor = pct >= 100 ? '#059669' : pct >= 60 ? '#E8971F' : '#F5A623'
   const progressLabel = pct >= 100 ? 'Complete! 🎉' : pct >= 60 ? 'In Progress' : 'Getting Started'
 
   return (
@@ -408,10 +384,10 @@ export default function StudentDashboard() {
                     overflow: 'hidden', animation: 'scaleIn 0.2s cubic-bezier(0.34,1.3,0.64,1) both' }}>
                     <div style={{ padding: '14px 16px', borderBottom: '1px solid #F3F4F6',
                       display: 'flex', justifyContent: 'space-between', alignItems: 'center',
-                      background: 'linear-gradient(135deg,#FFF7ED,#FFEDD5)' }}>
+                      background: 'linear-gradient(135deg,#FFFBF0,#FEF3C7)' }}>
                       <p style={{ fontWeight: 800, fontSize: 14, color: '#111827', margin: 0 }}>🔔 Notifications</p>
                       {notifications.length > 0 && (
-                        <button onClick={markAllRead} style={{ fontSize: 11, color: '#F97316',
+                        <button onClick={markAllRead} style={{ fontSize: 11, color: '#E8971F',
                           background: 'none', border: 'none', cursor: 'pointer', fontFamily: 'inherit', fontWeight: 700 }}>
                           Mark all read
                         </button>
@@ -428,7 +404,7 @@ export default function StudentDashboard() {
                         {notifications.map(n => (
                           <div key={n.id} onClick={() => { setShowNotif(false); if (n.link) router.push(n.link) }}
                             style={{ padding: '12px 16px', borderBottom: '1px solid #F9FAFB',
-                              background: n.isRead ? 'white' : '#FFF7ED',
+                              background: n.isRead ? 'white' : '#FFFBF0',
                               cursor: n.link ? 'pointer' : 'default', transition: 'background 0.15s' }}>
                             <div style={{ display: 'flex', gap: 10, alignItems: 'flex-start' }}>
                               <NotifIcon type={n.type} />
@@ -438,7 +414,7 @@ export default function StudentDashboard() {
                                 <p style={{ fontSize: 12, color: '#6B7280', margin: 0, lineHeight: 1.4 }}>{n.message}</p>
                               </div>
                               {!n.isRead && (
-                                <div style={{ width: 8, height: 8, background: '#F97316', borderRadius: '50%',
+                                <div style={{ width: 8, height: 8, background: '#E8971F', borderRadius: '50%',
                                   flexShrink: 0, marginTop: 4, animation: 'pulseGlow 2s ease infinite' }} />
                               )}
                             </div>
@@ -495,13 +471,13 @@ export default function StudentDashboard() {
         ═══════════════════════════════════════════════════ */}
         <div data-tutorial="stat-cards" className="stats-grid" style={{ animation: 'fadeSlideUp 0.5s 0.1s ease both' }}>
           <StatCard label="Narratives" value={<AnimCount to={ns.total} />} sub="total submissions"
-            bg="linear-gradient(135deg,#F97316,#FB923C)"
+            bg="linear-gradient(135deg,#B45309,#E8971F)"
             icon={icons.narratives} onClick={() => router.push('/narratives')} />
           <StatCard label="This Week" value={<AnimCount to={ns.thisWeek} />} sub="narratives this week"
-            bg="linear-gradient(135deg,#8B5CF6,#6D28D9)"
+            bg="linear-gradient(135deg,#D97706,#F5A623)"
             icon={icons.week} onClick={() => router.push('/narratives')} />
           <StatCard label="Pending Review" value={<AnimCount to={ns.pending} />} sub="awaiting feedback"
-            bg="linear-gradient(135deg,#F59E0B,#D97706)"
+            bg="linear-gradient(135deg,#92400E,#B45309)"
             icon={icons.pending} onClick={() => router.push('/narratives')} />
           <StatCard label="Requirements" value={`${pct}%`} sub={`${cl.completedItems}/${cl.totalItems} done`}
             bg={`linear-gradient(135deg,${progressColor},${progressColor}CC)`}
@@ -596,7 +572,7 @@ export default function StudentDashboard() {
                 <button onClick={() => router.push('/narratives/create')}
                   style={{ display: 'flex', alignItems: 'center', gap: 10, width: '100%',
                     background: 'none', border: 'none', cursor: 'pointer', fontFamily: 'inherit' }}>
-                  <div style={{ width: 38, height: 38, borderRadius: 10, background: '#FFF7ED',
+                  <div style={{ width: 38, height: 38, borderRadius: 10, background: '#FFFBF0',
                     border: `2px dashed ${theme.accent}50`, display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
                     <svg style={{ width: 18, height: 18, color: theme.accent }} fill="none" stroke="currentColor" viewBox="0 0 24 24">
                       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M12 4v16m8-8H4"/>
@@ -619,23 +595,23 @@ export default function StudentDashboard() {
           </div>
           <div data-tutorial="narratives-list" className="grid-2">
             <QuickAction label="New Narrative" desc="Document today's work experience"
-              accent="#F97316" onClick={() => router.push('/narratives/create')} icon={icons.pen} />
+              accent="#7C3AED" onClick={() => router.push('/narratives/create')} icon={icons.pen} />
             <QuickAction label="My Narratives" desc="View and manage all submissions"
-              accent="#8B5CF6" onClick={() => router.push('/narratives')} icon={icons.list}
+              accent="#6366F1" onClick={() => router.push('/narratives')} icon={icons.list}
               badge={ns.pending > 0 ? String(ns.pending) : undefined} />
             <QuickAction label="Requirements" desc="Track your checklist items"
               accent="#10B981" onClick={() => router.push('/checklist')} icon={icons.check} />
             <QuickAction label="Announcements" desc="Latest updates from teachers"
-              accent="#F59E0B" onClick={() => router.push('/announcements')} icon={icons.announce} />
+              accent="#F97316" onClick={() => router.push('/announcements')} icon={icons.announce} />
           </div>
         </div>
 
         {/* ══════════════════════════════════════════════════
             PROGRESS DETAIL CARD
         ═══════════════════════════════════════════════════ */}
-        <div style={{ background: 'linear-gradient(135deg,#FFFBEB,#FFF7ED)',
-          border: '1px solid #FED7AA', borderRadius: 20,
-          boxShadow: '0 2px 12px rgba(249,115,22,0.08)', padding: '22px 24px',
+        <div style={{ background: 'linear-gradient(135deg,#FFFBF0,#FEF3C7)',
+          border: '1px solid #FDE68A', borderRadius: 20,
+          boxShadow: '0 2px 12px rgba(232,151,31,0.1)', padding: '22px 24px',
           animation: 'fadeSlideUp 0.5s 0.35s ease both', boxSizing: 'border-box' }}>
           <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between',
             flexWrap: 'wrap', gap: 10, marginBottom: 18 }}>
@@ -649,8 +625,8 @@ export default function StudentDashboard() {
             </div>
             <span style={{
               padding: '5px 14px', borderRadius: 999, fontSize: 12, fontWeight: 700, whiteSpace: 'nowrap',
-              background: pct >= 100 ? '#D1FAE5' : pct >= 60 ? '#FEF3C7' : '#FFEDD5',
-              color:      pct >= 100 ? '#065F46' : pct >= 60 ? '#92400E' : '#9A3412',
+              background: pct >= 100 ? '#D1FAE5' : pct >= 60 ? '#FEF3C7' : '#FFFBF0',
+              color:      pct >= 100 ? '#065F46' : pct >= 60 ? '#92400E' : '#B45309',
             }}>{progressLabel}</span>
           </div>
           {/* Progress bar */}
@@ -684,7 +660,7 @@ export default function StudentDashboard() {
           <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, minmax(0, 1fr))', gap: 12 }}
             className="grid-3">
             {[
-              { label: 'Company',       value: student?.company,            icon: icons.company, bg: '#FFF7ED', border: '#FED7AA' },
+              { label: 'Company',       value: student?.company,            icon: icons.company, bg: '#FFFBF0', border: '#FDE68A' },
               { label: 'Supervisor',    value: student?.supervisor?.name,   icon: icons.user,    bg: '#F0FDF4', border: '#A7F3D0' },
               { label: 'Grade & Sec.',
                 value: student?.gradeLevel && student?.section?.name

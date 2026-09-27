@@ -1,122 +1,93 @@
-// PSBC Work Immersion Portal — Service Worker v5
-// Minimal SW — NO caching, NO splash screen, NO offline page
-// Just handles push notifications
+// PSBC Work Immersion Portal — Service Worker v10
+// Strategy: network-only for everything except icons/manifest
+// Bumping version forces all old caches to be wiped on next open
 
-const CACHE_NAME = 'ojt-portal-v5'
+const CACHE_NAME = 'ojt-portal-v10'
 
-// Delete ALL old caches on activate
-self.addEventListener('install', () => self.skipWaiting())
-
-self.addEventListener('activate', event => {
-  event.waitUntil(
-    caches.keys().then(keys => Promise.all(keys.map(k => caches.delete(k))))
-      .then(() => self.clients.claim())
-  )
-})
-
-// Pass ALL requests directly to network — no caching at all
-self.addEventListener('fetch', () => { /* network only */ })
-
-// Push notifications only
-self.addEventListener('push', event => {
-  const data = event.data?.json() ?? {}
-  event.waitUntil(
-    self.registration.showNotification(data.title ?? 'PSBC Work Immersion', {
-      body: data.body ?? 'You have a new notification',
-      icon: '/icon-192.png',
-      badge: '/icon-72.png',
-      data: { url: data.url ?? '/' },
-    })
-  )
-})
-
-self.addEventListener('notificationclick', event => {
-  event.notification.close()
-  const url = event.notification.data?.url ?? '/'
-  event.waitUntil(clients.openWindow(url))
-})
-
-// Only cache these static assets — NOT HTML pages
-const STATIC_ASSETS = [
-  '/manifest.json',
-  '/icon-192.png',
-  '/icon-512.png',
-  '/icon-72.png',
-  '/psbc-logo.jpg',
-]
-
-// Install — cache only static assets
+// ── Install: skip waiting immediately, no pre-caching ────────
 self.addEventListener('install', event => {
-  event.waitUntil(
-    caches.open(CACHE_NAME).then(cache =>
-      cache.addAll(STATIC_ASSETS).catch(() => {})
-    ).then(() => self.skipWaiting())
-  )
+  event.waitUntil(self.skipWaiting())
 })
 
-// Activate — delete ALL old caches immediately
+// ── Activate: delete ALL old caches, claim all clients ───────
 self.addEventListener('activate', event => {
   event.waitUntil(
-    caches.keys().then(keys =>
-      Promise.all(keys.map(key => caches.delete(key)))
-    ).then(() => self.clients.claim())
+    caches.keys()
+      .then(keys => Promise.all(keys.map(k => caches.delete(k))))
+      .then(() => self.clients.claim())
+      .then(() => {
+        // Tell all open tabs to reload so they get fresh JS/CSS
+        return self.clients.matchAll({ type: 'window' }).then(clients => {
+          clients.forEach(client => client.postMessage({ type: 'SW_UPDATED' }))
+        })
+      })
   )
 })
 
-// Fetch strategy:
-// - HTML/navigation pages → ALWAYS network (never serve from cache)
-// - Static assets (images, manifest) → cache first
+// ── Fetch: network-only for everything except a tiny set ─────
 self.addEventListener('fetch', event => {
   const { request } = event
   const url = new URL(request.url)
 
-  // Skip non-GET requests
+  // Non-GET: always pass through
   if (request.method !== 'GET') return
 
-  // ALWAYS fetch HTML/navigation from network — never cache pages
-  // This prevents the stuck splash screen on re-open
-  if (request.mode === 'navigate' ||
-      request.headers.get('accept')?.includes('text/html') ||
-      url.pathname === '/' ||
-      url.pathname === '/login' ||
-      url.pathname === '/dashboard' ||
-      url.pathname.startsWith('/teacher') ||
-      url.pathname.startsWith('/narratives') ||
-      url.pathname.startsWith('/api/')) {
-    // Network only for all page requests
+  // _next/static (JS, CSS bundles) → ALWAYS network, never cache
+  // This is the critical part — Next.js CSS-in-JS chunks must always be fresh
+  if (url.pathname.startsWith('/_next/')) {
+    event.respondWith(
+      fetch(request).catch(() => new Response('', { status: 503 }))
+    )
+    return
+  }
+
+  // API routes → network only
+  if (url.pathname.startsWith('/api/')) {
     event.respondWith(
       fetch(request).catch(() =>
-        new Response('You are offline. Please reconnect and try again.', {
+        new Response(JSON.stringify({ error: 'offline' }), {
           status: 503,
-          headers: { 'Content-Type': 'text/plain' }
+          headers: { 'Content-Type': 'application/json' },
         })
       )
     )
     return
   }
 
-  // Cache-first for static assets only (images, icons, manifest)
-  if (url.pathname.match(/\.(png|jpg|jpeg|svg|ico|webp|json)$/)) {
+  // HTML navigation → network only (always get fresh page)
+  if (request.mode === 'navigate' || request.headers.get('accept')?.includes('text/html')) {
     event.respondWith(
-      caches.match(request).then(cached => {
-        if (cached) return cached
-        return fetch(request).then(response => {
-          if (response.ok) {
-            const clone = response.clone()
-            caches.open(CACHE_NAME).then(cache => cache.put(request, clone))
-          }
-          return response
-        }).catch(() => cached ?? new Response('', { status: 404 }))
-      })
+      fetch(request).catch(() =>
+        new Response('<h1>You are offline</h1><p>Please reconnect and try again.</p>', {
+          status: 503,
+          headers: { 'Content-Type': 'text/html' },
+        })
+      )
+    )
+    return
+  }
+
+  // Static icons/images/manifest → cache-first (these never change)
+  if (url.pathname.match(/\.(png|jpg|jpeg|svg|ico|webp)$/) || url.pathname === '/manifest.json') {
+    event.respondWith(
+      caches.open(CACHE_NAME).then(cache =>
+        cache.match(request).then(cached => {
+          if (cached) return cached
+          return fetch(request).then(response => {
+            if (response.ok) cache.put(request, response.clone())
+            return response
+          }).catch(() => cached ?? new Response('', { status: 404 }))
+        })
+      )
     )
     return
   }
 
   // Everything else → network only
-  event.respondWith(fetch(request))
+  event.respondWith(fetch(request).catch(() => new Response('', { status: 503 })))
 })
 
-// Push notifications
+// ── Push notifications ────────────────────────────────────────
 self.addEventListener('push', event => {
   const data = event.data?.json() ?? {}
   event.waitUntil(
@@ -134,11 +105,11 @@ self.addEventListener('notificationclick', event => {
   event.notification.close()
   const url = event.notification.data?.url ?? '/'
   event.waitUntil(
-    clients.matchAll({ type: 'window' }).then(windowClients => {
+    self.clients.matchAll({ type: 'window' }).then(windowClients => {
       for (const client of windowClients) {
         if (client.url === url && 'focus' in client) return client.focus()
       }
-      if (clients.openWindow) return clients.openWindow(url)
+      return self.clients.openWindow(url)
     })
   )
 })

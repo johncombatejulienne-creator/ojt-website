@@ -130,7 +130,8 @@ function LoginPageInner() {
 
   if (status === 'loading') return (
     <div style={{ minHeight: '100vh', display: 'flex', alignItems: 'center',
-      justifyContent: 'center' }} className="bg-animated-gradient">
+      justifyContent: 'center', background: 'linear-gradient(135deg,#B45309,#E8971F)' }}
+      className="bg-animated-gradient">
       <div style={{ width: 44, height: 44, border: '4px solid rgba(255,255,255,0.3)',
         borderTopColor: 'white', borderRadius: '50%', animation: 'spin 1s linear infinite' }} />
     </div>
@@ -142,7 +143,7 @@ function LoginPageInner() {
       {/* -- LEFT SIDE: Branding ---------------------------- */}
       <div style={{
         display: 'none',
-        flex: 1, background: 'linear-gradient(145deg, #7C2D12 0%, #EA580C 40%, #FBBF24 100%)',
+        flex: 1, background: 'linear-gradient(145deg,#78350F 0%,#B45309 45%,#F5A623 100%)',
         padding: '48px', position: 'relative', overflow: 'hidden',
         flexDirection: 'column', justifyContent: 'space-between',
       }} className="login-left">
@@ -237,18 +238,23 @@ function LoginPageInner() {
       {/* -- RIGHT SIDE: Login card ------------------------- */}
       <div style={{
         flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center',
-        background: 'linear-gradient(160deg, #FFF7ED 0%, #F8FAFC 40%, #EEF2FF 100%)',
+        background: '#FAFAF7',
+        backgroundImage: [
+          'radial-gradient(at 15% 15%, rgba(245,166,35,0.1) 0, transparent 50%)',
+          'radial-gradient(at 85% 8%,  rgba(232,151,31,0.08) 0, transparent 45%)',
+          'radial-gradient(at 50% 92%, rgba(245,166,35,0.07) 0, transparent 50%)',
+        ].join(','),
         padding: '32px 24px', minHeight: '100vh', position: 'relative', overflow: 'hidden',
       }}>
         {/* Colorful background blobs */}
         <div style={{ position: 'absolute', top: -80, right: -80, width: 320, height: 320,
-          borderRadius: '50%', background: 'radial-gradient(circle, rgba(249,115,22,0.12) 0%, transparent 70%)',
+          borderRadius: '50%', background: 'radial-gradient(circle, rgba(245,166,35,0.12) 0%, transparent 70%)',
           pointerEvents: 'none' }} />
         <div style={{ position: 'absolute', bottom: -60, left: -60, width: 260, height: 260,
-          borderRadius: '50%', background: 'radial-gradient(circle, rgba(99,102,241,0.1) 0%, transparent 70%)',
+          borderRadius: '50%', background: 'radial-gradient(circle, rgba(180,83,9,0.08) 0%, transparent 70%)',
           pointerEvents: 'none' }} />
         <div style={{ position: 'absolute', top: '40%', left: '10%', width: 180, height: 180,
-          borderRadius: '50%', background: 'radial-gradient(circle, rgba(16,185,129,0.07) 0%, transparent 70%)',
+          borderRadius: '50%', background: 'radial-gradient(circle, rgba(232,151,31,0.06) 0%, transparent 70%)',
           pointerEvents: 'none' }} />
         <div style={{ width: '100%', maxWidth: 440, position: 'relative', zIndex: 1 }}
           className="animate-slide-up">
@@ -257,9 +263,9 @@ function LoginPageInner() {
           <div style={{ textAlign: 'center', marginBottom: 32 }} className="login-mobile-logo">
             <div style={{
               width: 72, height: 72, borderRadius: 18, background: 'white',
-              border: '3px solid #FBBF24',
+              border: '3px solid #FDE68A',
               display: 'flex', alignItems: 'center', justifyContent: 'center',
-              margin: '0 auto 14px', boxShadow: '0 8px 24px rgba(249,115,22,0.25)', padding: 4,
+              margin: '0 auto 14px', boxShadow: '0 8px 24px rgba(232,151,31,0.2)', padding: 4,
             }}>
               {/* eslint-disable-next-line @next/next/no-img-element */}
               <img src="/psbc-logo.jpg" onError={(e) => { (e.target as HTMLImageElement).src = "/psbc-logo.svg" }} alt="PSBC" style={{ width: '100%', height: '100%', objectFit: 'contain' }} />
@@ -275,10 +281,10 @@ function LoginPageInner() {
           {/* Card */}
           <div style={{
             background: 'rgba(255,255,255,0.92)',
-            backdropFilter: 'blur(12px)',
+            backdropFilter: 'blur(16px)',
             borderRadius: 24,
-            boxShadow: '0 20px 60px rgba(249,115,22,0.12), 0 4px 16px rgba(0,0,0,0.06)',
-            border: '1px solid rgba(249,115,22,0.15)',
+            boxShadow: '0 20px 60px rgba(180,83,9,0.1), 0 4px 16px rgba(0,0,0,0.05)',
+            border: '1px solid rgba(232,151,31,0.15)',
             overflow: 'hidden',
           }}>
             {/* Role tabs — pill selector */}
@@ -290,10 +296,10 @@ function LoginPageInner() {
                     border: 'none', cursor: 'pointer', fontFamily: 'inherit',
                     transition: 'all 0.22s cubic-bezier(0.34,1.2,0.64,1)',
                     background: userType === t
-                      ? 'linear-gradient(135deg,#F97316,#EA580C)'
+                      ? 'linear-gradient(135deg,#E8971F,#F5A623)'
                       : '#F3F4F6',
                     color: userType === t ? 'white' : '#9CA3AF',
-                    boxShadow: userType === t ? '0 4px 14px rgba(249,115,22,0.4)' : 'none',
+                    boxShadow: userType === t ? '0 4px 14px rgba(232,151,31,0.35)' : 'none',
                     transform: userType === t ? 'scale(1.03)' : 'scale(1)',
                     display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 7,
                   }}>
@@ -317,11 +323,11 @@ function LoginPageInner() {
               {authErrorMsg && (
                 <div style={{
                   display: 'flex', gap: 10, padding: '14px 16px',
-                  background: '#FFF7ED', border: '1.5px solid #FED7AA',
+                  background: '#FFFBF0', border: '1.5px solid #FDE68A',
                   borderRadius: 12, marginBottom: 16, fontSize: 13, color: '#92400E',
                   lineHeight: 1.5,
                 }}>
-                  <svg style={{ width: 18, height: 18, flexShrink: 0, marginTop: 1, color: '#F97316' }} fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <svg style={{ width: 18, height: 18, flexShrink: 0, marginTop: 1, color: '#E8971F' }} fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2}
                       d="M12 9v2m0 4h.01M10.29 3.86L1.82 18a2 2 0 001.71 3h16.94a2 2 0 001.71-3L13.71 3.86a2 2 0 00-3.42 0z"/>
                   </svg>
@@ -347,13 +353,13 @@ function LoginPageInner() {
               {userType === 'student' && (
                 <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
                   <div style={{
-                    background: '#EFF6FF', border: '1px solid #BFDBFE',
+                    background: '#FFFBF0', border: '1px solid #FDE68A',
                     borderRadius: 12, padding: '14px 16px', textAlign: 'center',
                   }}>
-                    <p style={{ fontSize: 13, fontWeight: 700, color: '#1E40AF', margin: '0 0 3px' }}>
+                    <p style={{ fontSize: 13, fontWeight: 700, color: '#92400E', margin: '0 0 3px' }}>
                       Students sign in with Gmail
                     </p>
-                    <p style={{ fontSize: 12, color: '#60A5FA', margin: 0 }}>
+                    <p style={{ fontSize: 12, color: '#B45309', margin: 0 }}>
                       Use your school-registered Google account
                     </p>
                   </div>
@@ -367,11 +373,11 @@ function LoginPageInner() {
                       color: '#374151', cursor: loading ? 'not-allowed' : 'pointer',
                       fontFamily: 'inherit', transition: 'all 0.2s',
                     }}
-                    onMouseEnter={e => { if (!loading) (e.currentTarget as HTMLElement).style.borderColor = '#F97316' }}
+                    onMouseEnter={e => { if (!loading) (e.currentTarget as HTMLElement).style.borderColor = '#E8971F' }}
                     onMouseLeave={e => { (e.currentTarget as HTMLElement).style.borderColor = '#E5E7EB' }}
                   >
                     {loading
-                      ? <div style={{ width: 20, height: 20, border: '3px solid #E5E7EB', borderTopColor: '#F97316', borderRadius: '50%', animation: 'spin 1s linear infinite' }} />
+                      ? <div style={{ width: 20, height: 20, border: '3px solid #E5E7EB', borderTopColor: '#E8971F', borderRadius: '50%', animation: 'spin 1s linear infinite' }} />
                       : <GoogleIcon />
                     }
                     {loading ? 'Signing in...' : 'Continue with Google'}
@@ -383,14 +389,14 @@ function LoginPageInner() {
               {userType === 'teacher' && (
                 <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
                   <div style={{
-                    background: 'linear-gradient(135deg,#FFF7ED,#FFEDD5)',
-                    border: '1px solid #FED7AA',
+                    background: 'linear-gradient(135deg,#FFFBF0,#FEF3C7)',
+                    border: '1px solid #FDE68A',
                     borderRadius: 12, padding: '14px 16px', textAlign: 'center',
                   }}>
                     <p style={{ fontSize: 13, fontWeight: 700, color: '#92400E', margin: '0 0 3px' }}>
                       Teachers sign in with Gmail
                     </p>
-                    <p style={{ fontSize: 12, color: '#F97316', margin: 0 }}>
+                    <p style={{ fontSize: 12, color: '#B45309', margin: 0 }}>
                       Use your school-registered Google account
                     </p>
                   </div>
@@ -399,14 +405,14 @@ function LoginPageInner() {
                     disabled={loading}
                     style={{
                       display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 10,
-                      padding: '13px', background: loading ? '#EA580C' : '#F97316',
+                      padding: '13px', background: loading ? '#D97706' : 'linear-gradient(135deg,#E8971F,#F5A623)',
                       border: 'none', borderRadius: 12, fontSize: 14, fontWeight: 700,
                       color: 'white', cursor: loading ? 'not-allowed' : 'pointer',
-                      fontFamily: 'inherit', transition: 'background 0.2s',
-                      boxShadow: '0 4px 14px rgba(249,115,22,0.4)',
+                      fontFamily: 'inherit', transition: 'opacity 0.2s',
+                      boxShadow: '0 4px 14px rgba(232,151,31,0.4)',
                     }}
-                    onMouseEnter={e => { if (!loading) (e.currentTarget as HTMLElement).style.background = '#EA580C' }}
-                    onMouseLeave={e => { if (!loading) (e.currentTarget as HTMLElement).style.background = '#F97316' }}
+                    onMouseEnter={e => { if (!loading) (e.currentTarget as HTMLElement).style.opacity = '0.9' }}
+                    onMouseLeave={e => { if (!loading) (e.currentTarget as HTMLElement).style.opacity = '1' }}
                   >
                     {loading
                       ? <div style={{ width: 20, height: 20, border: '3px solid rgba(255,255,255,0.3)', borderTopColor: 'white', borderRadius: '50%', animation: 'spin 1s linear infinite' }} />
@@ -452,7 +458,7 @@ export default function LoginPage() {
   return (
     <Suspense fallback={
       <div style={{ minHeight: '100vh', display: 'flex', alignItems: 'center',
-        justifyContent: 'center', background: 'linear-gradient(135deg,#F97316,#EA580C)' }}>
+        justifyContent: 'center', background: 'linear-gradient(135deg,#B45309,#E8971F)' }}>
         <div style={{ width: 44, height: 44, border: '4px solid rgba(255,255,255,0.3)',
           borderTopColor: 'white', borderRadius: '50%', animation: 'spin 1s linear infinite' }} />
         <style>{`@keyframes spin{to{transform:rotate(360deg)}}`}</style>

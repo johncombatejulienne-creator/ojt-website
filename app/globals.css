@@ -3,21 +3,26 @@
 /* ─────────────────────────────────────────────────────────
    DESIGN SYSTEM — OJT Work Immersion Portal
    Strand themes: STEM | ABM | HUMSS | TVL
+   Theme: warm golden-amber (matching psbclearance reference)
 ───────────────────────────────────────────────────────── */
 
 @theme {
-  /* ── PSBC Brand: Yellow / Orange / Gray ─────────────── */
-  --color-primary:     #F97316;
-  --color-primary-50:  #FFF7ED;
-  --color-primary-100: #FFEDD5;
-  --color-primary-200: #FED7AA;
-  --color-primary-300: #FDBA74;
-  --color-primary-400: #FB923C;
-  --color-primary-500: #F97316;
-  --color-primary-600: #EA580C;
-  --color-primary-700: #C2410C;
-  --color-primary-800: #9A3412;
-  --color-primary-900: #7C2D12;
+  /* ── PSBC Brand: Warm Golden Amber ──────────────────── */
+  --color-primary:     #E8971F;
+  --color-primary-50:  #FFFBF0;
+  --color-primary-100: #FEF3C7;
+  --color-primary-200: #FDE68A;
+  --color-primary-300: #FCD34D;
+  --color-primary-400: #FBBF24;
+  --color-primary-500: #F5A623;
+  --color-primary-600: #E8971F;
+  --color-primary-700: #D97706;
+  --color-primary-800: #B45309;
+  --color-primary-900: #78350F;
+
+  /* ── Accent: kept for highlights ────────────────────── */
+  --color-accent:       #F5A623;
+  --color-accent-light: #FFFBF0;
 
   /* ── Neutrals ───────────────────────────────────────── */
   --color-gray-50:  #F9FAFB;
@@ -38,32 +43,32 @@
   --color-info:     #3B82F6;
 
   /* ── Strand: STEM ──────────────────────────────────── */
-  --strand-stem-primary:   #F97316;
-  --strand-stem-secondary: #FBBF24;
-  --strand-stem-accent:    #EA580C;
-  --strand-stem-bg:        #FFF7ED;
-  --strand-stem-surface:   #FFEDD5;
+  --strand-stem-primary:   #2563EB;
+  --strand-stem-secondary: #3B82F6;
+  --strand-stem-accent:    #1D4ED8;
+  --strand-stem-bg:        #EFF6FF;
+  --strand-stem-surface:   #DBEAFE;
 
   /* ── Strand: ABM ────────────────────────────────────── */
-  --strand-abm-primary:   #D97706;
-  --strand-abm-secondary: #F59E0B;
-  --strand-abm-accent:    #92400E;
-  --strand-abm-bg:        #FFFBEB;
-  --strand-abm-surface:   #FEF3C7;
+  --strand-abm-primary:   #059669;
+  --strand-abm-secondary: #10B981;
+  --strand-abm-accent:    #047857;
+  --strand-abm-bg:        #ECFDF5;
+  --strand-abm-surface:   #D1FAE5;
 
   /* ── Strand: HUMSS ──────────────────────────────────── */
-  --strand-humss-primary:   #B45309;
-  --strand-humss-secondary: #D97706;
-  --strand-humss-accent:    #78350F;
-  --strand-humss-bg:        #FFFBEB;
-  --strand-humss-surface:   #FDE68A;
+  --strand-humss-primary:   #9333EA;
+  --strand-humss-secondary: #A855F7;
+  --strand-humss-accent:    #7E22CE;
+  --strand-humss-bg:        #FAF5FF;
+  --strand-humss-surface:   #F3E8FF;
 
   /* ── Strand: TVL ────────────────────────────────────── */
-  --strand-tvl-primary:   #EA580C;
-  --strand-tvl-secondary: #F97316;
-  --strand-tvl-accent:    #9A3412;
-  --strand-tvl-bg:        #FFF7ED;
-  --strand-tvl-surface:   #FFEDD5;
+  --strand-tvl-primary:   #E8971F;
+  --strand-tvl-secondary: #F5A623;
+  --strand-tvl-accent:    #D97706;
+  --strand-tvl-bg:        #FFFBF0;
+  --strand-tvl-surface:   #FEF3C7;
 
   /* ── Spacing scale (8px base) ───────────────────────── */
   --space-1:  0.25rem;
@@ -97,14 +102,14 @@
     "Helvetica Neue", Arial, "Noto Sans", sans-serif;
 
   /* ── Surface colors ─────────────────────────────────── */
-  --color-background: #F8FAFC;
+  --color-background: #FAFAF7;
   --color-surface:    #FFFFFF;
-  --color-border:     #E5E7EB;
-  --color-text:       #111827;
-  --color-muted:      #6B7280;
+  --color-border:     #EDE9E0;
+  --color-text:       #1A1A2E;
+  --color-muted:      #6B6B7B;
 
   /* Legacy compat */
-  --color-primary-old: #4F46E5;
+  --color-primary-old: #E8971F;
 }
 
 /* ─────────────────────────────────────────────────────────
@@ -122,7 +127,11 @@ html {
 
 body {
   font-family: var(--font-sans);
-  background: #F8FAFC;
+  background: #FAFAF7;
+  background-image:
+    radial-gradient(at 15% 10%, rgba(245,166,35,0.06) 0, transparent 50%),
+    radial-gradient(at 88% 8%,  rgba(232,151,31,0.05) 0, transparent 45%),
+    radial-gradient(at 50% 95%, rgba(245,166,35,0.04) 0, transparent 50%);
   color: var(--color-text);
   line-height: 1.5;
   overflow-x: hidden;
@@ -156,10 +165,11 @@ a { color: inherit; text-decoration: none; }
    CARD SYSTEM
 ───────────────────────────────────────────────────────── */
 .card {
-  background: var(--color-surface);
-  border: 1px solid var(--color-border);
+  background: rgba(255,255,255,0.95);
+  backdrop-filter: blur(8px);
+  border: 1px solid rgba(232,151,31,0.12);
   border-radius: var(--radius-xl);
-  box-shadow: var(--shadow-sm);
+  box-shadow: 0 1px 4px rgba(232,151,31,0.06), 0 4px 16px rgba(0,0,0,0.04);
   overflow: hidden;
 }
 
@@ -300,13 +310,13 @@ a { color: inherit; text-decoration: none; }
   --strand-surface:   var(--strand-tvl-surface);
 }
 
-/* Default (no strand assigned) */
+/* ── Default (no strand assigned) */
 .theme-default {
-  --strand-primary:   #4F46E5;
-  --strand-secondary: #6366F1;
-  --strand-accent:    #8B5CF6;
-  --strand-bg:        #F8FAFC;
-  --strand-surface:   #EEF2FF;
+  --strand-primary:   #E8971F;
+  --strand-secondary: #F5A623;
+  --strand-accent:    #D97706;
+  --strand-bg:        #FFFBF0;
+  --strand-surface:   #FEF3C7;
 }
 
 /* ─────────────────────────────────────────────────────────
@@ -315,6 +325,27 @@ a { color: inherit; text-decoration: none; }
 .strand-header {
   background: linear-gradient(135deg, var(--strand-primary) 0%, var(--strand-secondary) 100%);
   color: white;
+}
+
+/* ─────────────────────────────────────────────────────────
+   GRADIENT BANNER (welcome cards on dashboards)
+───────────────────────────────────────────────────────── */
+.gradient-banner {
+  border-radius: 20px;
+  padding: 24px 24px;
+  color: white;
+  box-shadow: 0 8px 32px rgba(232,151,31,0.3);
+  box-sizing: border-box;
+  position: relative;
+  overflow: hidden;
+}
+.gradient-banner-dots {
+  position: absolute;
+  inset: 0;
+  opacity: 0.08;
+  pointer-events: none;
+  background-image: radial-gradient(circle, white 1px, transparent 1px);
+  background-size: 24px 24px;
 }
 
 /* ─────────────────────────────────────────────────────────
@@ -334,8 +365,8 @@ a { color: inherit; text-decoration: none; }
 
 .form-input:focus {
   outline: none;
-  border-color: var(--color-primary-500);
-  box-shadow: 0 0 0 3px rgb(99 102 241 / 0.12);
+  border-color: #E8971F;
+  box-shadow: 0 0 0 3px rgba(232,151,31,0.12);
 }
 
 .form-input::placeholder { color: var(--color-gray-400); }
@@ -629,7 +660,7 @@ a { color: inherit; text-decoration: none; }
   left: 0;
   height: 3px;
   width: 0%;
-  background: linear-gradient(90deg, #F97316, #FBBF24, #10B981, #6366F1, #EC4899);
+  background: linear-gradient(90deg, #E8971F, #F5A623, #FBBF24, #F5A623, #E8971F);
   background-size: 200% 100%;
   animation: gradientShift 3s linear infinite;
   z-index: 9999;
@@ -714,8 +745,8 @@ a { color: inherit; text-decoration: none; }
 }
 
 @keyframes pulseGlow {
-  0%, 100% { box-shadow: 0 0 0 0 rgba(249,115,22,0.4); }
-  50%       { box-shadow: 0 0 0 12px rgba(249,115,22,0); }
+  0%, 100% { box-shadow: 0 0 0 0 rgba(232,151,31,0.4); }
+  50%       { box-shadow: 0 0 0 12px rgba(232,151,31,0); }
 }
 
 @keyframes gradientMove {
@@ -819,8 +850,8 @@ a { color: inherit; text-decoration: none; }
   overflow: hidden;
   transition: transform 0.2s cubic-bezier(0.34,1.56,0.64,1),
               box-shadow 0.2s ease;
-  background: linear-gradient(135deg, #F97316 0%, #EA580C 100%);
-  box-shadow: 0 4px 14px rgba(249,115,22,0.4);
+  background: linear-gradient(135deg, #F5A623 0%, #E8971F 100%);
+  box-shadow: 0 4px 14px rgba(232,151,31,0.4);
 }
 .btn-premium::before {
   content: '';
@@ -832,12 +863,12 @@ a { color: inherit; text-decoration: none; }
 }
 .btn-premium:hover {
   transform: translateY(-2px) scale(1.02);
-  box-shadow: 0 8px 24px rgba(249,115,22,0.5);
+  box-shadow: 0 8px 24px rgba(232,151,31,0.5);
 }
 .btn-premium:hover::before { opacity: 1; }
 .btn-premium:active {
   transform: translateY(0) scale(0.98);
-  box-shadow: 0 2px 8px rgba(249,115,22,0.3);
+  box-shadow: 0 2px 8px rgba(232,151,31,0.3);
 }
 
 /* ─────────────────────────────────────────────────────────
@@ -881,12 +912,12 @@ a { color: inherit; text-decoration: none; }
 }
 
 .bg-mesh {
-  background-color: #F8FAFC;
+  background-color: #FAFAF7;
   background-image:
-    radial-gradient(at 20% 20%, rgba(249,115,22,0.08) 0, transparent 50%),
-    radial-gradient(at 80% 10%, rgba(99,102,241,0.08) 0, transparent 50%),
-    radial-gradient(at 50% 80%, rgba(16,185,129,0.06) 0, transparent 50%),
-    radial-gradient(at 90% 70%, rgba(236,72,153,0.06) 0, transparent 50%);
+    radial-gradient(at 20% 20%, rgba(245,166,35,0.08) 0, transparent 50%),
+    radial-gradient(at 80% 10%, rgba(232,151,31,0.07) 0, transparent 50%),
+    radial-gradient(at 50% 80%, rgba(245,166,35,0.05) 0, transparent 50%),
+    radial-gradient(at 90% 70%, rgba(232,151,31,0.04) 0, transparent 50%);
 }
 
 /* ─────────────────────────────────────────────────────────
@@ -1038,8 +1069,8 @@ a { color: inherit; text-decoration: none; }
               transform 0.15s ease;
 }
 .input-animated:focus {
-  border-color: #F97316 !important;
-  box-shadow: 0 0 0 3px rgba(249,115,22,0.15) !important;
+  border-color: #E8971F !important;
+  box-shadow: 0 0 0 3px rgba(232,151,31,0.15) !important;
   transform: translateY(-1px);
   outline: none;
 }
@@ -1106,11 +1137,11 @@ a { color: inherit; text-decoration: none; }
 .skeleton-colorful {
   background: linear-gradient(
     90deg,
-    #FFEDD5 0%,
-    #FED7AA 25%,
-    #FFEDD5 50%,
-    #FED7AA 75%,
-    #FFEDD5 100%
+    #FEF3C7 0%,
+    #FDE68A 25%,
+    #FEF3C7 50%,
+    #FDE68A 75%,
+    #FEF3C7 100%
   );
   background-size: 300% 100%;
   animation: shimmer 1.8s ease-in-out infinite;
@@ -1167,10 +1198,10 @@ a { color: inherit; text-decoration: none; }
    COLORFUL SCROLLBAR
 ───────────────────────────────────────────────────────── */
 ::-webkit-scrollbar-thumb {
-  background: linear-gradient(180deg, #F97316, #FBBF24);
+  background: linear-gradient(180deg, #F5A623, #E8971F);
 }
 ::-webkit-scrollbar-thumb:hover {
-  background: linear-gradient(180deg, #EA580C, #F97316);
+  background: linear-gradient(180deg, #E8971F, #D97706);
 }
 
 /* ─────────────────────────────────────────────────────────

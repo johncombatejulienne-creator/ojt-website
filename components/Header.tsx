@@ -34,12 +34,12 @@ export function Avatar({ src, name, size = 34, round = true }: {
 
 /* ─── Strand gradient for header ────────────────────────── */
 const STRAND_GRAD: Record<string, string> = {
-  STEM:    'linear-gradient(135deg,#F97316,#FBBF24)',
-  ABM:     'linear-gradient(135deg,#D97706,#F59E0B)',
-  HUMSS:   'linear-gradient(135deg,#B45309,#D97706)',
-  TVL:     'linear-gradient(135deg,#EA580C,#F97316)',
-  TEACHER: 'linear-gradient(135deg,#F97316,#EA580C)',
-  DEFAULT: 'linear-gradient(135deg,#F97316,#FBBF24)',
+  STEM:    'linear-gradient(135deg,#1D4ED8 0%,#2563EB 55%,#3B82F6 100%)',
+  ABM:     'linear-gradient(135deg,#047857 0%,#059669 55%,#10B981 100%)',
+  HUMSS:   'linear-gradient(135deg,#7E22CE 0%,#9333EA 55%,#A855F7 100%)',
+  TVL:     'linear-gradient(135deg,#D97706 0%,#E8971F 55%,#F5A623 100%)',
+  TEACHER: 'linear-gradient(135deg,#92400E 0%,#B45309 40%,#E8971F 100%)',
+  DEFAULT: 'linear-gradient(135deg,#B45309 0%,#D97706 50%,#F5A623 100%)',
 }
 
 /* ─── Nav item ───────────────────────────────────────────── */
@@ -140,8 +140,11 @@ export default function Header({ strandCode, forceTeacher }: {
 
   return (
     <>
-      <header style={{ background: grad, position: 'sticky', top: 0, zIndex: 50,
-        boxShadow: '0 2px 16px rgba(0,0,0,0.15)' }}
+      <header style={{
+        background: grad,
+        position: 'sticky', top: 0, zIndex: 50,
+        boxShadow: '0 2px 20px rgba(180,83,9,0.2), 0 1px 0 rgba(255,255,255,0.1)',
+      }}
         className="header-glass">
         <div style={{ maxWidth: 1280, margin: '0 auto', padding: '0 20px' }}>
           <div style={{ display: 'flex', alignItems: 'center', height: 60, gap: 12 }}>
@@ -150,27 +153,24 @@ export default function Header({ strandCode, forceTeacher }: {
             <button onClick={() => router.push(dashPath)}
               style={{ display: 'flex', alignItems: 'center', gap: 10, background: 'none',
                 border: 'none', cursor: 'pointer', flexShrink: 0 }}>
-              <div style={{ width: 44, height: 44, borderRadius: '50%', overflow: 'hidden',
+              <div style={{ width: 40, height: 40, borderRadius: '50%', overflow: 'hidden',
                 background: 'white', flexShrink: 0,
-                boxShadow: '0 2px 8px rgba(0,0,0,0.2)',
-                border: '2px solid rgba(255,255,255,0.9)' }}>
+                boxShadow: '0 2px 10px rgba(0,0,0,0.15)',
+                border: '2px solid rgba(255,255,255,0.85)' }}>
                 {/* eslint-disable-next-line @next/next/no-img-element */}
                 <img
                   src="/psbc-logo.jpg"
                   alt="PSBC Logo"
                   style={{ width: '100%', height: '100%', objectFit: 'cover' }}
-                  onError={(e) => {
-                    // Fallback to SVG if JPG not found
-                    ;(e.target as HTMLImageElement).src = '/psbc-logo.svg'
-                  }}
+                  onError={(e) => { ;(e.target as HTMLImageElement).src = '/psbc-logo.svg' }}
                 />
               </div>
               <div style={{ display: 'none' }} className="header-title">
                 <p style={{ color: 'white', fontWeight: 900, fontSize: 13, margin: 0, lineHeight: 1.2,
-                  textShadow: '0 1px 2px rgba(0,0,0,0.2)' }}>
+                  textShadow: '0 1px 3px rgba(0,0,0,0.25)' }}>
                   PSBC Work Immersion
                 </p>
-                <p style={{ color: 'rgba(255,255,255,0.8)', fontSize: 10, margin: 0 }}>
+                <p style={{ color: 'rgba(255,255,255,0.7)', fontSize: 10, margin: 0 }}>
                   Paete, Laguna
                 </p>
               </div>
@@ -277,18 +277,20 @@ export default function Header({ strandCode, forceTeacher }: {
                       top: 68,
                       right: 8,
                       width: 'min(240px, calc(100vw - 16px))',
-                      background: 'white', borderRadius: 16,
-                      boxShadow: '0 20px 60px rgba(0,0,0,0.15), 0 4px 16px rgba(0,0,0,0.08)',
-                      border: '1px solid #E5E7EB', zIndex: 20, overflow: 'hidden',
+                      background: 'rgba(255,255,255,0.97)',
+                      backdropFilter: 'blur(16px)',
+                      borderRadius: 16,
+                      boxShadow: '0 20px 60px rgba(180,83,9,0.12), 0 4px 16px rgba(0,0,0,0.06)',
+                      border: '1px solid rgba(232,151,31,0.12)', zIndex: 20, overflow: 'hidden',
                       animation: 'fadeIn 0.15s ease',
                     }}>
                       {/* User info */}
                       <div style={{ padding: '16px 18px', borderBottom: '1px solid #F3F4F6',
                         display: 'flex', alignItems: 'center', gap: 12 }}>
                         <div style={{ width: 42, height: 42, borderRadius: 10, overflow: 'hidden',
-                          flexShrink: 0, background: '#FFF7ED',
+                          flexShrink: 0, background: '#FFFBF0',
                           display: 'flex', alignItems: 'center', justifyContent: 'center',
-                          color: '#F97316', fontWeight: 800, fontSize: 15 }}>
+                          color: '#E8971F', fontWeight: 800, fontSize: 15 }}>
                           {profilePic
                             ? <Image src={profilePic} alt={userName} width={42} height={42}
                                 style={{ width: '100%', height: '100%', objectFit: 'cover' }}
@@ -306,7 +308,7 @@ export default function Header({ strandCode, forceTeacher }: {
                             {userEmail}
                           </p>
                           <span style={{ display: 'inline-block', marginTop: 3, fontSize: 10, fontWeight: 700,
-                            background: '#FFF7ED', color: '#F97316', padding: '1px 8px', borderRadius: 999,
+                            background: '#FFFBF0', color: '#E8971F', padding: '1px 8px', borderRadius: 999,
                             textTransform: 'capitalize', whiteSpace: 'nowrap' }}>{userRole}</span>
                         </div>
                       </div>
